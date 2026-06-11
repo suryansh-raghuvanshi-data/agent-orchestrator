@@ -1,10 +1,8 @@
 # Extra Features (Deferred)
 
-## 1. Wire Dashboard WorkerPicker to Spawn Flow
+## 1. [COMPLETED] Wire Dashboard WorkerPicker to Spawn Flow
 
-WorkerPicker component and `/api/workers` endpoint exist but are not wired. Selecting a worker in the dashboard does nothing.
-
-**To do:** Pass `selectedWorker` from `handleSpawnOrchestrator` in Dashboard.tsx to the POST body of `/api/orchestrators`.
+WorkerPicker component and `/api/workers` endpoint have been successfully wired. Selecting a worker in the dashboard now passes the selected worker provider when spawning an orchestrator.
 
 ---
 
