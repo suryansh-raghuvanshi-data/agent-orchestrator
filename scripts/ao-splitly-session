@@ -1,5 +1,5 @@
 #!/bin/bash
-# claude-splitly-session-v2 - Worktree-based session manager for splitly
+# ao-splitly-session-v2 - Worktree-based session manager for splitly
 
 set -e
 
@@ -17,7 +17,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 usage() {
-    echo "Usage: ~/claude-splitly-session-v2 <command> [args]"
+    echo "Usage: ~/ao-splitly-session-v2 <command> [args]"
     echo ""
     echo "Commands:"
     echo "  new [ISSUE-NUM] [--open]  Create new session (optionally with GitHub issue)"
@@ -136,13 +136,13 @@ cmd_ls() {
 }
 
 cmd_attach() {
-    [ -z "$1" ] && echo "Usage: ~/claude-splitly-session-v2 attach <session>" && exit 1
+    [ -z "$1" ] && echo "Usage: ~/ao-splitly-session-v2 attach <session>" && exit 1
     tmux attach -t "$1"
 }
 
 cmd_kill() {
     local session="$1"
-    [ -z "$session" ] && echo "Usage: ~/claude-splitly-session-v2 kill <session>" && exit 1
+    [ -z "$session" ] && echo "Usage: ~/ao-splitly-session-v2 kill <session>" && exit 1
     
     local meta_file="$SESSION_DIR/$session"
     local worktree=""

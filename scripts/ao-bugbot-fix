@@ -2,12 +2,12 @@
 # Check open PRs for unaddressed bugbot (cursor[bot]) comments
 # and send fix instructions to the relevant sessions.
 #
-# Usage: ~/claude-bugbot-fix [project] [--dry-run]
+# Usage: ~/ao-bugbot-fix [project] [--dry-run]
 #
 # Examples:
-#   ~/claude-bugbot-fix integrator          # Check and send fix instructions
-#   ~/claude-bugbot-fix integrator --dry-run  # Just report, don't send
-#   ~/claude-bugbot-fix splitly
+#   ~/ao-bugbot-fix integrator          # Check and send fix instructions
+#   ~/ao-bugbot-fix integrator --dry-run  # Just report, don't send
+#   ~/ao-bugbot-fix splitly
 
 PROJECT="${1:-integrator}"
 DRY_RUN=false

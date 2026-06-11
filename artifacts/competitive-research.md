@@ -143,9 +143,9 @@ Research into 16+ projects that orchestrate AI coding agents. The goal: understa
 
 ---
 
-### claude-flow (ruvnet)
+### ao-flow (ruvnet)
 
-- **GitHub**: https://github.com/ruvnet/claude-flow
+- **GitHub**: https://github.com/ruvnet/ao-flow
 - **Stack**: TypeScript, Node.js 20+, WebAssembly, SQLite, PostgreSQL
 - **Claims**: 100K+ monthly active users, 84.8% SWE-Bench solve rate
 
@@ -366,10 +366,10 @@ Agent code remains the same regardless of deployment target.
 | ------------------------ | ------------------------------------ | --------------------------- |
 | **WebSocket ping/pong**  | Periodic heartbeats                  | OpenHands                   |
 | **Process polling**      | Check PID alive                      | Claude Agent SDK            |
-| **tmux capture-pane**    | Scrape terminal output               | Our `claude-session-status` |
+| **tmux capture-pane**    | Scrape terminal output               | Our `ao-session-status` |
 | **File-based signaling** | Status to shared filesystem          | Our metadata files          |
 | **HTTP health endpoint** | `/health` or `/status`               | OpenHands server            |
-| **JSONL mtime**          | Check session file modification time | Our `claude-status`         |
+| **JSONL mtime**          | Check session file modification time | Our `ao-status`         |
 
 ---
 
@@ -414,7 +414,7 @@ Agent code remains the same regardless of deployment target.
 - [CAO](https://github.com/awslabs/cli-agent-orchestrator)
 - [ccswarm](https://github.com/nwiizo/ccswarm)
 - [agent-team](https://github.com/nekocode/agent-team)
-- [claude-flow](https://github.com/ruvnet/claude-flow)
+- [ao-flow](https://github.com/ruvnet/ao-flow)
 - [OpenHands](https://github.com/OpenHands/OpenHands)
 - [SWE-agent](https://github.com/SWE-agent/SWE-agent)
 - [SWE-ReX](https://github.com/SWE-agent/SWE-ReX)

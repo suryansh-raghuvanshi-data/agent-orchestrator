@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: ~/claude-session-status [session-pattern]
+# Usage: ~/ao-session-status [session-pattern]
 # Shows status of Claude sessions: working, idle, or blocked
 
 PATTERN="${1:-integrator-}"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check all sessions with PRs for review comments and trigger agents to address them
-# Usage: ~/claude-review-check [integrator|splitly]
+# Usage: ~/ao-review-check [integrator|splitly]
 
 PROJECT="${1:-splitly}"
 
@@ -19,7 +19,7 @@ case "$PROJECT" in
         SESSION_DATA_DIR="$HOME/.ao-sessions"
         ;;
     *)
-        echo "Usage: ~/claude-review-check [integrator|splitly|ao]"
+        echo "Usage: ~/ao-review-check [integrator|splitly|ao]"
         exit 1
         ;;
 esac

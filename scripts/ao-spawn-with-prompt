@@ -1,17 +1,17 @@
 #!/bin/bash
-# Usage: ~/claude-spawn-with-prompt <project> <prompt> [--open]
+# Usage: ~/ao-spawn-with-prompt <project> <prompt> [--open]
 set -e
 
 PROJECT="$1"; PROMPT="$2"; OPEN_TAB=false
 [[ "$3" == "--open" ]] && OPEN_TAB=true
 
 case "$PROJECT" in
-    i|integrator) SCRIPT=~/claude-integrator-session ;;
-    s|splitly) SCRIPT=~/claude-splitly-session ;;
-    *) echo "Usage: ~/claude-spawn-with-prompt <i|s> \"prompt\" [--open]"; exit 1 ;;
+    i|integrator) SCRIPT=~/ao-integrator-session ;;
+    s|splitly) SCRIPT=~/ao-splitly-session ;;
+    *) echo "Usage: ~/ao-spawn-with-prompt <i|s> \"prompt\" [--open]"; exit 1 ;;
 esac
 
-[[ -z "$PROMPT" ]] && { echo "Usage: ~/claude-spawn-with-prompt <i|s> \"prompt\" [--open]"; exit 1; }
+[[ -z "$PROMPT" ]] && { echo "Usage: ~/ao-spawn-with-prompt <i|s> \"prompt\" [--open]"; exit 1; }
 
 # Create session WITHOUT --open to avoid race condition
 # We'll open the tab AFTER sending the message

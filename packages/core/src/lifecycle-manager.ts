@@ -7,7 +7,7 @@
  * 3. Triggers reactions (auto-handle CI failures, review comments, etc.)
  * 4. Escalates to human notification when auto-handling fails
  *
- * Reference: scripts/claude-session-status, scripts/claude-review-check
+ * Reference: scripts/ao-session-status, scripts/ao-review-check
  */
 
 import { randomUUID } from "node:crypto";

@@ -2,7 +2,7 @@
 
 # Claude Session Spawner
 # Opens a new iTerm2 window and starts a Claude session
-# Usage: ~/claude-spawn [integrator|splitly] [issue-url-or-number]
+# Usage: ~/ao-spawn [integrator|splitly] [issue-url-or-number]
 
 PROJECT="${1:-}"
 ISSUE="${2:-}"
@@ -12,10 +12,10 @@ show_help() {
 CLAUDE-SPAWN(1)                    User Commands                    CLAUDE-SPAWN(1)
 
 NAME
-    claude-spawn - Spawn a new Claude session in a new iTerm2 window
+    ao-spawn - Spawn a new Claude session in a new iTerm2 window
 
 SYNOPSIS
-    ~/claude-spawn <project> [issue]
+    ~/ao-spawn <project> [issue]
 
 DESCRIPTION
     Opens a new iTerm2 terminal window and starts a Claude Code session for the
@@ -35,25 +35,25 @@ ARGUMENTS
 
 EXAMPLES
     # Spawn a new integrator session (auto-picks checkout)
-    ~/claude-spawn integrator
+    ~/ao-spawn integrator
 
     # Spawn integrator session for a Linear ticket
-    ~/claude-spawn integrator https://linear.app/composio/issue/INT-1020
+    ~/ao-spawn integrator https://linear.app/composio/issue/INT-1020
 
     # Spawn splitly session for GitHub issue #294
-    ~/claude-spawn splitly 294
+    ~/ao-spawn splitly 294
 
     # Using aliases
-    ~/claude-spawn i INT-1020
-    ~/claude-spawn s 294
+    ~/ao-spawn i INT-1020
+    ~/ao-spawn s 294
 
 REQUIREMENTS
     - iTerm2 must be installed
 
 SEE ALSO
-    ~/claude-integrator-session-v2
-    ~/claude-splitly-session-v2
-    ~/claude-status
+    ~/ao-integrator-session-v2
+    ~/ao-splitly-session-v2
+    ~/ao-status
 
                                     2026-02-01                      CLAUDE-SPAWN(1)
 EOF
@@ -68,27 +68,27 @@ fi
 # Validate project
 case "$PROJECT" in
     integrator|i)
-        SESSION_SCRIPT="$HOME/claude-integrator-session-v2"
+        SESSION_SCRIPT="$HOME/ao-integrator-session-v2"
         PROJECT_NAME="integrator"
         ;;
     splitly|s|safesplit)
-        SESSION_SCRIPT="$HOME/claude-splitly-session-v2"
+        SESSION_SCRIPT="$HOME/ao-splitly-session-v2"
         PROJECT_NAME="splitly"
         ;;
     agent-orchestrator|ao)
-        SESSION_SCRIPT="$HOME/claude-ao-session"
+        SESSION_SCRIPT="$HOME/ao-ao-session"
         PROJECT_NAME="ao"
         ;;
     "")
-        echo "Usage: ~/claude-spawn <integrator|splitly|ao> [issue]"
+        echo "Usage: ~/ao-spawn <integrator|splitly|ao> [issue]"
         echo ""
         echo "Examples:"
-        echo "  ~/claude-spawn integrator"
-        echo "  ~/claude-spawn integrator https://linear.app/composio/issue/INT-1020"
-        echo "  ~/claude-spawn splitly 294"
-        echo "  ~/claude-spawn ao AO-1"
+        echo "  ~/ao-spawn integrator"
+        echo "  ~/ao-spawn integrator https://linear.app/composio/issue/INT-1020"
+        echo "  ~/ao-spawn splitly 294"
+        echo "  ~/ao-spawn ao AO-1"
         echo ""
-        echo "Run '~/claude-spawn help' for more information."
+        echo "Run '~/ao-spawn help' for more information."
         exit 1
         ;;
     *)

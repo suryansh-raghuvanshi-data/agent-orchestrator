@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: ~/claude-spawn-on-branch <project> <branch> <prompt> [--open]
+# Usage: ~/ao-spawn-on-branch <project> <branch> <prompt> [--open]
 # Creates session on branch - reuses existing worktree if one exists for the branch
 
 set -e
@@ -22,10 +22,10 @@ case "$PROJECT" in
         WORKTREE_BASE=~/.worktrees/splitly
         MAIN_REPO=~/projects/SafeSplit
         ;;
-    *) echo "Usage: ~/claude-spawn-on-branch <project> <branch> <prompt> [--open]"; exit 1 ;;
+    *) echo "Usage: ~/ao-spawn-on-branch <project> <branch> <prompt> [--open]"; exit 1 ;;
 esac
 
-[ -z "$BRANCH" ] || [ -z "$PROMPT" ] && { echo "Usage: ~/claude-spawn-on-branch <project> <branch> <prompt> [--open]"; exit 1; }
+[ -z "$BRANCH" ] || [ -z "$PROMPT" ] && { echo "Usage: ~/ao-spawn-on-branch <project> <branch> <prompt> [--open]"; exit 1; }
 
 # Check if worktree already exists for this branch
 cd "$MAIN_REPO"
@@ -50,7 +50,7 @@ if [ -n "$EXISTING_WORKTREE" ]; then
     echo "Reusing worktree: $EXISTING_WORKTREE"
 else
     # Create new session (which creates new worktree)
-    output=$(~/claude-${PROJECT}-session new 2>&1)
+    output=$(~/ao-${PROJECT}-session new 2>&1)
     SESSION=$(echo "$output" | grep "^SESSION=" | cut -d= -f2)
 
     [ -z "$SESSION" ] && { echo "Failed to create session"; echo "$output"; exit 1; }

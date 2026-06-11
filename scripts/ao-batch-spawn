@@ -3,21 +3,21 @@
 # Claude Batch Session Spawner (v2 - worktree-based)
 # Delegates to session managers for worktree creation, symlinks, and MCP setup.
 # Adds duplicate detection: skips issues that already have active sessions.
-# Usage: ~/claude-batch-spawn <project> <issue1> [issue2] [issue3] ...
+# Usage: ~/ao-batch-spawn <project> <issue1> [issue2] [issue3] ...
 
 PROJECT="${1:-}"
 shift
 ISSUES=("$@")
 
 if [ -z "$PROJECT" ] || [ ${#ISSUES[@]} -eq 0 ]; then
-    echo "Usage: ~/claude-batch-spawn <project> <issue1> [issue2] [issue3] ..."
+    echo "Usage: ~/ao-batch-spawn <project> <issue1> [issue2] [issue3] ..."
     echo ""
     echo "Examples:"
-    echo "  ~/claude-batch-spawn splitly 298 299 300 301"
-    echo "  ~/claude-batch-spawn integrator INT-1020 INT-1021"
+    echo "  ~/ao-batch-spawn splitly 298 299 300 301"
+    echo "  ~/ao-batch-spawn integrator INT-1020 INT-1021"
     echo ""
     echo "This creates worktree-based sessions for each issue."
-    echo "After creation, attach with: ~/claude-*-session attach <session-name>"
+    echo "After creation, attach with: ~/ao-*-session attach <session-name>"
     exit 1
 fi
 
@@ -25,19 +25,19 @@ fi
 case "$PROJECT" in
     integrator|i)
         SESSION_PREFIX="integrator"
-        SESSION_MANAGER="$HOME/claude-integrator-session"
+        SESSION_MANAGER="$HOME/ao-integrator-session"
         SESSION_DATA_DIR="$HOME/.integrator-sessions"
         GITHUB_REPO=""
         ;;
     splitly|s|safesplit)
         SESSION_PREFIX="splitly"
-        SESSION_MANAGER="$HOME/claude-splitly-session"
+        SESSION_MANAGER="$HOME/ao-splitly-session"
         SESSION_DATA_DIR="$HOME/.splitly-sessions"
         GITHUB_REPO="UniverseOfThings/SafeSplit"
         ;;
     agent-orchestrator|ao)
         SESSION_PREFIX="ao"
-        SESSION_MANAGER="$HOME/claude-ao-session"
+        SESSION_MANAGER="$HOME/ao-ao-session"
         SESSION_DATA_DIR="$HOME/.ao-sessions"
         GITHUB_REPO="ComposioHQ/agent-orchestrator"
         ;;
@@ -185,5 +185,5 @@ if [ ${#FAILED[@]} -gt 0 ]; then
 fi
 
 echo ""
-echo "To see all sessions: ~/claude-status"
-echo "To open all tabs: ~/claude-open-all $SESSION_PREFIX"
+echo "To see all sessions: ~/ao-status"
+echo "To open all tabs: ~/ao-open-all $SESSION_PREFIX"

@@ -67,8 +67,8 @@ Creates the monorepo scaffold and ALL type definitions. After this, every agent 
 | `metadata.ts`          | Flat-file metadata read/write (key=value)                        | Metadata parsing in all session managers        |
 | `event-bus.ts`         | In-process pub/sub + JSONL persistence                           | New (inspired by OpenHands event stream)        |
 | `tmux.ts`              | tmux command wrappers (list, new, send-keys, capture-pane, kill) | All scripts that call tmux                      |
-| `session-manager.ts`   | Session CRUD: spawn, list, kill, cleanup, send message           | `claude-ao-session`                             |
-| `lifecycle-manager.ts` | State machine per session + reaction engine                      | `claude-review-check` + `claude-session-status` |
+| `session-manager.ts`   | Session CRUD: spawn, list, kill, cleanup, send message           | `ao-ao-session`                             |
+| `lifecycle-manager.ts` | State machine per session + reaction engine                      | `ao-review-check` + `ao-session-status` |
 
 **Key complexity**: session-manager.ts orchestrates Runtime + Agent + Workspace plugins together. lifecycle-manager.ts runs the polling loop and triggers reactions.
 
@@ -85,9 +85,9 @@ Creates the monorepo scaffold and ALL type definitions. After this, every agent 
 
 | Plugin               | What                                                               | Reference                          |
 | -------------------- | ------------------------------------------------------------------ | ---------------------------------- |
-| `runtime-tmux`       | Create/destroy tmux sessions, send-keys, capture-pane, alive check | `claude-ao-session` new/kill       |
+| `runtime-tmux`       | Create/destroy tmux sessions, send-keys, capture-pane, alive check | `ao-ao-session` new/kill       |
 | `runtime-process`    | Spawn child processes, stdin/stdout, signal handling               | New (for headless `claude -p`)     |
-| `workspace-worktree` | `git worktree add/remove/list`, branch naming, symlinks            | `claude-ao-session` worktree logic |
+| `workspace-worktree` | `git worktree add/remove/list`, branch naming, symlinks            | `ao-ao-session` worktree logic |
 | `workspace-clone`    | `git clone`, cleanup                                               | New (for Docker/cloud runtimes)    |
 
 **Key complexity**: runtime-tmux must handle send-keys with proper escaping, busy detection, and the wait-for-idle pattern from `send-to-session`.
@@ -98,18 +98,18 @@ Creates the monorepo scaffold and ALL type definitions. After this, every agent 
 
 ### Agent 3: Agent Plugins
 
-**Packages**: `packages/plugins/agent-claude-code/`, `agent-codex/`, `agent-aider/`
+**Packages**: `packages/plugins/agent-ao-code/`, `agent-codex/`, `agent-aider/`
 **Branch**: `feat/agent-plugins`
 **Depends on**: Phase 0 types only
 **Blocked by**: Nothing after Phase 0
 
 | Plugin              | What                                                                   | Reference                                                           |
 | ------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `agent-claude-code` | Launch cmd, JSONL activity detection, process tree walk, introspection | `claude-status`, `get-claude-session-info`, `claude-session-status` |
+| `agent-ao-code` | Launch cmd, JSONL activity detection, process tree walk, introspection | `ao-status`, `get-ao-session-info`, `ao-session-status` |
 | `agent-codex`       | Launch cmd, process detection                                          | New                                                                 |
 | `agent-aider`       | Launch cmd, process detection                                          | New                                                                 |
 
-**Key complexity**: `agent-claude-code` has the richest activity detection — reading JSONL session files, extracting summaries, walking process trees from tmux pane PID to find `claude` process, detecting working/idle/stuck/blocked states.
+**Key complexity**: `agent-ao-code` has the richest activity detection — reading JSONL session files, extracting summaries, walking process trees from tmux pane PID to find `claude` process, detecting working/idle/stuck/blocked states.
 
 **Estimated effort**: Medium (~500-700 lines)
 
@@ -124,9 +124,9 @@ Creates the monorepo scaffold and ALL type definitions. After this, every agent 
 
 | Plugin           | What                                                                                 | Reference                                                         |
 | ---------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `scm-github`     | PR detection, CI checks, review comments, automated comments, merge readiness, merge | `claude-review-check`, `claude-bugbot-fix`, dashboard PR fetching |
-| `tracker-github` | Issue fetch, completion check, branch naming, prompt generation                      | `claude-splitly-session` (GitHub Issues)                          |
-| `tracker-linear` | Issue fetch via GraphQL, completion check, branch naming                             | `claude-ao-session` + `claude-integrator-session` Linear checks   |
+| `scm-github`     | PR detection, CI checks, review comments, automated comments, merge readiness, merge | `ao-review-check`, `ao-bugbot-fix`, dashboard PR fetching |
+| `tracker-github` | Issue fetch, completion check, branch naming, prompt generation                      | `ao-splitly-session` (GitHub Issues)                          |
+| `tracker-linear` | Issue fetch via GraphQL, completion check, branch naming                             | `ao-ao-session` + `ao-integrator-session` Linear checks   |
 
 **Key complexity**: `scm-github` is the largest — it covers PR state, CI checks (gh pr checks), review decision (gh pr view), inline review comments (gh api), automated bot comments (cursor[bot], bugbot), and merge readiness.
 
@@ -144,14 +144,14 @@ Creates the monorepo scaffold and ALL type definitions. After this, every agent 
 | Command                                | What                                                 | Reference Script                    |
 | -------------------------------------- | ---------------------------------------------------- | ----------------------------------- |
 | `ao init`                              | Interactive setup wizard → `agent-orchestrator.yaml` | New                                 |
-| `ao status`                            | Colored terminal table of all sessions               | `claude-status`                     |
-| `ao spawn <project> [issue]`           | Spawn single session                                 | `claude-spawn`                      |
-| `ao batch-spawn <project> <issues...>` | Batch spawn with dedup                               | `claude-batch-spawn`                |
-| `ao session ls\|kill\|cleanup`         | Session management                                   | `claude-ao-session` ls/kill/cleanup |
+| `ao status`                            | Colored terminal table of all sessions               | `ao-status`                     |
+| `ao spawn <project> [issue]`           | Spawn single session                                 | `ao-spawn`                      |
+| `ao batch-spawn <project> <issues...>` | Batch spawn with dedup                               | `ao-batch-spawn`                |
+| `ao session ls\|kill\|cleanup`         | Session management                                   | `ao-ao-session` ls/kill/cleanup |
 | `ao send <session> <message>`          | Smart message delivery                               | `send-to-session`                   |
-| `ao review-check [project]`            | Trigger PR review fixes                              | `claude-review-check`               |
-| `ao dashboard`                         | Start web server                                     | `claude-dashboard`                  |
-| `ao open [session\|all]`               | Open terminal tabs                                   | `claude-open-all`, `open-iterm-tab` |
+| `ao review-check [project]`            | Trigger PR review fixes                              | `ao-review-check`               |
+| `ao dashboard`                         | Start web server                                     | `ao-dashboard`                  |
+| `ao open [session\|all]`               | Open terminal tabs                                   | `ao-open-all`, `open-iterm-tab` |
 
 **Key complexity**: `ao status` needs rich terminal output (colors, columns, live data). `ao batch-spawn` needs duplicate detection.
 
@@ -171,15 +171,15 @@ Creates the monorepo scaffold and ALL type definitions. After this, every agent 
 | Component                     | What                                          | Reference                        |
 | ----------------------------- | --------------------------------------------- | -------------------------------- |
 | Next.js setup                 | App Router, Tailwind, dark theme              | New                              |
-| `GET /api/sessions`           | List all sessions with full state             | `claude-dashboard` /api/sessions |
+| `GET /api/sessions`           | List all sessions with full state             | `ao-dashboard` /api/sessions |
 | `POST /api/spawn`             | Spawn new session                             | New                              |
 | `POST /api/sessions/:id/send` | Send message to session                       | New                              |
 | `POST /api/sessions/:id/kill` | Kill session                                  | New                              |
 | `POST /api/prs/:id/merge`     | Merge PR                                      | New                              |
 | `GET /api/events`             | SSE stream for real-time updates              | New (replaces polling)           |
-| Dashboard page                | Attention-prioritized session cards           | `claude-dashboard` HTML          |
+| Dashboard page                | Attention-prioritized session cards           | `ao-dashboard` HTML          |
 | Session detail page           | Full session info + terminal embed            | New                              |
-| Components                    | SessionCard, PRStatus, CIBadge, AttentionZone | `claude-dashboard` HTML          |
+| Components                    | SessionCard, PRStatus, CIBadge, AttentionZone | `ao-dashboard` HTML          |
 
 **Key complexity**: SSE endpoint that streams lifecycle events in real-time. Attention-zone layout. xterm.js terminal embed.
 
@@ -201,7 +201,7 @@ Creates the monorepo scaffold and ALL type definitions. After this, every agent 
 | `notifier-desktop` | OS notifications (node-notifier), click → deep link to dashboard | `notify-session`                    |
 | `notifier-slack`   | Slack webhook messages with action buttons                       | New                                 |
 | `notifier-webhook` | Generic HTTP POST                                                | New                                 |
-| `terminal-iterm2`  | AppleScript tab management, reuse existing tabs                  | `open-iterm-tab`, `claude-open-all` |
+| `terminal-iterm2`  | AppleScript tab management, reuse existing tabs                  | `open-iterm-tab`, `ao-open-all` |
 | `terminal-web`     | xterm.js config for web-based terminal                           | New                                 |
 
 **Key complexity**: `notifier-desktop` needs to be cross-platform (macOS/Linux/Windows). `terminal-iterm2` has AppleScript quirks (string length limits, tab detection).
@@ -255,7 +255,7 @@ If core services are delayed, CLI and Web can't fully test. Mitigations:
 | ------ | ------------------------------------------------------------------------------------- | ----- |
 | AO-10  | Implement core services (metadata, event-bus, session-manager, lifecycle-manager)     | 1     |
 | AO-11  | Implement runtime + workspace plugins (tmux, process, worktree, clone)                | 2     |
-| AO-12  | Implement agent plugins (claude-code, codex, aider)                                   | 3     |
+| AO-12  | Implement agent plugins (ao-code, codex, aider)                                   | 3     |
 | AO-13  | Implement SCM + tracker plugins (github SCM, github tracker, linear tracker)          | 4     |
 | AO-14  | Implement CLI (ao init, status, spawn, session, send, review-check, dashboard, open)  | 5     |
 | AO-15  | Implement web dashboard (Next.js, API routes, SSE, attention-zone UI, session detail) | 6     |
@@ -266,7 +266,7 @@ If core services are delayed, CLI and Web can't fully test. Mitigations:
 After Phase 0 is committed to `main`:
 
 ```bash
-~/claude-batch-spawn ao AO-10 AO-11 AO-12 AO-13 AO-14 AO-15 AO-16
+~/ao-batch-spawn ao AO-10 AO-11 AO-12 AO-13 AO-14 AO-15 AO-16
 ```
 
 Each agent gets its own worktree branched from main (which contains the scaffold + types).

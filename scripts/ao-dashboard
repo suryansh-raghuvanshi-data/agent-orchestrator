@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate and open an HTML dashboard for all Claude orchestrator sessions
-# Usage: ~/claude-dashboard [--no-open]
+# Usage: ~/ao-dashboard [--no-open]
 
 NO_OPEN=false
 REGEN_ONLY=false
@@ -11,7 +11,7 @@ for arg in "$@"; do
     esac
 done
 
-DASHBOARD="/tmp/claude-dashboard.html"
+DASHBOARD="/tmp/ao-dashboard.html"
 
 echo "Gathering session data..."
 
@@ -106,12 +106,12 @@ for s in $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep -E "^integ
 
     # Launch background PR lookup from branch name
     if [ -n "$branch" ] && [ "$branch" != "unknown" ] && [ "$branch" != "next" ] && [ "$branch" != "main" ]; then
-        mkdir -p /tmp/claude-dashboard-prlookup.$$
-        ( gh pr list --repo "$repo" --head "$branch" --json url --jq '.[0].url' 2>/dev/null > "/tmp/claude-dashboard-prlookup.$$/$s" ) &
+        mkdir -p /tmp/ao-dashboard-prlookup.$$
+        ( gh pr list --repo "$repo" --head "$branch" --json url --jq '.[0].url' 2>/dev/null > "/tmp/ao-dashboard-prlookup.$$/$s" ) &
     fi
 
     # Store session data for later JSON assembly (after PR lookups complete)
-    echo "$s|$project|$branch|$meta_status|$summary|$pr|$issue|$activity|$slack|$notes" >> /tmp/claude-dashboard-sessions.$$
+    echo "$s|$project|$branch|$meta_status|$summary|$pr|$issue|$activity|$slack|$notes" >> /tmp/ao-dashboard-sessions.$$
 done
 
 # Wait for all background PR lookups to finish
@@ -123,8 +123,8 @@ first=true
 while IFS='|' read -r s project branch meta_status summary pr issue activity slack notes; do
     # Merge auto-detected PR from branch
     detected_pr=""
-    if [ -f "/tmp/claude-dashboard-prlookup.$$/$s" ]; then
-        detected_pr=$(cat "/tmp/claude-dashboard-prlookup.$$/$s" | tr -d '[:space:]')
+    if [ -f "/tmp/ao-dashboard-prlookup.$$/$s" ]; then
+        detected_pr=$(cat "/tmp/ao-dashboard-prlookup.$$/$s" | tr -d '[:space:]')
     fi
     if [ -n "$detected_pr" ] && [ "$detected_pr" != "null" ]; then
         if [ -z "$pr" ]; then
@@ -143,9 +143,9 @@ while IFS='|' read -r s project branch meta_status summary pr issue activity sla
 
     [ "$first" = true ] && first=false || sessions_json+=","
     sessions_json+="{\"name\":\"$s\",\"project\":\"$project\",\"branch\":\"$branch\",\"status\":\"$meta_status\",\"summary\":\"$summary\",\"pr\":\"$pr\",\"issue\":\"$issue\",\"activity\":\"$activity\",\"slack\":\"$slack\",\"notes\":\"$notes\"}"
-done < /tmp/claude-dashboard-sessions.$$
+done < /tmp/ao-dashboard-sessions.$$
 sessions_json+="]"
-rm -rf /tmp/claude-dashboard-prlookup.$$ /tmp/claude-dashboard-sessions.$$
+rm -rf /tmp/ao-dashboard-prlookup.$$ /tmp/ao-dashboard-sessions.$$
 
 # ─── Gather PR details (with review threads, CI, comments) ────────────────────
 
@@ -155,7 +155,7 @@ echo "Fetching PR details..."
 pr_urls=$(echo "$sessions_json" | grep -oE 'https://github.com/[^",]+/pull/[0-9]+' | sort -u)
 
 # Fetch all PRs in parallel
-pr_tmp=$(mktemp -d /tmp/claude-dashboard-pr-XXXXXX)
+pr_tmp=$(mktemp -d /tmp/ao-dashboard-pr-XXXXXX)
 
 for url in $pr_urls; do
     num=$(echo "$url" | grep -oE '[0-9]+$')
@@ -252,7 +252,7 @@ needs_review=$(echo "$pr_json" | grep -o '"REVIEW_REQUIRED"' | wc -l | tr -d ' '
 
 # ─── Generate Markdown (machine-readable for orchestrator agent) ───────────────
 
-MD_FILE="$HOME/.claude-dashboard.md"
+MD_FILE="$HOME/.ao-dashboard.md"
 
 python3 -c "
 import json, sys
@@ -931,16 +931,16 @@ if [ "$REGEN_ONLY" = true ]; then
 fi
 
 # Kill any previous dashboard server
-pkill -f 'claude-dashboard-server' 2>/dev/null
+pkill -f 'ao-dashboard-server' 2>/dev/null
 sleep 0.3
 
 # Start a tiny local server that serves the dashboard + handles /api/open/:session
 PORT=9847
-cat > /tmp/claude-dashboard-server.py << 'PYEOF'
+cat > /tmp/ao-dashboard-server.py << 'PYEOF'
 import http.server, subprocess, json, os, urllib.parse, signal, sys, re, threading, time
 
 PORT = 9847
-DASHBOARD = "/tmp/claude-dashboard.html"
+DASHBOARD = "/tmp/ao-dashboard.html"
 regen_lock = threading.Lock()
 regen_proc = None
 regen_started = 0
@@ -1251,7 +1251,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     shutil.move(meta, archive_path)
                 self._json(200, {'ok': True})
                 # Regenerate HTML in background so next reload is fresh
-                subprocess.Popen([os.path.expanduser('~/claude-dashboard'), '--regen-only'],
+                subprocess.Popen([os.path.expanduser('~/ao-dashboard'), '--regen-only'],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
@@ -1294,7 +1294,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if regen_proc is None or regen_proc.poll() is not None:
                     regen_started = time.time()
                     regen_proc = subprocess.Popen(
-                        [os.path.expanduser('~/claude-dashboard'), '--regen-only'],
+                        [os.path.expanduser('~/ao-dashboard'), '--regen-only'],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                     )
             self.send_response(200)
@@ -1359,13 +1359,13 @@ print(f"Dashboard server on http://localhost:{PORT}")
 http.server.HTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
 PYEOF
 
-python3 /tmp/claude-dashboard-server.py &
+python3 /tmp/ao-dashboard-server.py &
 SERVERPID=$!
-echo "$SERVERPID" > /tmp/claude-dashboard-server.pid
+echo "$SERVERPID" > /tmp/ao-dashboard-server.pid
 sleep 0.5
 
 if [ "$NO_OPEN" = false ]; then
     open "http://localhost:$PORT"
     echo "Opened http://localhost:$PORT"
 fi
-echo "Server PID: $SERVERPID (kill with: pkill -f claude-dashboard-server)"
+echo "Server PID: $SERVERPID (kill with: pkill -f ao-dashboard-server)"

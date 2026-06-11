@@ -1,13 +1,13 @@
 #!/bin/bash
 # Spawn a Claude session with custom context/prompt (v2 - worktree-based)
 # Delegates to session managers for worktree creation, symlinks, and MCP setup.
-# Usage: ~/claude-spawn-with-context <project> <ticket-id> <prompt-file> [--open]
+# Usage: ~/ao-spawn-with-context <project> <ticket-id> <prompt-file> [--open]
 #
 # Examples:
-#   ~/claude-spawn-with-context integrator INT-1020 /tmp/prompt.txt --open
-#   ~/claude-spawn-with-context i INT-1020 /tmp/prompt.txt --open
-#   ~/claude-spawn-with-context splitly 295 /tmp/prompt.txt
-#   ~/claude-spawn-with-context s 295 /tmp/prompt.txt
+#   ~/ao-spawn-with-context integrator INT-1020 /tmp/prompt.txt --open
+#   ~/ao-spawn-with-context i INT-1020 /tmp/prompt.txt --open
+#   ~/ao-spawn-with-context splitly 295 /tmp/prompt.txt
+#   ~/ao-spawn-with-context s 295 /tmp/prompt.txt
 
 set -e
 
@@ -30,7 +30,7 @@ for arg in "$@"; do
 done
 
 if [ -z "$PROJECT" ] || [ -z "$TICKET" ] || [ -z "$PROMPT_FILE" ]; then
-    echo "Usage: ~/claude-spawn-with-context <project> <ticket-id> <prompt-file> [--open]"
+    echo "Usage: ~/ao-spawn-with-context <project> <ticket-id> <prompt-file> [--open]"
     echo ""
     echo "  project:      integrator (or i) / splitly (or s)"
     echo "  ticket-id:    Linear ticket (INT-XXXX) or GitHub issue number"
@@ -38,8 +38,8 @@ if [ -z "$PROJECT" ] || [ -z "$TICKET" ] || [ -z "$PROMPT_FILE" ]; then
     echo "  --open:       open in new iTerm2 tab after spawning"
     echo ""
     echo "Examples:"
-    echo "  ~/claude-spawn-with-context i INT-1020 /tmp/prompt.txt --open"
-    echo "  ~/claude-spawn-with-context s 295 /tmp/prompt.txt"
+    echo "  ~/ao-spawn-with-context i INT-1020 /tmp/prompt.txt --open"
+    echo "  ~/ao-spawn-with-context s 295 /tmp/prompt.txt"
     exit 1
 fi
 
@@ -52,12 +52,12 @@ fi
 case "$PROJECT" in
     integrator|i)
         PROJECT="integrator"
-        SESSION_MANAGER="$HOME/claude-integrator-session"
+        SESSION_MANAGER="$HOME/ao-integrator-session"
         SESSIONS_DIR="$HOME/.integrator-sessions"
         ;;
     splitly|s|safesplit)
         PROJECT="splitly"
-        SESSION_MANAGER="$HOME/claude-splitly-session"
+        SESSION_MANAGER="$HOME/ao-splitly-session"
         SESSIONS_DIR="$HOME/.splitly-sessions"
         ;;
     *)
