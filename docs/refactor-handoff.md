@@ -83,107 +83,80 @@
 ---
 
 ## Next Scope: UI/UX Overhaul & Deferred Tasks
-The codebase is fully refactored, typechecking, and ready for the next phase:
-1. **Visual Overhaul**: Apply the "Mission Control" visual styling tokens to `globals.css` and restructure web dashboard cards, headers, and terminal components per `docs/design/design-brief.md`.
-2. **CLI Worker Provider**: Build `packages/plugins/provider-cli` executing arbitrary subprocesses.
-3. **Devin Cloud Handoff**: Auto-fallback to Cloud Devin API on local process timeout/failure.
-4. **Settings UI**: Expose worker provider fields in the project configuration interface.
 
-*Detailed implementation plan has been populated in `implementation_plan.md`.*
+The codebase is fully refactored, typechecking, and ready for the next phase. Below is the detailed implementation plan and checklist.
+
+### 1. Proposed Changes & Technical Design
+
+#### A. CLI Worker Provider (`packages/plugins/provider-cli`)
+- **Location**: Create `packages/plugins/provider-cli`.
+- **Contract**: Implement `WorkerProvider` slot contract.
+- **Task Submission (`submitTask`)**:
+  - Dynamically load the global configuration using `loadConfig()` from `@aoagents/ao-core`.
+  - Look up the project workspace path via `projects[projectId].path`.
+  - Spawn the configured local command subprocess (e.g. `binary args... "prompt"`) in that directory.
+- **Monitoring (`getTaskStatus`)**: Query process liveness using cross-platform PID checks.
+- **Cancellation (`cancelTask`)**: Kill the spawned process tree using `killProcessTree` from `@aoagents/ao-core/platform`.
+- **Health Check (`health`)**: Query path resolution of the binary using cross-platform paths (`which` / `where` helpers depending on `isWindows()`).
+
+#### B. Devin Cloud Handoff Fallback
+- **Location**: `packages/core/src/worker-failure-handler.ts`.
+- **Mechanism**: Intercept errors or timeouts from the local Devin worker process. On failure, execute a handoff request to the Cloud Devin API, storing task metadata in the session and polling the cloud API task handle.
+
+#### C. Project Settings Integration
+- **Local config updates**: Add `workerProvider` and `fallbackWorkerProvider` to `LocalProjectConfigSchema` in `packages/core/src/global-config.ts` so they can be saved and loaded in `agent-orchestrator.yaml`.
+- **API updates**: Add both fields to `EDITABLE_CONFIG_FIELDS` in `packages/web/src/app/api/projects/[id]/route.ts`.
+- **UI updates**: Add `workerProvider` and `fallbackWorkerProvider` inputs to `ProjectSettingsForm.tsx` to allow selecting and saving them.
+
+#### D. Visual Overhaul (Mission Control Theme)
+- **globals.css**: Implement the cool blue-cast dark tokens (`#0C0C11` base background, `#141419` cards, `#5B7EF8` brand blue-indigo accent, `#22C55E` success/merge green).
+- **SessionCard.tsx**: Replace Unicode emojis with CSS status dots (`.activity-dot`), implement a solid green merge button when ready, remove merge confirmation modals, and display cards in a responsive multi-column grid.
+- **AttentionZone.tsx**: Refactor zone headers to a cleaner, high-density format with divider lines: `[●] ZONE LABEL ──────────────── [Count]`.
+- **Dashboard.tsx**: Hook up client-side `EventSource` listening to `/api/events` to handle real-time UI state sync and animate transition changes.
+- **SessionDetail.tsx**: Add breadcrumbs (`← Agent Orchestrator / [id]`), update badges to use CSS activity dots, and set dynamic viewport heights.
+- **DirectTerminal.tsx**: Apply xterm.js theme adjustments (`#0A0A0F` background, `#5B7EF8` cursor).
 
 ---
 
-## How To Resume (Step by Step)
+## Actionable Checklist / TODO List
 
-### 1. Baseline check
+### CLI Worker & Settings UI
+- [ ] Create `packages/plugins/provider-cli` package.
+- [ ] Implement `WorkerProvider` contract in `packages/plugins/provider-cli/src/index.ts`.
+- [ ] Register `"cli-worker"` in `packages/core/src/plugin-registry.ts`.
+- [ ] Add config fields to `LocalProjectConfigSchema` in `packages/core/src/global-config.ts`.
+- [ ] Support both fields in `packages/web/src/app/api/projects/[id]/route.ts`.
+- [ ] Expose inputs in `packages/web/src/components/ProjectSettingsForm.tsx`.
 
-```bash
-git status --short
-git log --oneline -5
-pnpm --dir packages/core typecheck
-pnpm typecheck   # workspace root, optional but recommended
-```
+### Devin Cloud Fallback
+- [ ] Wire local failure/timeout catch and cloud handoff fallback in `packages/core/src/worker-failure-handler.ts`.
+- [ ] Support status polling and output fetching from the cloud API.
 
-All three should be clean / passing.
+### Visual Overhaul & Live SSE
+- [ ] Update `packages/web/src/app/globals.css` with Mission Control palette and `.activity-dot` styles.
+- [ ] Replace emoji indicators with CSS dots in `SessionCard.tsx`.
+- [ ] Implement solid green merge buttons and remove merge confirmation dialogs in `SessionCard.tsx` and `Dashboard.tsx`.
+- [ ] Style the zones and cards into a compact multi-column grid in `AttentionZone.tsx` and `mc-board.css`.
+- [ ] Hook up client-side `EventSource` for real-time SSE refresh in `Dashboard.tsx`.
+- [ ] Add breadcrumb nav header updates in `SessionDetail.tsx`.
+- [ ] Tune xterm.js themes in `DirectTerminal.tsx`.
 
-### 2. Pick one TODO item
+---
 
-Work on **only one** item at a time.
+## How To Resume & Verify
 
-### 3. Make the smallest possible change
-
-- One file move / one helper extraction per commit
-- No cross-cutting renames
-- No changes to `index.ts` public exports unless absolutely required
-
-### 4. Verify immediately
-
-```bash
-pnpm --dir packages/core typecheck
-```
-
-### 5. Commit with conventional message
-
-```
-git add <files>
-git commit -m "<type>(<scope>): <short summary>"
-```
-
-Types to use: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`
-
-### 6. Update this handoff doc
-
-After each commit:
-- Add the commit hash to the “What Was Done” table
-- Cross off the matching TODO item
-- Note any new problems discovered
+1. Run `pnpm typecheck` to ensure no compile-time regressions exist.
+2. Run `pnpm test` to verify unit test suite coverage.
+3. Start the dev environment with `pnpm dev`.
 
 ---
 
 ## Guardrails
 
-- **Never** edit files inside `.git/`
-- **Never** introduce `process.platform === "win32"` inline; use `isWindows()` from `@aoagents/ao-core`
-- **Never** change `packages/core/src/index.ts` public surface without discussion
-- **Never** push to remote unless explicitly asked
-- **Always** keep `pnpm --dir packages/core typecheck` passing before moving to the next item
-
----
-
-## Branch & Remote Notes
-
-- Remote: `origin`
-- Branch: `feat/multi-worker`
-- Do NOT push unless explicitly requested
-- If creating a follow-up branch, base it off current HEAD to avoid drift
-
----
-
-## Known Risks / Watch Items
-
-- `config-types.ts` currently duplicates some symbols already in `types.ts` (config split was partially reverted/fixed during this session). Keep it additive.
-- `packages/core/src/orchestrator-intelligence.ts` is a stub engine; it compiles but is not wired into lifecycle yet.
-- `probe-strategy.ts` exists as an idea file only; actual extraction still pending.
-- `session-manager.ts` and `lifecycle-manager.ts` remain large (>3000 lines each). Further splitting them is not in scope unless asked.
-
----
-
-## Quick Reference Commands
-
-```bash
-pnpm install
-pnpm build
-pnpm typecheck
-pnpm test
-pnpm lint
-```
-
-Core-only faster loop:
-
-```bash
-pnpm --dir packages/core typecheck
-pnpm --dir packages/core test
-```
+- **Never** introduce `process.platform === "win32"` inline; always use `isWindows()` from `@aoagents/ao-core`.
+- **Never** change public exports in `packages/core/src/index.ts` without explicit need.
+- **Never** add external UI component libraries (C-01).
+- **Always** keep files under 400 lines (C-04).
 
 ---
 
