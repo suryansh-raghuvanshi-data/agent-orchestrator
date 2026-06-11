@@ -114,6 +114,7 @@ export async function executeTaskWithRetry(
     }
 
     if (attempt > 0) {
+      retriesAttempted++;
       const delay = computeBackoff(attempt - 1, retryPolicy);
       await sleep(delay);
     }
@@ -152,8 +153,6 @@ export async function executeTaskWithRetry(
         totalElapsedMs: Date.now() - startTime,
       };
     }
-
-    retriesAttempted++;
   }
 
   return {
