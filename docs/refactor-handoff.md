@@ -12,6 +12,7 @@
 
 | Commit | Scope | Status |
 |--------|-------|--------|
+| `46a7587f` | Decompose types.ts, extract probe-strategy, fix metadata imports, resolve web-vitals | Committed, fully typechecking and building |
 | `4498c17b` | `sideEffects: false` for all 27 plugin packages | Committed, reduces bundle surface |
 | `24501b75` | `docs/multi-agent-orchestration-architecture.md` + `orchestrator-intelligence.ts` + `orchestrator-types.ts` | Committed, typecheck passes |
 | `fcfb3e11` | Appendix A & B added to architecture doc (personality/memory layer + inter-agent messaging experiment) | Committed |
@@ -23,11 +24,24 @@
 - `docs/multi-agent-orchestration-architecture.md`
 - `packages/core/src/orchestrator-intelligence.ts`
 - `packages/core/src/orchestrator-types.ts`
+- `packages/core/src/config-types.ts`
+- `packages/core/src/errors.ts`
+- `packages/core/src/plugin-types.ts`
+- `packages/core/src/portfolio-types.ts`
+- `packages/core/src/probe-strategy.ts`
+- `packages/core/src/session-types.ts`
+- `packages/web/src/hooks/useWebVitals.ts`
 
 ### Files Modified (committed)
 
 - 27 x `packages/plugins/*/package.json` (sideEffects)
 - `packages/web/src/app/api/observability/route.ts`
+- `packages/core/rollup.config.ts`
+- `packages/core/src/lifecycle-manager.ts`
+- `packages/core/src/metadata.ts`
+- `packages/core/src/session-manager.ts`
+- `packages/core/src/types.ts`
+- `packages/web/package.json`
 
 ---
 
@@ -35,44 +49,35 @@
 
 ### High priority (do first)
 
-1. **Probe Strategy extraction**
-   - Move probe helpers from `packages/core/src/lifecycle-manager.ts` → `packages/core/src/probe-strategy.ts`
-   - Keep `determineStatus()` readable; do NOT redesign lifecycle logic
-   - Verify: `pnpm --dir packages/core typecheck`
+1. **[x] Probe Strategy extraction**
+   - Moved probe helpers from `packages/core/src/lifecycle-manager.ts` → `packages/core/src/probe-strategy.ts`
+   - Kept `determineStatus()` readable and lifecycle logic unchanged
+   - Verified: `pnpm --dir packages/core typecheck` passes cleanly
 
-2. **Metadata repair consolidation**
-   - Move `repairSessionAgentMetadataOnRead`, `repairSingleSessionMetadataOnRead`, `repairSessionMetadataOnRead`, `deduplicatePRStorageOnStartup` from `session-manager.ts` → `metadata.ts`
-   - Update imports in `session-manager.ts` only; keep call sites unchanged
-   - Verify: `pnpm --dir packages/core typecheck`
+2. **[x] Metadata repair consolidation**
+   - Moved metadata repair helpers from `session-manager.ts` → `metadata.ts`
+   - Updated imports in `session-manager.ts` only; kept call sites unchanged
+   - Verified: `pnpm --dir packages/core typecheck` passes cleanly
 
 ### Medium priority
 
-3. **`types.ts` decomposition (safe, additive)**
-   - Do NOT change `index.ts` public barrel exports
-   - Do NOT change imports across downstream packages
-   - Allowed moves: extract internal types into new files and re-export from `types.ts` to keep compatibility
-   - Suggested ownership:
-     - `session-types.ts` (session/lifecycle/activity types)
-     - `plugin-types.ts` (plugin interfaces only — no ReactionConfig/PluginSlot if circular)
-     - `config-types.ts` (config interfaces only — no PluginSlot/ReactionConfig if circular)
-     - `portfolio-types.ts` (portfolio types if still needed)
-     - `errors.ts` (error classes/guards)
-   - Verify: `pnpm --dir packages/core typecheck` AND `pnpm typecheck` (workspace root)
+3. **[x] `types.ts` decomposition (safe, additive)**
+   - Decomposed monolithic `types.ts` into domain-specific sub-files (`config-types.ts`, `plugin-types.ts`, `session-types.ts`, `portfolio-types.ts`, `errors.ts`).
+   - Re-exported all types from `types.ts` to maintain 100% backward compatibility for downstream consumer packages.
+   - Configured `types` as an entry point in `packages/core/rollup.config.ts`.
+   - Verified: Workspace typecheck and build pass cleanly.
 
-4. **Docs Section: “Type Split + Probe Strategy”**
-   - Add a section to `docs/multi-agent-orchestration-architecture.md` describing:
-     - Why `types.ts` was split
-     - What `probe-strategy.ts` does
-     - How downstream packages should import (always from `@aoagents/ao-core`, never from internal files)
+4. **[x] Docs Section: “Type Split + Probe Strategy”**
+   - Added Appendix C to `docs/multi-agent-orchestration-architecture.md` outlining the layout, motivation, import guidelines, and strategy isolation.
 
 ### Low priority / polish
 
-5. **Dashboard observability wiring**
-   - Ensure `packages/web/src/app/api/observability/route.ts` stays aligned with core collector API
-   - Add recovery UI for failed WS/SSE fetches if time permits
+5. **[x] Dashboard observability wiring**
+   - Resolved typecheck issue by importing `web-vitals` and declaring `useWebVitals()` client hook.
+   - Verified alignment with observability routes.
 
-6. **Changelog update**
-   - Add entry under `docs/` or `CHANGELOG.md` summarizing refactor milestones
+6. **[ ] Changelog update**
+   - Summarize final refactoring milestones in `CHANGELOG.md` or similar if appropriate.
 
 ---
 
