@@ -1,6 +1,5 @@
 import type {
   WorkerProvider,
-  WorkerProviderCapabilities,
   WorkerProviderHealth,
   WorkerProviderTaskConfig,
   WorkerProviderTaskHandle,
