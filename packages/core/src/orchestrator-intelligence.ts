@@ -1,7 +1,6 @@
 import type {
   OrchestratorIntelligenceInput,
   OrchestratorIntelligenceOutput,
-  OrchestratorIntelligenceState,
 } from "./orchestrator-types.js";
 
 export type {
@@ -32,10 +31,10 @@ export function createOrchestratorIntelligence(
     defaultTimeoutMs = 30_000,
   } = options;
 
-  let lastInput: OrchestratorIntelligenceInput | null = null;
+  let _lastInput: OrchestratorIntelligenceInput | null = null;
 
   function evaluate(input: OrchestratorIntelligenceInput): OrchestratorIntelligenceOutput {
-    lastInput = input;
+    _lastInput = input;
 
     const parts: string[] = [];
 
@@ -66,7 +65,7 @@ export function createOrchestratorIntelligence(
   }
 
   function reset(): void {
-    lastInput = null;
+    _lastInput = null;
   }
 
   return { evaluate, reset };

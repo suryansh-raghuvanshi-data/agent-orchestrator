@@ -42,7 +42,6 @@ import {
   type ReviewComment,
   type ReviewSummary,
   type Session,
-  type CanonicalSessionLifecycle,
 } from "./types.js";
 import {
   buildLifecycleMetadataPatch,
