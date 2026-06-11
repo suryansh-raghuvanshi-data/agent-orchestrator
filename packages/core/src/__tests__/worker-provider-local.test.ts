@@ -73,12 +73,12 @@ describe("createLocalWorkerProvider", () => {
     expect(output).toBe("");
   });
 
-  it("health returns healthy when default agent and runtime exist", () => {
+  it("health returns degraded when no plugins registered", async () => {
     const registry = createPluginRegistry();
     const config = makeConfig();
 
     const provider = createLocalWorkerProvider(config, registry);
-    // No plugins registered — defaults won't be found
-    // health should still resolve without throwing
+    const health = await provider.health();
+    expect(health.status).toBe("degraded");
   });
 });
