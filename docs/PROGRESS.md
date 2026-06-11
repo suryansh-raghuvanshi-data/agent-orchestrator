@@ -28,9 +28,13 @@ See implementation plan in CLAUDE.md session context. Key phases:
 | File | Change | Status |
 |------|--------|--------|
 | `packages/core/src/types.ts` | Added `WorkerProvider` interface + types + `"worker-provider"` plugin slot | Done |
+| `packages/core/src/types.ts` | Added `WorkerProviderConfig`, extended `OrchestratorConfig`, `ProjectConfig`, `SessionSpawnConfig` | Done |
+| `packages/core/src/config.ts` | Added Zod schemas for worker provider config | Done |
 | `packages/core/src/worker-provider-registry.ts` | Worker provider registry service | Done |
 | `packages/core/src/worker-provider-local.ts` | Local provider adapter (passthrough for existing Agent flow) | Done |
 | `packages/core/src/index.ts` | Exported new modules | Done |
+| `schema/config.schema.json` | Added `workerProviderConfig` definition + `workerProviders` property | Done |
+| `agent-orchestrator.yaml.example` | Added worker provider config examples | Done |
 | `docs/PROGRESS.md` | Created progress doc | Done |
 
 ## Tests Run
@@ -45,6 +49,7 @@ See implementation plan in CLAUDE.md session context. Key phases:
 ## Next Steps
 1. Create WorkerProvider types in `packages/core/src/types.ts` ✅
 2. Create worker-provider-local plugin (adapter for existing Agent plugins) ✅ (built as core module)
-3. Extend config/schema for worker providers
+3. Extend config/schema for worker providers ✅
+4. Add worker routing to session-manager
 
 Last updated: 2026-06-11

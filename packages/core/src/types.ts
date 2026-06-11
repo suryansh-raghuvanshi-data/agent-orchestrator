@@ -378,6 +378,8 @@ export interface SessionSpawnConfig {
   agent?: string;
   /** Override the OpenCode subagent for this session (e.g. "sisyphus", "oracle") */
   subagent?: string;
+
+  workerProvider?: string;
 }
 
 /** Config for creating an orchestrator session */
@@ -1420,6 +1422,8 @@ export interface OrchestratorConfig {
   /** Default reaction configs */
   reactions: Record<string, ReactionConfig>;
 
+  workerProviders?: Record<string, WorkerProviderConfig>;
+
   /**
    * Internal: External plugin entries collected from inline tracker/scm/notifier configs.
    * Used by plugin-registry for manifest validation. Set automatically during config validation.
@@ -1577,6 +1581,9 @@ export interface ProjectConfig {
 
   worker?: RoleAgentConfig;
 
+  /** Override default worker provider for this project */
+  workerProvider?: string;
+
   /** Per-project reaction overrides */
   reactions?: Record<string, Partial<ReactionConfig>>;
 
@@ -1598,6 +1605,9 @@ export interface ProjectConfig {
     | "kill-previous";
 
   opencodeIssueSessionStrategy?: "reuse" | "delete" | "ignore";
+
+  /** Fallback worker provider when primary is unavailable */
+  fallbackWorkerProvider?: string;
 }
 
 export interface TrackerConfig {
@@ -1860,6 +1870,12 @@ export interface WorkerProviderError {
   isTransient: boolean;
   /** Optional provider-specific details */
   details?: Record<string, unknown>;
+}
+
+export interface WorkerProviderConfig {
+  enabled?: boolean;
+  maxConcurrency?: number;
+  [key: string]: unknown;
 }
 
 export interface WorkerProviderTaskConfig {

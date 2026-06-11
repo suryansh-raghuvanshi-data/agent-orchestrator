@@ -266,6 +266,7 @@ const ProjectConfigSchema = z.object({
   agentConfig: AgentSpecificConfigSchema.default({}),
   orchestrator: RoleAgentConfigSchema,
   worker: RoleAgentConfigSchema,
+  workerProvider: z.string().optional(),
   reactions: z.record(ReactionConfigSchema.partial()).optional(),
   agentRules: z.string().optional(),
   agentRulesFile: z.string().optional(),
@@ -274,6 +275,7 @@ const ProjectConfigSchema = z.object({
     .enum(["reuse", "delete", "ignore", "delete-new", "ignore-new", "kill-previous"])
     .optional(),
   opencodeIssueSessionStrategy: z.enum(["reuse", "delete", "ignore"]).optional(),
+  fallbackWorkerProvider: z.string().optional(),
 });
 
 const DefaultPluginsSchema = z.object({
@@ -312,6 +314,11 @@ const InstalledPluginConfigSchema = z
       });
     }
   });
+
+const WorkerProviderConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  maxConcurrency: z.number().int().positive().optional(),
+}).passthrough().optional();
 
 const PowerConfigSchema = z
   .object({
@@ -366,6 +373,7 @@ const OrchestratorConfigSchema = z.object({
   observability: ObservabilityConfigSchema,
   defaults: DefaultPluginsSchema.default({}),
   plugins: z.array(InstalledPluginConfigSchema).default([]),
+  workerProviders: z.record(WorkerProviderConfigSchema).default({}),
   dashboard: DashboardConfigSchema.optional(),
   projects: z.record(
     z

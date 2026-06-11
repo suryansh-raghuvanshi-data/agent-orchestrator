@@ -83,9 +83,33 @@
       "additionalProperties": {
         "$ref": "#/$defs/reactionConfig"
       }
+    },
+    "workerProviders": {
+      "type": "object",
+      "default": {},
+      "description": "Worker provider configurations keyed by provider name.",
+      "additionalProperties": {
+        "$ref": "#/$defs/workerProviderConfig"
+      }
     }
   },
   "$defs": {
+    "workerProviderConfig": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable this worker provider."
+        },
+        "maxConcurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Override the default max concurrent tasks for this provider."
+        }
+      }
+    },
     "reactionConfig": {
       "type": "object",
       "additionalProperties": false,
@@ -354,6 +378,14 @@
         },
         "worker": {
           "$ref": "#/$defs/roleAgentConfig"
+        },
+        "workerProvider": {
+          "type": "string",
+          "description": "Override default worker provider for this project."
+        },
+        "fallbackWorkerProvider": {
+          "type": "string",
+          "description": "Fallback worker provider when primary is unavailable."
         },
         "reactions": {
           "type": "object",

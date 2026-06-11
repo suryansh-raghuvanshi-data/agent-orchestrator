@@ -120,6 +120,10 @@ projects:
     # orchestratorRules: |
     #   Prefer to batch-spawn related issues together.
 
+    # Worker provider selection (default: local)
+    # workerProvider: devin                    # Use a specific worker provider
+    # fallbackWorkerProvider: local            # Fallback if primary is unavailable
+
     # OpenCode issue session strategy (only for agent: opencode)
     # opencodeIssueSessionStrategy: reuse   # reuse | delete | ignore
 
@@ -149,6 +153,24 @@ projects:
 #   action: [desktop, slack]   # PR ready to merge
 #   warning: [slack]           # auto-fix failed
 #   info: [slack]              # summary, all done
+
+# Worker providers — sources of AI coding work
+# workerProviders:
+#   local:              # Built-in local agent provider (default)
+#     enabled: true
+#
+#   devin:              # External provider via plugin
+#     enabled: false
+#     apiKey: ${DEVIN_API_KEY}
+#
+#   kilo:               # External provider via plugin
+#     enabled: false
+#
+# Per-project worker provider selection:
+# projects:
+#   my-app:
+#     workerProvider: local          # Use local agent (default)
+#     fallbackWorkerProvider: local  # Fallback if primary is unavailable
 
 # Reactions — auto-responses to events (these are the defaults)
 # reactions:
