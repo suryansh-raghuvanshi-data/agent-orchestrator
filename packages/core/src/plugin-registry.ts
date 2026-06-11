@@ -69,6 +69,10 @@ const BUILTIN_PLUGINS: Array<{ slot: PluginSlot; name: string; pkg: string }> = 
   // Terminals
   { slot: "terminal", name: "iterm2", pkg: "@aoagents/ao-plugin-terminal-iterm2" },
   { slot: "terminal", name: "web", pkg: "@aoagents/ao-plugin-terminal-web" },
+  // Worker Providers
+  { slot: "worker-provider", name: "antigravity", pkg: "@aoagents/ao-plugin-worker-antigravity" },
+  { slot: "worker-provider", name: "kilo", pkg: "@aoagents/ao-plugin-worker-kilo" },
+  { slot: "worker-provider", name: "devin", pkg: "@aoagents/ao-plugin-worker-devin" },
 ];
 
 function matchesNotifierPlugin(

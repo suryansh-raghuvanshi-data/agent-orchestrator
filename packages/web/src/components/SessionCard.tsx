@@ -201,6 +201,16 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
 
         <div className="card__meta">
           {session.branch && <span className="card__branch">{session.branch}</span>}
+          {session.metadata?.workerProvider && (
+            <>
+              {session.branch && (
+                <span className="card__meta-sep" aria-hidden="true">·</span>
+              )}
+              <span className="font-mono text-[9px] bg-[var(--color-bg-subtle)] border border-[color-mix(in_srgb,var(--color-text-muted)_25%,transparent)] px-1 py-0.5 rounded text-[var(--color-text-secondary)] font-medium uppercase tracking-[0.02em] leading-none">
+                {session.metadata.workerProvider}
+              </span>
+            </>
+          )}
           {prs.length === 1 && (
             <>
               {session.branch && (

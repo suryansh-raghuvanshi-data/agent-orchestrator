@@ -52,6 +52,7 @@ import {
   PR_STATE,
 } from "./types.js";
 import {
+  readMetadata,
   readMetadataRaw,
   writeMetadata,
   updateMetadata,
@@ -1315,8 +1316,21 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       }
     }
 
+    const sessionsDir = getProjectSessionsDir(spawnConfig.projectId);
+    let orchestratorWorkerProvider: string | undefined;
+    const orchestratorSessionId = `${project.sessionPrefix}-orchestrator`;
+    const orchestratorMeta = readMetadata(sessionsDir, orchestratorSessionId);
+    if (orchestratorMeta?.workerProvider) {
+      orchestratorWorkerProvider = orchestratorMeta.workerProvider;
+    }
+
+    const effectiveSpawnConfig = {
+      ...spawnConfig,
+      workerProvider: spawnConfig.workerProvider ?? orchestratorWorkerProvider,
+    };
+
     // Resolve worker provider — route external tasks before creating local resources
-    const route = resolveWorkerProvider(spawnConfig, project, config, {
+    const route = resolveWorkerProvider(effectiveSpawnConfig, project, config, {
       getProvider: (name) => registry.get<WorkerProvider>("worker-provider", name),
     });
 
@@ -1384,7 +1398,6 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     }
 
     // Get the sessions directory for this project
-    const sessionsDir = getProjectSessionsDir(spawnConfig.projectId);
 
     // CleanupStack: each side effect pushes its undo as soon as the resource
     // exists. On any failure below we runAll() in LIFO order; on success we
@@ -1614,6 +1627,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         createdAt,
         lastActivityAt: createdAt,
         metadata: {
+          workerProvider: route.providerName,
           ...(reusedOpenCodeSessionId ? { opencodeSessionId: reusedOpenCodeSessionId } : {}),
           ...(spawnConfig.prompt ? { userPrompt: spawnConfig.prompt } : {}),
           ...(displayName ? { displayName } : {}),
@@ -1644,6 +1658,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         opencodeSessionId: reusedOpenCodeSessionId,
         userPrompt: spawnConfig.prompt,
         displayName,
+        workerProvider: route.providerName,
       });
 
       if (plugins.agent.postLaunchSetup) {
@@ -2104,6 +2119,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       metadata: {
         ...(reusableOpenCodeSessionId ? { opencodeSessionId: reusableOpenCodeSessionId } : {}),
         ...(displayName ? { displayName } : {}),
+        ...(orchestratorConfig.workerProvider ? { workerProvider: orchestratorConfig.workerProvider } : {}),
       },
     };
 
@@ -2124,6 +2140,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         runtimeHandle: handle,
         opencodeSessionId: reusableOpenCodeSessionId,
         displayName,
+        workerProvider: orchestratorConfig.workerProvider,
       });
 
       if (plugins.agent.postLaunchSetup) {

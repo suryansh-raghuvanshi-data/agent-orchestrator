@@ -202,6 +202,8 @@ export function readMetadata(dataDir: string, sessionId: SessionId): SessionMeta
             raw["displayNameUserSet"] === true
           ? true
           : undefined,
+    workerProvider: raw["workerProvider"] as string | undefined,
+    workerTaskId: raw["workerTaskId"] as string | undefined,
   };
 }
 

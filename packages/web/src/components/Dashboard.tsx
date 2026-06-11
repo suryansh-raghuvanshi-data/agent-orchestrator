@@ -450,7 +450,7 @@ function DashboardInner({
       const res = await fetch("/api/orchestrators", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: project.id }),
+        body: JSON.stringify({ projectId: project.id, workerProvider: selectedWorker }),
       });
 
       const data = (await res.json().catch(() => null)) as {

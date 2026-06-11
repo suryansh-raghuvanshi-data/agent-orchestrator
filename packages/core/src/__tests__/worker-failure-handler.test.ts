@@ -195,3 +195,117 @@ describe("executeTaskWithRetry", () => {
     expect(result.retriesAttempted).toBe(2);
   });
 });
+
+describe("reassignTask", () => {
+  it("cancels source, spawns target, and completes successfully", async () => {
+    const { reassignTask } = await import("../worker-failure-handler.js");
+
+    const sourceProvider = makeProvider({
+      cancelTask: vi.fn().mockResolvedValue(undefined),
+    });
+    const targetProvider = makeProvider({
+      submitTask: vi.fn().mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
+      getTaskStatus: vi.fn().mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
+    });
+
+    const sourceHandle = { taskId: "source-task", providerName: "source", data: {} };
+    const taskConfig = { sessionId: "s1", projectId: "p1", prompt: "test" };
+
+    const result = await reassignTask(
+      sourceProvider as never,
+      sourceHandle,
+      targetProvider as never,
+      taskConfig,
+      { taskTimeoutMs: 5000, pollIntervalMs: 50 }
+    );
+
+    expect(sourceProvider.cancelTask).toHaveBeenCalledWith(sourceHandle);
+    expect(targetProvider.submitTask).toHaveBeenCalledWith(taskConfig);
+    expect(result.success).toBe(true);
+    expect(result.handle?.taskId).toBe("target-task");
+  });
+
+  it("handles source cancel failure gracefully and still spawns target", async () => {
+    const { reassignTask } = await import("../worker-failure-handler.js");
+
+    const sourceProvider = makeProvider({
+      cancelTask: vi.fn().mockRejectedValue(new Error("Cancel failed")),
+    });
+    const targetProvider = makeProvider({
+      submitTask: vi.fn().mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
+      getTaskStatus: vi.fn().mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
+    });
+
+    const sourceHandle = { taskId: "source-task", providerName: "source", data: {} };
+    const taskConfig = { sessionId: "s1", projectId: "p1", prompt: "test" };
+
+    const result = await reassignTask(
+      sourceProvider as never,
+      sourceHandle,
+      targetProvider as never,
+      taskConfig,
+      { taskTimeoutMs: 5000, pollIntervalMs: 50 }
+    );
+
+    expect(sourceProvider.cancelTask).toHaveBeenCalledWith(sourceHandle);
+    expect(targetProvider.submitTask).toHaveBeenCalledWith(taskConfig);
+    expect(result.success).toBe(true);
+    expect(result.handle?.taskId).toBe("target-task");
+  });
+
+  it("returns failure status if target task fails to complete", async () => {
+    const { reassignTask } = await import("../worker-failure-handler.js");
+
+    const sourceProvider = makeProvider({
+      cancelTask: vi.fn().mockResolvedValue(undefined),
+    });
+    const targetProvider = makeProvider({
+      submitTask: vi.fn().mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
+      getTaskStatus: vi.fn().mockResolvedValue({
+        state: "failed",
+        lastUpdatedAt: new Date().toISOString(),
+        error: { code: "TARGET_ERROR", message: "Target failure", isTransient: false },
+      }),
+    });
+
+    const sourceHandle = { taskId: "source-task", providerName: "source", data: {} };
+    const taskConfig = { sessionId: "s1", projectId: "p1", prompt: "test" };
+
+    const result = await reassignTask(
+      sourceProvider as never,
+      sourceHandle,
+      targetProvider as never,
+      taskConfig,
+      { taskTimeoutMs: 5000, pollIntervalMs: 50 }
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.reason).toBe("Target failure");
+    expect(result.handle?.taskId).toBe("target-task");
+  });
+
+  it("returns failure if target submission throws error", async () => {
+    const { reassignTask } = await import("../worker-failure-handler.js");
+
+    const sourceProvider = makeProvider({
+      cancelTask: vi.fn().mockResolvedValue(undefined),
+    });
+    const targetProvider = makeProvider({
+      submitTask: vi.fn().mockRejectedValue(new Error("Submission failed")),
+    });
+
+    const sourceHandle = { taskId: "source-task", providerName: "source", data: {} };
+    const taskConfig = { sessionId: "s1", projectId: "p1", prompt: "test" };
+
+    const result = await reassignTask(
+      sourceProvider as never,
+      sourceHandle,
+      targetProvider as never,
+      taskConfig,
+      { taskTimeoutMs: 5000, pollIntervalMs: 50 }
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.reason).toBe("Submission failed");
+  });
+});

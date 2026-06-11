@@ -199,6 +199,11 @@ export function SessionDetailHeader({
             ) : null}
           </div>
           <StatusBadge session={session} variant="pill" />
+          {session.metadata?.workerProvider && (
+            <span className="session-detail-mode-badge session-detail-mode-badge--neutral">
+              Worker: {session.metadata.workerProvider}
+            </span>
+          )}
           <span className="dashboard-app-header__session-id topbar-mobile-only">{session.id}</span>
         </>
       )}

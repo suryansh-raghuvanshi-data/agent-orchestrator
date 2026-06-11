@@ -121,6 +121,15 @@ importers:
       '@aoagents/ao-plugin-tracker-linear':
         specifier: workspace:*
         version: link:../plugins/tracker-linear
+      '@aoagents/ao-plugin-worker-antigravity':
+        specifier: workspace:*
+        version: link:../plugins/worker-antigravity
+      '@aoagents/ao-plugin-worker-devin':
+        specifier: workspace:*
+        version: link:../plugins/worker-devin
+      '@aoagents/ao-plugin-worker-kilo':
+        specifier: workspace:*
+        version: link:../plugins/worker-kilo
       '@aoagents/ao-plugin-workspace-clone':
         specifier: workspace:*
         version: link:../plugins/workspace-clone
@@ -181,6 +190,15 @@ importers:
         specifier: ^12.10.0
         version: 12.10.0
     devDependencies:
+      '@aoagents/ao-plugin-worker-antigravity':
+        specifier: workspace:*
+        version: link:../plugins/worker-antigravity
+      '@aoagents/ao-plugin-worker-devin':
+        specifier: workspace:*
+        version: link:../plugins/worker-devin
+      '@aoagents/ao-plugin-worker-kilo':
+        specifier: workspace:*
+        version: link:../plugins/worker-kilo
       '@rollup/plugin-typescript':
         specifier: ^12.3.0
         version: 12.3.0(rollup@4.60.1)(tslib@2.8.1)(typescript@5.9.3)
@@ -667,6 +685,45 @@ importers:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@25.6.0)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.3)
 
+  packages/plugins/worker-antigravity:
+    dependencies:
+      '@aoagents/ao-core':
+        specifier: workspace:*
+        version: link:../../core
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.6.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/plugins/worker-devin:
+    dependencies:
+      '@aoagents/ao-core':
+        specifier: workspace:*
+        version: link:../../core
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.6.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/plugins/worker-kilo:
+    dependencies:
+      '@aoagents/ao-core':
+        specifier: workspace:*
+        version: link:../../core
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.6.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/plugins/workspace-clone:
     dependencies:
       '@aoagents/ao-core':
@@ -737,6 +794,15 @@ importers:
       '@aoagents/ao-plugin-tracker-linear':
         specifier: workspace:*
         version: link:../plugins/tracker-linear
+      '@aoagents/ao-plugin-worker-antigravity':
+        specifier: workspace:*
+        version: link:../plugins/worker-antigravity
+      '@aoagents/ao-plugin-worker-devin':
+        specifier: workspace:*
+        version: link:../plugins/worker-devin
+      '@aoagents/ao-plugin-worker-kilo':
+        specifier: workspace:*
+        version: link:../plugins/worker-kilo
       '@aoagents/ao-plugin-workspace-worktree':
         specifier: workspace:*
         version: link:../plugins/workspace-worktree
