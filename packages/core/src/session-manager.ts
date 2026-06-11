@@ -465,7 +465,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
   }
 
 
-  const SESSION_CACHE_TTL_MS = 35_000;
+  const SESSION_CACHE_TTL_MS = 1000;
   let sessionCache: {
     sessions: Session[];
     expiresAt: number;
