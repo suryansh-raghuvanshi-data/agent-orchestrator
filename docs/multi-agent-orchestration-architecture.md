@@ -826,6 +826,16 @@ Personality is stored in `OrchestratorConfig.personality` and influences:
 - Reaction escalation thresholds
 - Skill library loading order
 
+#### Dynamic Personality Adaptation
+
+Personality should not be static. The orchestrator can derive or mutate its active personality profile from user requirements and observed mission characteristics:
+
+- Rule-based preset: user selects a base personality in config (`conservative`, `exploratory`, `efficiency-first`, `quality-first`)
+- Work-based adaptation: mission attributes (risk, deadline, budget, compliance requirements) shift weights toward a different profile without changing the stored default
+- User override signals: explicit commands or feedback (“be more careful”, “ship faster”) temporarily bias behavior and are logged to memory for future calibration
+
+This separates stable preference (`OrchestratorConfig.personality`) from session-specific adaptation (`activePersonality`), enabling the orchestrator to keep long-term identity while adjusting tactics per requirement.
+
 ### A.2 Skill Sets Per Personality
 
 Each personality loads a prioritized skill library. Skills are plugin-like modules registered in `packages/core/src/orchestrator-skills.ts`.
