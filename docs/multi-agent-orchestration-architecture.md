@@ -1,5 +1,12 @@
 # Multi-Agent Orchestration Architecture
 
+> Restart instructions: resume from [Appendix A: Future Enhancements — Orchestrator Personality & Memory Layer](#appendix-a-future-enhancements--orchestrator-personality--memory-layer).
+>
+> Status notes from last session:
+> - Commit: `fcfb3e11` docs: add orchestrator personality/memory layer and inter-agent messaging experiment
+> - Branch: `feat/multi-worker`
+> - Core typecheck: passing
+
 > Strategic architecture supplement to `ARCHITECTURE.md`  
 > Scope: Research-to-integration of Factory.ai Missions, LangGraph, CrewAI, and AutoGen patterns  
 > Constraint: Non-breaking additive layer on existing AO session/runtime/agent architecture
