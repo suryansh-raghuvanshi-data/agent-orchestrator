@@ -795,3 +795,139 @@ observer.onSessionTransition((sessionId, oldStatus, newStatus) => {
 ```
 
 **This is the key non-breaking integration**: The Mission Layer uses existing AO infrastructure (`ProjectObserver`, `recordActivityEvent`, `SessionManager`, `LifecycleManager`) without modifying any of it. It is an application built on top of AO primitives.
+
+---
+
+## Appendix A: Future Enhancements — Orchestrator Personality & Memory Layer
+
+This section captures architecture ideas for later implementation. It is not a contract; it is a design notebook.
+
+### A.1 Orchestrator Personality Types
+
+The orchestrator agent should be configurable with distinct personality profiles that shape risk tolerance, retry behavior, reaction aggressiveness, and communication style.
+
+| Personality | Traits | Default Skill Emphasis | Behavior Changes |
+|-------------|--------|------------------------|------------------|
+| `conservative` | Low risk tolerance, high audit preference | review, audit, validation | Slower escalation, more human-in-the-loop checkpoints, stricter validation contracts |
+| `exploratory` | High experimentation, tolerant of failure | experiment, rollback, sandbox | Faster iteration, automatic rollback on failure, encourage trying multiple workers/providers |
+| `efficiency-first` | Optimize for throughput and cost | routing, load-balancing, cost-tracking | Aggressive worker reuse, minimal human escalation, cost-budget enforcement |
+| `quality-first` | Maximize correctness and test coverage | test, review, adversarial-validation | Mandatory verification steps, extended stuck-detection windows |
+
+Personality is stored in `OrchestratorConfig.personality` and influences:
+- Default worker provider selection
+- Retry budget and timeout multipliers
+- Reaction escalation thresholds
+- Skill library loading order
+
+### A.2 Skill Sets Per Personality
+
+Each personality loads a prioritized skill library. Skills are plugin-like modules registered in `packages/core/src/orchestrator-skills.ts`.
+
+Example skill registrations:
+- `conservative`: `audit-trail`, `validation-contract-enforcer`, `human-checkpoint-scheduler`
+- `exploratory`: `ab-test-runner`, `rollback-automation`, `branch-sandbox-manager`
+- `efficiency-first`: `worker-pool-balancer`, `cost-budget-enforcer`, `cache-optimizer`
+- `quality-first`: `adversarial-validator`, `test-coverage-analyzer`, `regression-detector`
+
+Skills expose a standard interface:
+```ts
+interface OrchestratorSkill {
+  name: string;
+  appliesTo(personality: PersonalityType): boolean;
+  onSessionStateChange(session: Session, event: LifecycleEvent): void;
+  suggestAdjustment(metrics: ObservabilityMetrics): ConfigSuggestion | null;
+}
+```
+
+### A.3 Long-Term Memory Store
+
+The orchestrator maintains an append-only memory log at `~/.agent-orchestrator/.orchestrator-meta/memory.jsonl`. Each record contains:
+- Timestamp, sessionId, projectId
+- Decision made (e.g., "selected worker provider X for issue Y")
+- Outcome observed (success, failure, override, escalation)
+- Feedback signal (user correction, validation failure, cost anomaly)
+
+Memory is never mutated; corrections append a new entry with `correctsPreviousId`. This enables:
+- Temporal reasoning: "What happened the last 3 times we used provider X?"
+- Pattern detection: "User overrides cluster around issue type Z"
+- Self-improvement proposals
+
+### A.4 Self-Update / Self-Improvement Loop
+
+The orchestrator periodically (every N mission cycles or on threshold breach) proposes config adjustments:
+
+1. **Observation**: Collect metrics from `ObservabilityCollector` + memory.jsonl patterns
+2. **Hypothesis**: "Increasing retry count from 3 to 5 would reduce escalation rate by ~40% based on last 20 cycles"
+3. **Simulation**: Run the proposed config through a dry-run simulation (no live sessions) using recorded historical data
+4. **Validation**: Proposal must pass simulation + confidence threshold before apply
+5. **Apply**: Write to `agent-orchestrator.yaml` with `auto-applied: true` and `appliedBy: orchestrator`
+6. **Rollback**: If user or validator reverts within M minutes, append rollback entry to memory
+
+This loop makes the orchestrator adaptive without human intervention, while preserving full auditability.
+
+### A.5 Rollback and Audit Trail
+
+Every autonomous change creates:
+- `config-change.jsonl` entry with `proposal`, `simulationResult`, `appliedAt`, `appliedBy`
+- Memory entry linking to the config change
+- Automatic rollback trigger if validation metrics regress within observation window
+
+Human operators can:
+- `ao config history` — show recent autonomous changes
+- `ao config rollback <id>` — revert a specific autonomous change
+- Disable autonomy per-key in `agent-orchestrator.yaml` with `autonomy: { enabled: false }`
+
+---
+
+## Appendix B: Inter-Agent Communication Experimentation
+
+This section defines a future experiment layer where agents can directly communicate or leave structured messages for each other, independent of the orchestrator's task-assignment flow.
+
+### B.1 Motivation
+
+Current AO architecture routes all coordination through the orchestrator's lifecycle manager and shared file state. For complex missions, this creates latency and context bottlenecks. Direct inter-agent messaging enables:
+- Rapid handoff refinement without orchestrator round-trips
+- Peer review between workers on the same feature branch
+- Negotiation protocols for resource conflicts
+
+### B.2 Message Types
+
+Agents exchange typed messages via a shared mailbox:
+
+```ts
+type AgentMessage =
+  | { kind: "handoff"; from: AgentId; to: AgentId; payload: HandoffSummary; requiresAck: boolean }
+  | { kind: "review-request"; from: AgentId; to: AgentId; subject: SessionId; diff: string[] }
+  | { kind: "review-result"; from: AgentId; to: AgentId; subject: SessionId; verdict: "approve" | "request-changes" | "block"; comments: ReviewComment[] }
+  | { kind: "negotiate"; from: AgentId; to: AgentId; topic: string; positions: AgentPosition[] }
+  | { kind: "status-update"; from: AgentId; broadcast: true; state: AgentState }
+  | { kind: "delegate"; from: AgentId; to: AgentId; task: Subtask; constraints: TaskConstraint[] };
+```
+
+### B.3 Mailbox Implementation
+
+Mailbox is a flat file per project: `.ao/mailbox/{agentId}.jsonl`. Each line is one message. Agents poll or receive push notifications via the existing `recordActivityEvent` hook.
+
+Rules:
+- Messages are immutable once written
+- Receiving agent must ack within TTL or message expires
+- Orchestrator can inspect all mailboxes for audit but does not mediate delivery
+- Size limit per mailbox (e.g., 1000 messages) with FIFO eviction
+
+### B.4 Experiment Gates
+
+This feature is gated behind:
+- `agent-orchestrator.yaml` → `features.interAgentMessaging: true`
+- Per-agent opt-in: `agentConfig.allowDirectMessaging: boolean`
+- Sandbox mode for first 10 cycles: messages logged but not delivered, to validate protocol stability
+
+### B.5 Observability
+
+All inter-agent messages generate structured events:
+- `agent.message.sent` / `agent.message.received` / `agent.message.expired` / `agent.message.acknowledged`
+- Dashboard surface: "Agent Activity" tab shows real-time message stream per session
+- Metrics: message latency, ack rate, negotiation win rate
+
+---
+
+*End of architecture supplement.*
