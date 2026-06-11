@@ -11,7 +11,7 @@
  * Reference: scripts/claude-ao-session, scripts/send-to-session
  */
 
-import { statSync, existsSync, writeFileSync, mkdirSync, utimesSync, unlinkSync } from "node:fs";
+import { statSync, existsSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { recordActivityEvent } from "./activity-events.js";
 import { execFile } from "node:child_process";
 import { basename, join, resolve } from "node:path";
@@ -61,6 +61,12 @@ import {
   deleteMetadata,
   listMetadata,
   reserveSessionId,
+  isOrchestratorSessionRecord,
+  repairSessionAgentMetadataOnRead as repairSessionAgentMetadataOnReadImpl,
+  repairSingleSessionMetadataOnRead,
+  repairSessionMetadataOnRead as repairSessionMetadataOnReadImpl,
+  deduplicatePRStorageOnStartup as deduplicatePRStorageOnStartupImpl,
+  type ActiveSessionRecord,
 } from "./metadata.js";
 import {
   buildLifecycleMetadataPatch,
@@ -108,7 +114,6 @@ import { resolveWorkerProvider, submitTaskToWorkerProvider } from "./worker-rout
 const execFileAsync = promisify(execFile);
 const OPENCODE_DISCOVERY_TIMEOUT_MS = 10_000;
 const OPENCODE_INTERACTIVE_DISCOVERY_TIMEOUT_MS = 10_000;
-const INDEXED_PR_METADATA_KEY_REGEX = /^(prEnrichment|prReviewComments)_\d+$/;
 // On Windows, execFile cannot resolve .cmd shim extensions without invoking the shell.
 // windowsHide:true suppresses the conhost popup that the shell would otherwise flash.
 const EXEC_SHELL_OPTION =
@@ -224,11 +229,6 @@ const PR_TRACKING_STATUSES: ReadonlySet<string> = new Set([
   "changes_requested",
   "approved",
   "mergeable",
-]);
-
-const STALE_PR_OWNERSHIP_STATUSES: ReadonlySet<string> = new Set([
-  ...PR_TRACKING_STATUSES,
-  "merged",
 ]);
 
 /**
@@ -389,12 +389,6 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     projectId: string;
   }
 
-  interface ActiveSessionRecord {
-    sessionName: string;
-    raw: Record<string, string>;
-    modifiedAt?: Date;
-  }
-
   function normalizePath(path: string): string {
     return resolve(path).replace(/[/\\]$/, "");
   }
@@ -434,24 +428,6 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     return roots.some((root) => isPathInside(workspacePath, root));
   }
 
-  function isOrchestratorSessionRecord(
-    sessionId: string,
-    raw: Record<string, string> | null | undefined,
-    sessionPrefix?: string,
-  ): boolean {
-    if (!raw) return false;
-    if (raw["role"] === "orchestrator") return true;
-    // Check the -orchestrator-N pattern only when the prefix is known so the
-    // regex is anchored to the project prefix, preventing false-positives when
-    // the user-configured sessionPrefix itself ends with "-orchestrator".
-    if (sessionPrefix) {
-      if (sessionId === `${sessionPrefix}-orchestrator`) {
-        return true;
-      }
-      return new RegExp(`^${escapeRegex(sessionPrefix)}-orchestrator-\\d+$`).test(sessionId);
-    }
-    return false;
-  }
 
   function isCleanupProtectedSession(
     project: ProjectConfig,
@@ -464,23 +440,6 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     return isOrchestratorSessionRecord(sessionId, metadata ?? {}, project.sessionPrefix);
   }
 
-  function applyMetadataUpdatesToRaw(
-    raw: Record<string, string>,
-    updates: Partial<Record<string, string>>,
-  ): Record<string, string> {
-    let next = { ...raw };
-    for (const [key, value] of Object.entries(updates)) {
-      if (value === undefined) continue;
-      if (value === "") {
-        const { [key]: _removed, ...rest } = next;
-        void _removed;
-        next = rest;
-        continue;
-      }
-      next[key] = value;
-    }
-    return next;
-  }
 
   function buildUpdatedLifecycle(
     sessionId: string,
@@ -505,31 +464,6 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     return buildLifecycleMetadataPatch(lifecycle);
   }
 
-  function updateMetadataPreservingMtime(
-    sessionsDir: string,
-    sessionName: string,
-    updates: Partial<Record<string, string>>,
-    modifiedAt?: Date,
-  ): void {
-    const metaPath = join(sessionsDir, `${sessionName}.json`);
-    let preservedMtime = modifiedAt;
-    if (!preservedMtime) {
-      try {
-        preservedMtime = statSync(metaPath).mtime;
-      } catch {
-        preservedMtime = undefined;
-      }
-    }
-
-    updateMetadata(sessionsDir, sessionName, updates);
-
-    if (!preservedMtime) return;
-    try {
-      utimesSync(metaPath, preservedMtime, preservedMtime);
-    } catch {
-      void 0;
-    }
-  }
 
   const SESSION_CACHE_TTL_MS = 35_000;
   let sessionCache: {
@@ -544,226 +478,41 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
   }
 
   function deduplicatePRStorageOnStartup(): void {
-    let migrated = false;
-
-    for (const [projectId] of Object.entries(config.projects)) {
-      const sessionsDir = getProjectSessionsDir(projectId);
-      if (!existsSync(sessionsDir)) continue;
-
-      for (const sessionName of listMetadata(sessionsDir)) {
-        const raw = readMetadataRaw(sessionsDir, sessionName);
-        if (!raw) continue;
-
-        const rawPrUrls = raw["prs"]
-          ? raw["prs"].split(",").map((url) => url.trim()).filter(Boolean)
-          : [];
-        const uniquePrUrls = dedupePrUrls(rawPrUrls);
-        const updates: Partial<Record<string, string>> = {};
-        if (rawPrUrls.length !== uniquePrUrls.length) {
-          updates["prs"] = uniquePrUrls.join(",");
-        }
-
-        let deletedIndexedKeyCount = 0;
-        for (const key of Object.keys(raw)) {
-          if (!INDEXED_PR_METADATA_KEY_REGEX.test(key)) continue;
-          updates[key] = "";
-          deletedIndexedKeyCount += 1;
-        }
-
-        if (Object.keys(updates).length === 0) continue;
-
-        updateMetadata(sessionsDir, sessionName, updates);
-        migrated = true;
-        recordActivityEvent({
-          projectId,
-          sessionId: sessionName,
-          source: "session-manager",
-          kind: "metadata.deduplicated",
-          summary: `deduplicated PR metadata: ${sessionName}`,
-          data: {
-            beforePrCount: rawPrUrls.length,
-            afterPrCount: uniquePrUrls.length,
-            deletedIndexedKeyCount,
-          },
-        });
-      }
-    }
-
+    const migrated = deduplicatePRStorageOnStartupImpl(config);
     if (migrated) invalidateCache();
   }
 
   deduplicatePRStorageOnStartup();
 
-  function repairSessionAgentMetadataOnRead(
+  const repairSessionAgentMetadataOnRead = (
     sessionsDir: string,
     record: ActiveSessionRecord,
     project: ProjectConfig,
-  ): ActiveSessionRecord {
-    if (record.raw["agent"]) return record;
+  ) => {
+    const allSessionPrefixes = Object.values(config.projects).map((p) => p.sessionPrefix);
+    return repairSessionAgentMetadataOnReadImpl(
+      sessionsDir,
+      record,
+      project,
+      config.defaults,
+      allSessionPrefixes,
+    );
+  };
 
-    const agent = resolveSelectionForSession(project, record.sessionName, record.raw).agentName;
-    updateMetadataPreservingMtime(sessionsDir, record.sessionName, { agent }, record.modifiedAt);
-    return {
-      ...record,
-      raw: applyMetadataUpdatesToRaw(record.raw, { agent }),
-    };
-  }
-
-  function repairSingleSessionMetadataOnRead(
-    sessionsDir: string,
-    record: ActiveSessionRecord,
-    sessionPrefix?: string,
-  ): ActiveSessionRecord {
-    const repaired = { ...record, raw: { ...record.raw } };
-    if (!isOrchestratorSessionRecord(repaired.sessionName, repaired.raw, sessionPrefix)) {
-      return repaired;
-    }
-
-    const updates: Partial<Record<string, string>> = {};
-    if (repaired.raw["role"] !== "orchestrator") {
-      updates["role"] = "orchestrator";
-    }
-    if (repaired.raw["pr"]) {
-      updates["pr"] = "";
-    }
-    if (repaired.raw["prAutoDetect"] !== "off" && repaired.raw["prAutoDetect"] !== "false") {
-      updates["prAutoDetect"] = "false";
-    }
-    if (STALE_PR_OWNERSHIP_STATUSES.has(repaired.raw["status"] ?? "")) {
-      updates["status"] = "working";
-    }
-
-    if (Object.keys(updates).length > 0) {
-      const lifecycle = buildUpdatedLifecycle(repaired.sessionName, repaired.raw, (next) => {
-        next.session.kind = "orchestrator";
-        next.pr.state = "none";
-        next.pr.reason = "not_created";
-        next.pr.number = null;
-        next.pr.url = null;
-        next.pr.lastObservedAt = null;
-        if (updates["status"] === "working") {
-          next.session.state = "working";
-          next.session.reason = "task_in_progress";
-        }
-      });
-      updateMetadataPreservingMtime(
-        sessionsDir,
-        repaired.sessionName,
-        { ...updates, ...lifecycleMetadataUpdates(repaired.raw, lifecycle) },
-        repaired.modifiedAt,
-      );
-      repaired.raw = applyMetadataUpdatesToRaw(repaired.raw, {
-        ...updates,
-        ...lifecycleMetadataUpdates(repaired.raw, lifecycle),
-      });
-    }
-
-    return repaired;
-  }
-
-  function sessionMetadataTimestamp(record: ActiveSessionRecord): number {
-    const metadataTimestamp = Date.parse(record.raw["restoredAt"] ?? record.raw["createdAt"] ?? "");
-    if (record.modifiedAt) return record.modifiedAt.getTime();
-    return Number.isNaN(metadataTimestamp) ? 0 : metadataTimestamp;
-  }
-
-  function repairSessionMetadataOnRead(
+  const repairSessionMetadataOnRead = (
     sessionsDir: string,
     records: ActiveSessionRecord[],
     project: ProjectConfig,
-  ): ActiveSessionRecord[] {
-    const repaired = records.map((record) => ({ ...record, raw: { ...record.raw } }));
-    const duplicatePRAttachments = new Map<string, ActiveSessionRecord[]>();
-
-    for (const record of repaired) {
-      if (!record.raw["lifecycle"] && (!record.raw["statePayload"] || record.raw["stateVersion"] !== "2")) {
-        const lifecycle = cloneLifecycle(
-          parseCanonicalLifecycle(record.raw, {
-            sessionId: record.sessionName,
-            status: validateStatus(record.raw["status"]),
-            createdAt: record.raw["createdAt"] ? new Date(record.raw["createdAt"]) : undefined,
-            sessionKind: isOrchestratorSessionRecord(
-              record.sessionName,
-              record.raw,
-              project.sessionPrefix,
-            )
-              ? "orchestrator"
-              : "worker",
-          }),
-        );
-        const canonicalUpdates = lifecycleMetadataUpdates(record.raw, lifecycle);
-        updateMetadataPreservingMtime(
-          sessionsDir,
-          record.sessionName,
-          canonicalUpdates,
-          record.modifiedAt,
-        );
-        record.raw = applyMetadataUpdatesToRaw(record.raw, canonicalUpdates);
-      }
-
-      if (isOrchestratorSessionRecord(record.sessionName, record.raw, project.sessionPrefix)) {
-        record.raw = repairSingleSessionMetadataOnRead(sessionsDir, record, project.sessionPrefix).raw;
-        record.raw = repairSessionAgentMetadataOnRead(sessionsDir, record, project).raw;
-        continue;
-      }
-
-      record.raw = repairSessionAgentMetadataOnRead(sessionsDir, record, project).raw;
-
-      const prUrl = record.raw["pr"];
-      if (!prUrl) continue;
-
-      const attached = duplicatePRAttachments.get(prUrl) ?? [];
-      attached.push(record);
-      duplicatePRAttachments.set(prUrl, attached);
-    }
-
-    for (const attachedRecords of duplicatePRAttachments.values()) {
-      if (attachedRecords.length < 2) continue;
-
-      const [owner, ...staleRecords] = [...attachedRecords].sort((a, b) => {
-        const trackingDiff =
-          Number(PR_TRACKING_STATUSES.has(b.raw["status"] ?? "")) -
-          Number(PR_TRACKING_STATUSES.has(a.raw["status"] ?? ""));
-        if (trackingDiff !== 0) return trackingDiff;
-
-        const timestampDiff = sessionMetadataTimestamp(b) - sessionMetadataTimestamp(a);
-        if (timestampDiff !== 0) return timestampDiff;
-
-        return b.sessionName.localeCompare(a.sessionName);
-      });
-
-      void owner;
-
-      for (const record of staleRecords) {
-        const updates: Partial<Record<string, string>> = {
-          pr: "",
-          prAutoDetect: "false",
-          ...(PR_TRACKING_STATUSES.has(record.raw["status"] ?? "") ? { status: "working" } : {}),
-        };
-        const lifecycle = buildUpdatedLifecycle(record.sessionName, record.raw, (next) => {
-          next.pr.state = "none";
-          next.pr.reason = "not_created";
-          next.pr.number = null;
-          next.pr.url = null;
-          next.pr.lastObservedAt = null;
-          if (updates["status"] === "working") {
-            next.session.state = "working";
-            next.session.reason = "task_in_progress";
-          }
-        });
-        const lifecycleUpdates = lifecycleMetadataUpdates(record.raw, lifecycle);
-        updateMetadataPreservingMtime(
-          sessionsDir,
-          record.sessionName,
-          { ...updates, ...lifecycleUpdates },
-          record.modifiedAt,
-        );
-        record.raw = applyMetadataUpdatesToRaw(record.raw, { ...updates, ...lifecycleUpdates });
-      }
-    }
-
-    return repaired;
-  }
+  ) => {
+    const allSessionPrefixes = Object.values(config.projects).map((p) => p.sessionPrefix);
+    return repairSessionMetadataOnReadImpl(
+      sessionsDir,
+      records,
+      project,
+      config.defaults,
+      allSessionPrefixes,
+    );
+  };
 
   function loadActiveSessionRecords(projectId: string, project: ProjectConfig): ActiveSessionRecord[] {
     const sessionsDir = getProjectSessionsDir(projectId);

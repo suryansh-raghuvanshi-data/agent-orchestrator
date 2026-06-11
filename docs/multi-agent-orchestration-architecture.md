@@ -945,6 +945,48 @@ All inter-agent messages generate structured events:
 - Dashboard surface: "Agent Activity" tab shows real-time message stream per session
 - Metrics: message latency, ack rate, negotiation win rate
 
+## Appendix C: Type Split + Probe Strategy
+
+This section documents the structure and reasoning behind the types decomposition and probe strategy extraction introduced in the refactoring phase.
+
+### C.1 Motivation for the Type Split
+
+Initially, `packages/core/src/types.ts` was a monolithic type file spanning over 2,200 lines. It combined:
+- Core configuration validation structures.
+- Pluggable extension slot contracts (Runtime, Agent, Workspace, etc.).
+- Active runtime lifecycle and session state machines.
+- Cross-project portfolio aggregation and index structures.
+- Custom exception wrappers and error parsing guards.
+
+This monolithic layout caused high visual noise, slowed down IDE completions, and made tracking slot-specific dependencies difficult. Decomposing these types into dedicated domains makes the architecture modular while preserving public compatibility.
+
+### C.2 Split Layout and Domains
+
+The structures were extracted into five domain-specific type files:
+
+1. **`packages/core/src/config-types.ts`**: Handles validation schema definitions, orchestrator power controls, project entries, and worker provider options.
+2. **`packages/core/src/plugin-types.ts`**: Houses the strict interfaces for all 8 slot plugins (e.g. `SCM`, `Tracker`, `Workspace`), as well as PR metadata and webhook event types.
+3. **`packages/core/src/session-types.ts`**: Contains live session model schemas, event routing metadata, automatic reaction rule shapes, and state classification constants.
+4. **`packages/core/src/portfolio-types.ts`**: Holds cross-project registration and dashboard layout ordering preference schemas.
+5. **`packages/core/src/errors.ts`**: Encapsulates custom exceptions (such as `SessionNotFoundError` and `WorkspaceMissingError`) alongside error classification guards.
+
+### C.3 Import Guidelines
+
+To maintain complete backward compatibility:
+- All new type modules are fully re-exported in `packages/core/src/types.ts`.
+- **Downstream consumers and plugins must always import types from `@aoagents/ao-core` (or `../types.js` internally) rather than referencing the domain-specific files directly.** This prevents visual coupling and keeps internal file movements transparent to the rest of the workspace.
+
+### C.4 Probe Strategy Isolation
+
+The status detection logic in `lifecycle-manager.ts` relied on custom process probe parsing and transition telemetry assembly. These functions have been isolated into `packages/core/src/probe-strategy.ts`:
+- `processProbeResultToProbeResult`: Classifies process liveness signals into strict `alive`, `dead`, or `unknown` probe results.
+- `splitEvidenceSignals`: Tokenizes raw terminal/mtime signals for evidence matching.
+- `primaryLifecycleReason`: Selects the priority reason for state transitions.
+- `buildTransitionObservabilityData`: Assembles detailed transition telemetry maps.
+
+By isolating these helper routines, `determineStatus()` in the lifecycle engine remains readable, and probe classification can be validated in dedicated unit tests.
+
 ---
 
 *End of architecture supplement.*
+
