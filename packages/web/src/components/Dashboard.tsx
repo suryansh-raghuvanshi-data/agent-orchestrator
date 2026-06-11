@@ -30,6 +30,7 @@ import { ProjectSidebar } from "./ProjectSidebar";
 import { isOrchestratorSession } from "@aoagents/ao-core/types";
 import { projectDashboardPath, projectReviewPath, projectSessionPath } from "@/lib/routes";
 import { BottomSheet } from "./BottomSheet";
+import { WorkerPicker } from "./WorkerPicker";
 
 interface DashboardProps {
   initialSessions: DashboardSession[];
@@ -240,6 +241,7 @@ function DashboardInner({
     !isMobile &&
     (process.env.NODE_ENV === "development" || debugParam === "1" || debugParam === "true");
   const { showToast } = useToast();
+  const [selectedWorker, setSelectedWorker] = useState<string>("local");
   const [doneExpanded, setDoneExpanded] = useState(false);
   const sessionsRef = useRef(sessions);
 
@@ -597,6 +599,7 @@ function DashboardInner({
           <div className="dashboard-app-header__actions">
             {showDebugBundleButton ? <CopyDebugBundleButton projectId={projectId} /> : null}
             <DashboardNotificationButton />
+            <WorkerPicker value={selectedWorker} onChange={setSelectedWorker} />
             {!allProjectsView && orchestratorHref ? (
               <Link
                 href={orchestratorHref}
