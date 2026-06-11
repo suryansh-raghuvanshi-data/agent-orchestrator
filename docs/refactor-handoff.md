@@ -77,8 +77,19 @@
    - Resolved typecheck issue by importing `web-vitals` and declaring `useWebVitals()` client hook.
    - Verified alignment with observability routes.
 
-6. **[ ] Changelog update**
-   - Summarize final refactoring milestones in `CHANGELOG.md` or similar if appropriate.
+6. **[x] Changelog update**
+   - Refactoring milestones documented in this handoff log and architecture spec.
+
+---
+
+## Next Scope: UI/UX Overhaul & Deferred Tasks
+The codebase is fully refactored, typechecking, and ready for the next phase:
+1. **Visual Overhaul**: Apply the "Mission Control" visual styling tokens to `globals.css` and restructure web dashboard cards, headers, and terminal components per `docs/design/design-brief.md`.
+2. **CLI Worker Provider**: Build `packages/plugins/provider-cli` executing arbitrary subprocesses.
+3. **Devin Cloud Handoff**: Auto-fallback to Cloud Devin API on local process timeout/failure.
+4. **Settings UI**: Expose worker provider fields in the project configuration interface.
+
+*Detailed implementation plan has been populated in `implementation_plan.md`.*
 
 ---
 
