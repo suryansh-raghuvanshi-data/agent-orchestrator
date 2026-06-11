@@ -309,4 +309,43 @@ projects:
     });
 
   });
+
+  describe("defaults.model", () => {
+    it("parses model from defaults in wrapped config", () => {
+      const configPath = join(testDir, "agent-orchestrator.yaml");
+      writeFileSync(
+        configPath,
+        [
+          "defaults:",
+          "  agent: opencode",
+          "  model: deepseek/deepseek-v4-flash-free",
+          "projects:",
+          "  test-app:",
+          "    path: /tmp/test-app",
+          "",
+        ].join("\n"),
+      );
+
+      const config = loadConfig(configPath);
+      expect(config.defaults.model).toBe("deepseek/deepseek-v4-flash-free");
+    });
+
+    it("defaults.model is undefined when not set", () => {
+      const configPath = join(testDir, "agent-orchestrator.yaml");
+      writeFileSync(
+        configPath,
+        [
+          "defaults:",
+          "  agent: opencode",
+          "projects:",
+          "  test-app:",
+          "    path: /tmp/test-app",
+          "",
+        ].join("\n"),
+      );
+
+      const config = loadConfig(configPath);
+      expect(config.defaults.model).toBeUndefined();
+    });
+  });
 });
