@@ -220,6 +220,7 @@ export const GlobalConfigSchema = z
         agent: z.string().default("claude-code"),
         workspace: z.string().default("worktree"),
         notifiers: z.array(z.string()).default(["composio", "desktop"]),
+        model: z.string().optional(),
         orchestrator: z.object({ agent: z.string().optional() }).optional(),
         worker: z.object({ agent: z.string().optional() }).optional(),
       })

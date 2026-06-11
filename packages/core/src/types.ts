@@ -1489,6 +1489,7 @@ export interface DefaultPlugins {
   agent: string;
   workspace: string;
   notifiers: string[];
+  model?: string;
   orchestrator?: {
     agent?: string;
   };
