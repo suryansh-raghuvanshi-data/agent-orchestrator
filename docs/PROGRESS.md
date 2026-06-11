@@ -25,18 +25,20 @@ See implementation plan in CLAUDE.md session context. Key phases:
 
 | File | Change | Status |
 |------|--------|--------|
-| — | — | — |
+| `packages/core/src/types.ts` | Added `WorkerProvider` interface + types + `"worker-provider"` plugin slot | Done |
+| `docs/PROGRESS.md` | Created progress doc | Done |
 
 ## Tests Run
 
 | Test | Result |
 |------|--------|
-| — | — |
+| `pnpm --filter @aoagents/ao-core typecheck` | Passed |
 
 ## Known Issues
 - None yet
 
 ## Next Steps
-1. Create WorkerProvider types in `packages/core/src/types.ts`
+1. Create WorkerProvider types in `packages/core/src/types.ts` ✅
+2. Create worker-provider-local plugin (adapter for existing Agent plugins)
 
 Last updated: 2026-06-11

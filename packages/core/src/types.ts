@@ -1729,7 +1729,8 @@ export type PluginSlot =
   | "tracker"
   | "scm"
   | "notifier"
-  | "terminal";
+  | "terminal"
+  | "worker-provider";
 
 /** Plugin manifest — what every plugin exports */
 export interface PluginManifest {
@@ -1756,6 +1757,125 @@ export interface PluginModule<T = unknown> {
 
   /** Optional: detect whether this plugin's runtime/binary is available on the system. */
   detect?(): boolean;
+}
+
+// =============================================================================
+// WORKER PROVIDER — Plugin Slot 8
+// =============================================================================
+
+/**
+ * WorkerProvider handles dispatching tasks to external or local worker agents.
+ * This is a higher-level abstraction over the Agent plugin — it represents
+ * a source of AI coding work (Kilo, Devin, Anti-Gravity, or a local agent).
+ */
+export interface WorkerProvider {
+  readonly name: string;
+  readonly displayName: string;
+  readonly capabilities: WorkerProviderCapabilities;
+
+  /** Check if this provider is available and healthy */
+  health(): Promise<WorkerProviderHealth>;
+
+  /** Submit a task to this provider */
+  submitTask(config: WorkerProviderTaskConfig): Promise<WorkerProviderTaskHandle>;
+
+  /** Get current status of a submitted task */
+  getTaskStatus(handle: WorkerProviderTaskHandle): Promise<WorkerProviderTaskStatus>;
+
+  /** Cancel a running task */
+  cancelTask(handle: WorkerProviderTaskHandle): Promise<void>;
+
+  /** Get output/logs from a task */
+  getTaskOutput(handle: WorkerProviderTaskHandle): Promise<string>;
+
+  /**
+   * Optional: whether a failed task can be retried by this provider.
+   * Defaults to true for transient errors.
+   */
+  canRetry?(error: WorkerProviderError): boolean;
+
+  /**
+   * Optional: estimated wait time before a task can be retried.
+   * Returns null when unknown.
+   */
+  estimatedRetryWait?(handle: WorkerProviderTaskHandle): Promise<number | null>;
+}
+
+export interface WorkerProviderCapabilities {
+  /** Maximum concurrent tasks this provider supports */
+  maxConcurrency: number;
+  /** Whether this provider supports task timeout */
+  timeoutSupported: boolean;
+  /** Whether completed/failed tasks can be restarted from checkpoint */
+  restartFromCheckpoint: boolean;
+  /** Optional list of model names this provider can use */
+  supportedModels?: string[];
+}
+
+export interface WorkerProviderHealth {
+  /** Overall provider status */
+  status: "healthy" | "degraded" | "offline";
+  /** Number of currently active/running tasks */
+  activeTasks: number;
+  /** Maximum concurrent tasks (from capabilities) */
+  maxTasks: number;
+  /** ISO timestamp of last successful health check, or null */
+  lastHeartbeat: string | null;
+  /** Error message when status is degraded or offline */
+  error?: string;
+}
+
+export type WorkerProviderTaskState =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "timed_out";
+
+export interface WorkerProviderTaskHandle {
+  /** Provider-specific task identifier */
+  taskId: string;
+  /** Which provider owns this task */
+  providerName: string;
+  /** Provider-specific metadata */
+  data: Record<string, unknown>;
+}
+
+export interface WorkerProviderTaskStatus {
+  /** Current state of the task */
+  state: WorkerProviderTaskState;
+  /** ISO timestamp of last status update */
+  lastUpdatedAt: string;
+  /** Error details if the task failed */
+  error?: WorkerProviderError;
+  /** Progress info (0-100 or null if unknown) */
+  progress?: number;
+}
+
+export interface WorkerProviderError {
+  code: string;
+  message: string;
+  /** Whether this error is transient (safe to retry) */
+  isTransient: boolean;
+  /** Optional provider-specific details */
+  details?: Record<string, unknown>;
+}
+
+export interface WorkerProviderTaskConfig {
+  /** Session/project context */
+  sessionId: string;
+  projectId: string;
+  /** The task description/prompt to execute */
+  prompt: string;
+  /** System prompt / instructions */
+  systemPrompt?: string;
+  /** Optional timeout in milliseconds */
+  timeoutMs?: number;
+  /** Optional model override */
+  model?: string;
+  /** Provider-specific config passthrough */
+  providerConfig?: Record<string, unknown>;
 }
 
 /**
