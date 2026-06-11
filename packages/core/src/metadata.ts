@@ -320,6 +320,8 @@ export function writeMetadata(
   if (metadata.displayName) data["displayName"] = metadata.displayName;
   if (metadata.displayNameUserSet !== undefined)
     data["displayNameUserSet"] = metadata.displayNameUserSet;
+  if (metadata.workerProvider) data["workerProvider"] = metadata.workerProvider;
+  if (metadata.workerTaskId) data["workerTaskId"] = metadata.workerTaskId;
 
   atomicWriteFileSync(path, serializeMetadata(data));
 }

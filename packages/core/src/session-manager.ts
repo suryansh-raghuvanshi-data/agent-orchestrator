@@ -46,6 +46,7 @@ import {
   type SCM,
   type PluginRegistry,
   type RuntimeHandle,
+  type WorkerProvider,
   type Issue,
   type CanonicalSessionLifecycle,
   PR_STATE,
@@ -101,6 +102,7 @@ import {
   setupPathWrapperWorkspace,
   PREFERRED_GH_PATH,
 } from "./agent-workspace-hooks.js";
+import { resolveWorkerProvider, submitTaskToWorkerProvider } from "./worker-router.js";
 
 const execFileAsync = promisify(execFile);
 const OPENCODE_DISCOVERY_TIMEOUT_MS = 10_000;
@@ -1311,6 +1313,74 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
           throw new Error(`Failed to fetch issue ${spawnConfig.issueId}: ${err}`, { cause: err });
         }
       }
+    }
+
+    // Resolve worker provider — route external tasks before creating local resources
+    const route = resolveWorkerProvider(spawnConfig, project, config, {
+      getProvider: (name) => registry.get<WorkerProvider>("worker-provider", name),
+    });
+
+    if (!route.isLocal && route.provider) {
+      const externalSessionId = `ext-${spawnConfig.projectId}-${Date.now()}`;
+      const taskHandle = await submitTaskToWorkerProvider(route.provider, {
+        sessionId: externalSessionId,
+        projectId: spawnConfig.projectId,
+        prompt: spawnConfig.prompt ?? "",
+        systemPrompt: undefined,
+      });
+      const createdAt = new Date();
+      const lifecycle = createInitialCanonicalLifecycle("worker", createdAt);
+      const externalSession: Session = {
+        id: externalSessionId,
+        projectId: spawnConfig.projectId,
+        status: "working",
+        activity: "active",
+        activitySignal: createActivitySignal("valid", {
+          activity: "active",
+          timestamp: createdAt,
+          source: "runtime",
+        }),
+        lifecycle,
+        branch: `session/${externalSessionId}`,
+        issueId: spawnConfig.issueId ?? null,
+        pr: null,
+        prs: [],
+        workspacePath: project.path,
+        runtimeHandle: null,
+        agentInfo: null,
+        createdAt,
+        lastActivityAt: createdAt,
+        metadata: {
+          workerProvider: route.providerName,
+          workerTaskId: taskHandle.taskId,
+          ...(spawnConfig.prompt ? { userPrompt: spawnConfig.prompt } : {}),
+        },
+      };
+      writeMetadata(getProjectSessionsDir(spawnConfig.projectId), externalSessionId, {
+        worktree: project.path,
+        branch: externalSession.branch ?? `session/${externalSessionId}`,
+        status: "working",
+        ...buildLifecycleMetadataPatch(lifecycle),
+        lifecycle,
+        issue: spawnConfig.issueId,
+        project: spawnConfig.projectId,
+        agent: selection.agentName,
+        createdAt: createdAt.toISOString(),
+        userPrompt: spawnConfig.prompt,
+        workerProvider: route.providerName,
+        workerTaskId: taskHandle.taskId,
+        displayName: "External Worker",
+      });
+      invalidateCache();
+      recordActivityEvent({
+        projectId: spawnConfig.projectId,
+        sessionId: externalSessionId,
+        source: "session-manager",
+        kind: "session.spawned",
+        summary: `spawned (external: ${route.providerName}): ${externalSessionId}`,
+        data: { provider: route.providerName, taskId: taskHandle.taskId },
+      });
+      return externalSession;
     }
 
     // Get the sessions directory for this project

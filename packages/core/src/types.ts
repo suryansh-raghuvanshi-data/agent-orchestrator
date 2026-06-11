@@ -1980,6 +1980,11 @@ export interface SessionMetadata {
    * touched.
    */
   displayNameUserSet?: boolean;
+
+  /** Worker provider that is handling this session (for external providers) */
+  workerProvider?: string;
+  /** Task ID returned by the external worker provider */
+  workerTaskId?: string;
 }
 
 // =============================================================================

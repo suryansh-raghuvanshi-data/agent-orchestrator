@@ -46,10 +46,21 @@ See implementation plan in CLAUDE.md session context. Key phases:
 ## Known Issues
 - None yet
 
+| `packages/core/src/worker-router.ts` | Worker routing module (resolve provider, submit task) | Done |
+| `packages/core/src/session-manager.ts` | Integrated worker routing in spawn flow | Done |
+| `packages/core/src/metadata.ts` | Persist workerProvider/workerTaskId in metadata | Done |
+
+## Tests Run
+
+| Test | Result |
+|------|--------|
+| `pnpm --filter @aoagents/ao-core typecheck` | Passed |
+
 ## Next Steps
-1. Create WorkerProvider types in `packages/core/src/types.ts` ✅
-2. Create worker-provider-local plugin (adapter for existing Agent plugins) ✅ (built as core module)
-3. Extend config/schema for worker providers ✅
-4. Add worker routing to session-manager
+1-4 ✅ Complete
+5. Add failure handling (retry, timeout, reassign)
+6. Add dashboard UI (WorkerPicker)
+7. Add API routes for workers
+8. Tests and verification
 
 Last updated: 2026-06-11
