@@ -12,6 +12,7 @@
 
 | Commit | Scope | Status |
 |--------|-------|--------|
+| `3114c0ff` | Reduce Next.js session cache TTL to 1 second | Committed, improves dashboard responsiveness |
 | `46a7587f` | Decompose types.ts, extract probe-strategy, fix metadata imports, resolve web-vitals | Committed, fully typechecking and building |
 | `4498c17b` | `sideEffects: false` for all 27 plugin packages | Committed, reduces bundle surface |
 | `24501b75` | `docs/multi-agent-orchestration-architecture.md` + `orchestrator-intelligence.ts` + `orchestrator-types.ts` | Committed, typecheck passes |
