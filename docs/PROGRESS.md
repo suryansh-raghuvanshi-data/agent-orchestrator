@@ -25,7 +25,12 @@ See implementation plan in CLAUDE.md session context. Key phases:
 
 | File | Change | Status |
 |------|--------|--------|
+| File | Change | Status |
+|------|--------|--------|
 | `packages/core/src/types.ts` | Added `WorkerProvider` interface + types + `"worker-provider"` plugin slot | Done |
+| `packages/core/src/worker-provider-registry.ts` | Worker provider registry service | Done |
+| `packages/core/src/worker-provider-local.ts` | Local provider adapter (passthrough for existing Agent flow) | Done |
+| `packages/core/src/index.ts` | Exported new modules | Done |
 | `docs/PROGRESS.md` | Created progress doc | Done |
 
 ## Tests Run
@@ -39,6 +44,7 @@ See implementation plan in CLAUDE.md session context. Key phases:
 
 ## Next Steps
 1. Create WorkerProvider types in `packages/core/src/types.ts` ✅
-2. Create worker-provider-local plugin (adapter for existing Agent plugins)
+2. Create worker-provider-local plugin (adapter for existing Agent plugins) ✅ (built as core module)
+3. Extend config/schema for worker providers
 
 Last updated: 2026-06-11
