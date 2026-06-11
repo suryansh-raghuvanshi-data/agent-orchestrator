@@ -46,6 +46,13 @@ Enable the orchestrator to run tasks through multiple worker providers (e.g. Kil
 8. Write tests for worker provider infrastructure
 9. Final typecheck, lint, build — run `pnpm build` to verify full build
 
+## Remaining Work
+- Wire `/api/spawn` to forward `workerProvider` from request body to `sessionManager.spawn()`
+- Wire `/api/orchestrators` to forward `workerProvider` to `sessionManager.spawnOrchestrator()`
+- Add `workerProvider` field to `OrchestratorSpawnConfig` in core types
+- Wire Dashboard WorkerPicker to spawn flow (see `dashboard-picker-todo.md`)
+- Create external worker provider plugins (Devin, Kilo, etc.)
+
 ## Smoke Test Checklist
 - [ ] the repo still installs and starts in the normal dev flow
 - [ ] the existing default worker path still works

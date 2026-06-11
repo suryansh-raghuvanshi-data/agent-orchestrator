@@ -388,6 +388,8 @@ export interface OrchestratorSpawnConfig {
   systemPrompt?: string;
   /** Override the agent plugin for this orchestrator (e.g. "codex", "claude-code", "opencode") */
   agent?: string;
+  /** Override the worker provider for sessions spawned by this orchestrator */
+  workerProvider?: string;
 }
 
 // =============================================================================

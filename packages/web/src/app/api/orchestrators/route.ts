@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
   }
 
   const clean = body.clean === true;
+  const workerProvider = (body.workerProvider as string) ?? undefined;
 
   try {
     const { config, sessionManager } = await getServices();
@@ -60,9 +61,10 @@ export async function POST(request: NextRequest) {
     const project = config.projects[projectId];
 
     const systemPrompt = generateOrchestratorPrompt({ config, projectId, project });
+    const spawnConfig = { projectId, systemPrompt, workerProvider };
     const session = clean
-      ? await sessionManager.relaunchOrchestrator({ projectId, systemPrompt })
-      : await sessionManager.spawnOrchestrator({ projectId, systemPrompt });
+      ? await sessionManager.relaunchOrchestrator(spawnConfig)
+      : await sessionManager.spawnOrchestrator(spawnConfig);
 
     recordActivityEvent({
       projectId,
