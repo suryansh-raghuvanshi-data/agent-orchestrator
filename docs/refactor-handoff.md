@@ -1,7 +1,7 @@
 # AO Refactor — Handoff & Resume Guide
 
 > **Resume point**: start here on fresh checkout.
-> **Last saved commit**: `6d1a247e` (docs: add dynamic personality adaptation to future experiment notes)
+> **Last saved commit**: `56726617` (docs: inline implementation plan and task checklist directly into handoff guide)
 > **Branch**: `feat/multi-worker`
 > **Core typecheck status**: passing (`pnpm --dir packages/core typecheck` clean)
 > **Date**: 2026-06-11
@@ -19,6 +19,8 @@
 | `fcfb3e11` | Appendix A & B added to architecture doc (personality/memory layer + inter-agent messaging experiment) | Committed |
 | `6d1a247e` | Dynamic personality adaptation note in doc | Committed |
 | `169628a7` | Restart instructions block at top of doc | Committed |
+| `4329a064` | docs(refactor): finalize refactoring checklist and prep for visual overhaul | Committed |
+| `56726617` | docs(refactor): inline implementation plan and task checklist directly into handoff guide | Committed |
 
 ### Files Added (committed)
 
