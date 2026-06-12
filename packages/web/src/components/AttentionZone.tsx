@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useState } from "react";
 import { type DashboardSession, type AttentionLevel, isPRMergeReady } from "@/lib/types";
-import { SessionCard } from "./SessionCard";
+import { TaskCard } from "./TaskCard";
 import { getSessionTitle } from "@/lib/format";
 import { projectSessionPath } from "@/lib/routes";
 
@@ -132,7 +132,7 @@ function AttentionZoneView({
                     onPreview={onPreview}
                   />
                 ) : (
-                  <SessionCard
+                  <TaskCard
                     key={session.id}
                     session={session}
                     onKill={onKill}
@@ -176,7 +176,7 @@ function AttentionZoneView({
         {sessions.length > 0 ? (
           <div className="kanban-column__stack">
             {sessions.map((session) => (
-              <SessionCard
+              <TaskCard
                 key={session.id}
                 session={session}
                 onKill={onKill}

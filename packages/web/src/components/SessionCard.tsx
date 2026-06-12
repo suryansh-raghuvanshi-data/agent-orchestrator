@@ -13,7 +13,7 @@ import {
   isDashboardSessionRestorable,
 } from "@/lib/types";
 import { cn } from "@/lib/cn";
-import { getSessionTitle } from "@/lib/format";
+import { getSessionTitle, formatRelativeTime } from "@/lib/format";
 import { StatusBadge } from "./StatusBadge";
 import { DoneSessionCard } from "./SessionCard.parts";
 import { projectSessionHashPath } from "@/lib/routes";
@@ -318,16 +318,24 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
 
         <div className="session-card__footer">
           <div className="session-card__footer-info">
+            <span className="text-[var(--color-text-muted)] font-[var(--font-mono)] text-[10px] tabular-nums">
+              {formatRelativeTime(Date.parse(session.lastActivityAt))}
+            </span>
             {pr ? (
-              <a
-                href={pr.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="card__pr"
-              >
-                PR #{pr.number}
-              </a>
+              <>
+                <span className="card__meta-sep" aria-hidden="true">
+                  ·
+                </span>
+                <a
+                  href={pr.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="card__pr"
+                >
+                  PR #{pr.number}
+                </a>
+              </>
             ) : null}
             {pr && footerDetail ? (
               <span className="card__meta-sep" aria-hidden="true">

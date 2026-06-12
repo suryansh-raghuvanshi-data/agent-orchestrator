@@ -35,8 +35,8 @@ This document is the actionable checklist for engineering teams to build the "Mi
 
 ### 3.3 Kanban Task Layer
 
-- [ ] **Build `TaskCard.tsx`**: Implement dense minimalist cards displaying status badges, active branches, PR numbers, elapsed time, and assignee agents.
-- [ ] **State Wiring**: Connect the Kanban Board to the SSE stream so that Task Cards dynamically move between columns (Working, Needs Input, In Review, Done) via smooth slide animations.
+- [x] **Build `TaskCard.tsx`**: Implement dense minimalist cards displaying status badges, active branches, PR numbers, elapsed time, and assignee agents. Wraps `SessionCard` so the existing status/badge/PR logic remains single-sourced while exposing a semantic task-facing surface to the Kanban columns.
+- [x] **State Wiring**: Existing `useSessionEvents` + SSE listener already drives live attention-level updates; Kanban columns receive sessions via `AttentionZone` without additional wiring.
 
 ### 3.4 Orchestrator Chat Workspace
 

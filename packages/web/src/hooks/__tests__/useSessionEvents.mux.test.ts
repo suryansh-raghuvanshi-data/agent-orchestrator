@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useSessionEvents } from "../useSessionEvents";
 import type { DashboardSession } from "@/lib/types";
+import type { SessionPatch } from "@/lib/mux-protocol";
 
 const now = new Date().toISOString();
 const s1 = { id: "s1", projectId: "proj", lastActivityAt: now } as unknown as DashboardSession;
@@ -17,6 +18,7 @@ describe("useSessionEvents - mux", () => {
     );
   });
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.clearAllTimers();
   });
@@ -39,7 +41,7 @@ describe("useSessionEvents - mux", () => {
         lastActivityAt: now,
       },
     ];
-    renderHook(() =>
+    const { unmount } = renderHook(() =>
       useSessionEvents({
         initialSessions,
         project: "proj",
@@ -53,6 +55,7 @@ describe("useSessionEvents - mux", () => {
         expect.objectContaining({ cache: "no-store" }),
       );
     });
+    unmount();
   });
 
   it("does not warn when an in-flight refresh is aborted on unmount", async () => {
@@ -107,6 +110,31 @@ describe("useSessionEvents - mux", () => {
       "[useSessionEvents] refresh failed:",
       expect.anything(),
     );
-    vi.useRealTimers();
+  });
+
+  it("applies external ssePatches through the snapshot reducer", () => {
+    const later = new Date(Date.now() + 1000).toISOString();
+    const patch: SessionPatch = {
+      id: "s1",
+      status: "mergeable",
+      activity: "active",
+      attentionLevel: "merge",
+      lastActivityAt: later,
+    };
+
+    const initialSessions = [s1];
+    const { result, unmount } = renderHook(() =>
+      useSessionEvents({
+        initialSessions,
+        ssePatches: [patch],
+        attentionZones: "simple",
+      }),
+    );
+
+    expect(result.current.sessions[0].status).toBe("mergeable");
+    expect(result.current.sessions[0].lastActivityAt).toBe(later);
+    expect(result.current.attentionLevels.s1).toBe("merge");
+
+    unmount();
   });
 });

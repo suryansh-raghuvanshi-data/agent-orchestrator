@@ -17,6 +17,7 @@ import {
 import { AttentionZone } from "./AttentionZone";
 import { DynamicFavicon, countNeedingAttention } from "./DynamicFavicon";
 import { useSessionEvents } from "@/hooks/useSessionEvents";
+import type { SessionPatch } from "@/lib/mux-protocol";
 import { useMuxOptional } from "@/providers/MuxProvider";
 import type { ProjectInfo } from "@/lib/project-name";
 import { EmptyState } from "./Skeleton";
@@ -156,6 +157,7 @@ function DashboardInner({
 }: DashboardProps) {
   const orchestratorLinks = orchestrators ?? EMPTY_ORCHESTRATORS;
   const mux = useMuxOptional();
+  const [ssePatches, setSsePatches] = useState<SessionPatch[] | null>(null);
   const kanbanLevels =
     attentionZones === "detailed" ? DETAILED_KANBAN_LEVELS : SIMPLE_KANBAN_LEVELS;
   const initialAttentionLevels = useMemo(() => {
@@ -171,6 +173,7 @@ function DashboardInner({
     // Kanban filtering is applied client-side via projectSessions below.
     muxSessions: mux?.status === "connected" ? mux.sessions : undefined,
     muxLastError: mux?.lastError,
+    ssePatches,
     initialAttentionLevels,
     attentionZones,
   });
@@ -284,26 +287,60 @@ function DashboardInner({
     setActiveOrchestrators((current) => mergeOrchestrators(current, orchestratorLinks));
   }, [orchestratorLinks]);
 
-  // Real-time SSE refresh — listen to /api/events for session lifecycle changes
-  // and trigger a client-side refresh so the board stays in sync.
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.EventSource === "undefined") return;
+
+    let cancelled = false;
     const source = new EventSource("/api/events");
-    source.onmessage = (event: MessageEvent) => {
-      let parsed: { type?: string } | null = null;
+
+    const fetchSessionPatches = async () => {
       try {
-        parsed = JSON.parse(event.data as string) as { type?: string };
+        const res = await fetch("/api/sessions/patches", { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error(`Session patch fetch failed: HTTP ${res.status}`);
+        }
+        const data = (await res.json()) as { sessions?: SessionPatch[]; error?: string };
+        if (!cancelled && data.sessions) {
+          setSsePatches(data.sessions);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn("[Dashboard] SSE patch fetch failed:", error);
+        }
+      }
+    };
+
+    const handleMessage = async (event: MessageEvent) => {
+      let payload: { type?: string; patches?: unknown } | null;
+      try {
+        payload = JSON.parse(event.data as string) as { type?: string; patches?: unknown };
       } catch {
-        // Ignore malformed SSE payloads.
+        payload = null;
       }
-      if (parsed?.type === "sessions.updated") {
-        routerRef.current?.refresh();
+
+      if (payload?.type !== "sessions.updated") return;
+
+      if (Array.isArray(payload.patches)) {
+        if (!cancelled) setSsePatches(payload.patches as SessionPatch[]);
+        return;
       }
+
+      await fetchSessionPatches();
+    };
+
+    source.onmessage = (event: MessageEvent) => {
+      void handleMessage(event);
     };
     source.onerror = () => {
+      if (cancelled) return;
+      source.close();
+      setSsePatches(null);
+    };
+
+    return () => {
+      cancelled = true;
       source.close();
     };
-    return () => source.close();
   }, []);
 
   // Update document title with live attention counts
