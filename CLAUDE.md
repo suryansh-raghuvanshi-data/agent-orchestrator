@@ -382,6 +382,8 @@ All importable from `@aoagents/ao-core` unless noted:
 | `packages/web/src/components/AgentDrawerContext.tsx` | Context provider for opening the AgentDrawer from any client component via `useAgentDrawer()`                                     |
 | `packages/web/src/app/history/page.tsx`         | Session history view with date filters, search, and session list                                                                       |
 | `packages/web/src/app/settings/page.tsx`        | Settings view with Agents, API Keys, Notifications, Appearance, Danger zone sections                                                   |
+| `packages/web/src/components/HomeView.tsx`      | Returning-user home dashboard with welcome heading, active task grid, needs-input section, recent sessions, quick actions              |
+| `packages/web/src/app/new-task/page.tsx`        | New task setup screen with 3-step flow: intent → agent selection → review & launch                                                    |
 
 ## Skills
 

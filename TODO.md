@@ -40,6 +40,10 @@
 - Step 3: Review summary card + Launch button with spinner animation, navigates to session workspace
 - Fetches projects, agents, and workers on mount; spawns via `POST /api/orchestrators`
 
+### Phase 6.2 — Dashboard / Home View ✅
+- `HomeView` component at `/`: welcome heading with task counts, active task cards (grid), needs-input section (amber highlighted), recent sessions list, quick actions bar
+- Kanban board accessible via `/?view=kanban` link from quick actions
+
 ### Phase 4 — Kanban Board ✅
 - `KanbanBoard` groups sessions by attention level into columns with column count chips, search filtering, density toggle, done/terminated collapsible section
 - `KanbanBoardHeader`: title, counts, search, filter, density toggle
@@ -984,9 +988,9 @@ PHASE 5  ✅
   5.1  Logs view — done
   5.2  Status monitoring widget — done
 
-PHASE 6 — in progress
+PHASE 6  ✅
   6.1  New task setup screen — done
-  6.2  Dashboard / home view
+  6.2  Dashboard / home view — done
 
 PHASE 7  ←  Depends on 3.x and 4.x
   7.1  Reasoning summary panel
