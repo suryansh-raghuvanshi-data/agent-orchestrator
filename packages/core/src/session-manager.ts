@@ -1020,11 +1020,40 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       throw new Error(`Unknown project: ${spawnConfig.projectId}`);
     }
 
+    const sessionsDir = getProjectSessionsDir(spawnConfig.projectId);
+    let orchestratorWorkerProvider: string | undefined;
+    let allowedProviders: string[] | undefined;
+    let allowedAgents: string[] | undefined;
+
+    const orchestratorSessionId = `${project.sessionPrefix}-orchestrator`;
+    const orchestratorMeta = readMetadata(sessionsDir, orchestratorSessionId);
+
+    if (orchestratorMeta?.workerAgents && orchestratorMeta.workerAgents.length > 0) {
+      allowedProviders = [];
+      allowedAgents = [];
+      for (const item of orchestratorMeta.workerAgents) {
+        if (item.startsWith("worker-")) {
+          allowedProviders.push(item);
+        } else if (item.startsWith("agent-")) {
+          allowedAgents.push(item.replace(/^agent-/, ""));
+        } else {
+          allowedAgents.push(item);
+        }
+      }
+    } else if (orchestratorMeta?.workerProvider) {
+      orchestratorWorkerProvider = orchestratorMeta.workerProvider;
+    }
+
+    let effectiveAgentOverride = spawnConfig.agent;
+    if (!effectiveAgentOverride && allowedAgents && allowedAgents.length > 0) {
+      effectiveAgentOverride = allowedAgents[0];
+    }
+
     const selection = resolveAgentSelection({
       role: "worker",
       project,
       defaults: config.defaults,
-      spawnAgentOverride: spawnConfig.agent,
+      spawnAgentOverride: effectiveAgentOverride,
     });
     const plugins = resolvePlugins(project, selection.agentName);
     if (!plugins.runtime) {
@@ -1065,17 +1094,16 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       }
     }
 
-    const sessionsDir = getProjectSessionsDir(spawnConfig.projectId);
-    let orchestratorWorkerProvider: string | undefined;
-    const orchestratorSessionId = `${project.sessionPrefix}-orchestrator`;
-    const orchestratorMeta = readMetadata(sessionsDir, orchestratorSessionId);
-    if (orchestratorMeta?.workerProvider) {
-      orchestratorWorkerProvider = orchestratorMeta.workerProvider;
+    let effectiveProviderOverride = spawnConfig.workerProvider;
+    if (!effectiveProviderOverride && allowedProviders && allowedProviders.length > 0) {
+      effectiveProviderOverride = allowedProviders[0];
+    } else if (!effectiveProviderOverride && orchestratorWorkerProvider) {
+      effectiveProviderOverride = orchestratorWorkerProvider;
     }
 
     const effectiveSpawnConfig = {
       ...spawnConfig,
-      workerProvider: spawnConfig.workerProvider ?? orchestratorWorkerProvider,
+      workerProvider: effectiveProviderOverride,
     };
 
     // Resolve worker provider — route external tasks before creating local resources
