@@ -389,6 +389,8 @@ All importable from `@aoagents/ao-core` unless noted:
 | `packages/web/src/components/HighLoadBanner.tsx` | Amber warning banner for high task load with optional "Prioritize top 5" action                                                       |
 | `packages/web/src/components/CompletionOverlay.tsx` | Full-viewport completion overlay: dark dim + checkmark card, auto-fades after 800ms                                                |
 | `packages/web/src/components/CompletionSummary.tsx` | Completion summary card with counts, elapsed time, skipped/failed tasks, key outputs, action strip                                |
+| `packages/web/src/lib/empty-states.tsx`             | Centralized empty state configs and icons for all major views (dashboard, kanban, logs, history, agents)                         |
+| `packages/web/src/app/globals.css`                  | Design tokens, base styles, motion system animations (pulse-border, stagger, drawer/dropdown/modal entrances)                    |
 
 ## Skills
 

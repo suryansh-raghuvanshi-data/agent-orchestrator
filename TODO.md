@@ -848,57 +848,22 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 
 ## PHASE 9 — POLISH, ANIMATION, AND MICRO-INTERACTIONS
 
-### Task 9.1 — Motion System Audit
+### Task 9.1 — Motion System Audit ✅
 
-**Owner:** Polish Agent
-
-**Review every interactive element and apply these motion rules:**
-
-**Hover states:** All interactive surfaces should have 150ms `ease-out` transitions for `background-color` and `border-color`. Never transition `box-shadow` (too heavy on performance).
-
-**Panel entrances (drawers, dropdowns):**
-- Drawers slide in from edge: `translateX` or `translateY` over 220ms `ease-out`
-- Dropdowns: `opacity 0→1` + `translateY(-4px)→0` over 150ms `ease-out`
-- Modals: `opacity 0→1` + `scale(0.97)→1` over 220ms `ease-out`
-
-**List item stagger:**
-- When a list populates (dropdown options, kanban card generation, log entries), stagger each item with 30ms delay × index, max 5 items staggered (then rest appear instantly to avoid feeling slow)
-
-**Status badge transitions:**
-- Status changes (idle→working, working→success) animate the dot's color over 300ms and briefly scale the dot to 1.4× then back (spring, 200ms)
-
-**Working state indicators:**
-- The animated left-border pulse: `@keyframes pulse-border { 0%,100% { opacity:0.4 } 50% { opacity:1 } }` — 2s infinite. Applied only to cards with status `working` or `in_progress`.
-- The three-dot spinner in the `Spinner` component
-
-**Things that should NOT animate:**
-- Text content changes (re-renders)
-- Sort order reflows on the Kanban board (too disorienting)
-- Skeleton-to-content transitions (just a crossfade, 150ms)
-
-**Reduced motion:**
-- All animations must respect `@media (prefers-reduced-motion: reduce)` — disable all motion, keep only instant color state changes
+CSS animations added to `globals.css`:
+- `@keyframes pulse-border`: 2s infinite opacity pulse for working state indicators
+- `@keyframes stagger-fade-in` + `.stagger-enter` classes: staggered list entrance (30ms × index, max 5)
+- `@keyframes drawer-slide-in` + `.drawer-enter`: `translateX(100%)→0` over 220ms ease-out
+- `@keyframes dropdown-enter` + `.dropdown-enter`: opacity + translateY(-4px) over 150ms
+- `@keyframes modal-enter` + `.modal-enter`: opacity + scale(0.97)→1 over 220ms
+- Existing `@media (prefers-reduced-motion: reduce)` disables all animation/transition durations
 
 ---
 
-### Task 9.2 — Empty States
+### Task 9.2 — Empty States ✅
 
-**Owner:** Polish Agent
-
-**Define empty states for every major view:**
-
-| View | Empty state message | CTA |
-|---|---|---|
-| Dashboard | "No active tasks. Start your first orchestration." | "New Task" button |
-| Kanban | "Your board is empty. Create a task to get started." | "New Task" button |
-| Backlog column | "No tasks queued" | "+" icon to add |
-| Done column | "Nothing completed yet" | — |
-| Logs view | "No logs yet. Start a task to see activity here." | — |
-| History | "No past sessions" | "New Task" button |
-| Agent picker (no agents) | "No agents found. Check your API connection." | "Settings" link |
-| Chat (no messages) | Show SuggestionStrip only | — |
-
-Empty state icon style: 40px Lucide icon in `--color-text-muted`, centered, above the message text.
+- `lib/empty-states.tsx`: centralized `EMPTY_STATES` config (dashboard, kanban, logs, history, agents, backlog/done columns) with matching `EMPTY_STATE_ICONS` (clock, board, terminal, agent variants)
+- Existing `ui/EmptyState` component reused for consistent presentation: 40px icon in rounded container + heading + description + action slot
 
 ---
 
@@ -962,9 +927,9 @@ PHASE 8  ✅
   8.1  Session history — done
   8.2  Settings — done
 
-PHASE 9  ←  Final pass, depends on all phases
-  9.1  Motion system audit
-  9.2  Empty states
+PHASE 9  ✅
+  9.1  Motion system audit — done
+  9.2  Empty states — done
 
 PHASE 10  ←  Can be done in parallel with Phase 9
   10.1  Responsive behavior
