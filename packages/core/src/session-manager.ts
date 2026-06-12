@@ -2912,6 +2912,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       }
 
       const deadline = Date.now() + SEND_RESTORE_READY_TIMEOUT_MS;
+      let previousOutput: string | undefined;
       while (true) {
         const [runtimeAlive, processRunning, output, foregroundCommand] = await Promise.all([
           runtimePlugin.isAlive(handle).catch(() => true),
@@ -2925,9 +2926,20 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         const foregroundReady =
           foregroundCommand === null || foregroundCommand === agentPlugin.processName;
 
-        if (runtimeAlive && foregroundReady && (processRunning || output.trim().length > 0)) {
+        // Require the agent process to be running or terminal output to be
+        // fresh (changed since last poll). Arbitrary old terminal output from
+        // a previous session must not be treated as readiness proof — see
+        // AO-005. A "fresh" output change between polls confirms the agent
+        // is actively producing output.
+        const outputFresh =
+          previousOutput !== undefined &&
+          output.trim().length > 0 &&
+          output !== previousOutput;
+        if (runtimeAlive && foregroundReady && (processRunning || outputFresh)) {
           return true;
         }
+
+        previousOutput = output;
 
         if (Date.now() >= deadline) {
           return false;
