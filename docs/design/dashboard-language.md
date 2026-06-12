@@ -48,19 +48,19 @@ is rationed so it always signals something:
 
 | Token | Use |
 |-------|-----|
-| Blue `#4d8dff` | orchestrator / you — primary action, selection, focus (the *only* solid-fill button) |
+| Blue `#5b7ef8` | orchestrator / you — primary action, selection, focus (the *only* solid-fill button) |
 | Orange `#f59f4c` | a working agent (status + cursor) |
 | Amber `#e8c14a` | needs-your-input / attention (incl. unresolved review comments) |
 | Red `#ef6b6b` | failing (CI failed, stuck) |
-| Green `#74b98a` | mergeable / passed / resolved |
+| Green `#22c55e` | mergeable / passed / resolved |
 | Neutral grays | everything healthy & passive: in-review, idle, done, metadata |
 
 Diff add/remove green & red are allowed in their literal context (the Changes view).
 
 ### Surfaces & lines (dark, cool neutral)
 ```
---bg        #0a0b0d   (app base)        --card  #15171b (the only bordered surface)
---bg-side   #08090b   (sidebar)         --term  #0c0d10 (terminal / xterm background)
+--bg        #0c0c11   (app base)        --card  #141419 (the only bordered surface)
+--bg-side   #0c0c11   (sidebar)         --term  #0a0a0f (terminal / xterm background)
 --line      rgba(255,255,255,0.06)      --line-2 rgba(255,255,255,0.10)
 --t1 #f4f5f7  --t2 #9ba1aa  --t3 #646a73  --t4 #444951   (text ramp: primary→faint)
 ```
