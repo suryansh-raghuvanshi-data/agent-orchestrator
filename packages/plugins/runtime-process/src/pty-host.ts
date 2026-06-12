@@ -401,6 +401,7 @@ async function runPtyHost(): Promise<void> {
   });
   process.on("unhandledRejection", (reason) => {
     process.stderr.write(`pty-host [${sessionId}] unhandled rejection: ${String(reason)}\n`);
+    shutdown("unhandledRejection");
   });
   // Last resort: dispose the PTY even on a clean exit before the event loop
   // unwinds so node-pty's native cleanup gets a chance to run.

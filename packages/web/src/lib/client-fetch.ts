@@ -214,12 +214,22 @@ export function __clearInflightFetchesForTest(): void {
   inflightFetches.clear();
 }
 
+interface MergedSignalResult {
+  signal: AbortSignal;
+  cleanup: () => void;
+}
+
 function mergeAbortSignals(
   signals: Array<AbortSignal | null | undefined>,
-): AbortSignal | undefined {
+): MergedSignalResult | undefined {
   const activeSignals = signals.filter((signal): signal is AbortSignal => Boolean(signal));
   if (activeSignals.length === 0) return undefined;
-  if (activeSignals.length === 1) return activeSignals[0];
+  if (activeSignals.length === 1) {
+    return {
+      signal: activeSignals[0],
+      cleanup: () => {},
+    };
+  }
 
   const controller = new AbortController();
   const abort = () => controller.abort();
@@ -232,7 +242,16 @@ function mergeAbortSignals(
     signal.addEventListener("abort", abort, { once: true });
   }
 
-  return controller.signal;
+  const cleanup = () => {
+    for (const signal of activeSignals) {
+      signal.removeEventListener("abort", abort);
+    }
+  };
+
+  return {
+    signal: controller.signal,
+    cleanup,
+  };
 }
 
 async function readErrorMessage(
@@ -272,9 +291,10 @@ export async function fetchJsonWithTimeout<T>(
   let timer: ReturnType<typeof setTimeout> | null = null;
   let removeAbortListener: () => void = () => {};
   let timedOut = false;
+  const mergedResult = mergeAbortSignals([signal, timeoutController.signal]);
 
   try {
-    const mergedSignal = mergeAbortSignals([signal, timeoutController.signal]);
+    const mergedSignal = mergedResult?.signal;
     const requestInit: RequestInit = { ...init };
     if (mergedSignal) {
       requestInit.signal = mergedSignal;
@@ -344,5 +364,8 @@ export async function fetchJsonWithTimeout<T>(
       clearTimeout(timer);
     }
     removeAbortListener();
+    if (mergedResult) {
+      mergedResult.cleanup();
+    }
   }
 }
