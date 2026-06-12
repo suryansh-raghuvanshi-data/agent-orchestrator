@@ -138,7 +138,7 @@ pagerduty/
 The generated `src/index.ts` looks like this:
 
 ```typescript
-import type { PluginModule } from "@aoagents/ao-core";
+import type { PluginModule, Notifier } from "@aoagents/ao-core";
 
 export const manifest = {
   name: "pagerduty",
@@ -148,13 +148,14 @@ export const manifest = {
   displayName: "PagerDuty",
 };
 
-const plugin: PluginModule = {
+const plugin: PluginModule<Notifier> = {
   manifest,
   create(config?: Record<string, unknown>) {
     return {
       name: manifest.name,
-      config: config ?? {},
-      // TODO: replace this placeholder with a real notifier implementation.
+      async notify(event) {
+        console.log(`[Notification] \${event.type}: \${event.message}`);
+      },
     };
   },
 };
