@@ -1062,6 +1062,32 @@ describe("API Routes", () => {
       });
     });
 
+    it("passes workerAgents to sessionManager.spawnOrchestrator", async () => {
+      (mockSessionManager.spawnOrchestrator as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        makeSession({
+          id: "my-app-orchestrator",
+          projectId: "my-app",
+          metadata: { role: "orchestrator" },
+        }),
+      );
+
+      const req = makeRequest("/api/orchestrators", {
+        method: "POST",
+        body: JSON.stringify({ projectId: "my-app", workerAgents: ["agent-codex", "worker-antigravity"] }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const res = await orchestratorsPOST(req);
+
+      expect(res.status).toBe(201);
+      expect(mockSessionManager.spawnOrchestrator).toHaveBeenCalledWith({
+        projectId: "my-app",
+        systemPrompt: expect.stringContaining("# My App Orchestrator"),
+        workerAgents: ["agent-codex", "worker-antigravity"],
+        workerProvider: undefined,
+        agent: undefined,
+      });
+    });
+
     it("returns 404 for an unknown project", async () => {
       const req = makeRequest("/api/orchestrators", {
         method: "POST",
