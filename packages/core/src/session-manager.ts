@@ -3016,7 +3016,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       return normalized;
     };
 
-    const sendWithConfirmation = async (session: Session): Promise<void> => {
+    const sendWithConfirmation = async (session: Session): Promise<"confirmed" | "attempted_unconfirmed"> => {
       const handle = session.runtimeHandle;
       if (!handle) {
         throw new Error(`Session ${sessionId} has no runtime handle`);
@@ -3046,7 +3046,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
           (baselineActivity !== "waiting_input" && activity === "waiting_input");
 
         if (delivered) {
-          return;
+          return "confirmed";
         }
       }
 
@@ -3055,7 +3055,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       // as a soft success rather than throwing.  Throwing here caused the caller
       // to report failure, which prevented the dispatch-hash from updating and
       // led to duplicate messages on the next poll cycle.
-      return;
+      return "attempted_unconfirmed";
     };
 
     // Top-level try/catch: any final send failure (initial preparation,
@@ -3067,7 +3067,18 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
 
       try {
         stage = "initial";
-        await sendWithConfirmation(prepared);
+        const initialResult = await sendWithConfirmation(prepared);
+        if (initialResult === "attempted_unconfirmed") {
+          recordActivityEvent({
+            projectId,
+            sessionId,
+            source: "session-manager",
+            kind: "session.send_unconfirmed",
+            level: "warn",
+            summary: `message sent but delivery not confirmed for ${sessionId}`,
+            data: { stage: "initial" },
+          });
+        }
       } catch (err) {
         const shouldRetryWithRestore = prepared.restoredAt === undefined && isRestorable(prepared);
 
@@ -3081,7 +3092,18 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         stage = "restore_retry";
         prepared = await prepareSession(true);
         try {
-          await sendWithConfirmation(prepared);
+          const retryResult = await sendWithConfirmation(prepared);
+          if (retryResult === "attempted_unconfirmed") {
+            recordActivityEvent({
+              projectId,
+              sessionId,
+              source: "session-manager",
+              kind: "session.send_unconfirmed",
+              level: "warn",
+              summary: `message sent but delivery not confirmed for ${sessionId}`,
+              data: { stage: "restore_retry" },
+            });
+          }
         } catch (retryErr) {
           if (retryErr instanceof Error) {
             throw retryErr;
