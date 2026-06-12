@@ -31,6 +31,7 @@ import { isOrchestratorSession } from "@aoagents/ao-core/types";
 import { projectDashboardPath, projectReviewPath, projectSessionPath } from "@/lib/routes";
 import { BottomSheet } from "./BottomSheet";
 import { WorkerPicker } from "./WorkerPicker";
+import { OrchestratorAgentPicker } from "./OrchestratorAgentPicker";
 
 interface DashboardProps {
   initialSessions: DashboardSession[];
@@ -242,6 +243,7 @@ function DashboardInner({
     (process.env.NODE_ENV === "development" || debugParam === "1" || debugParam === "true");
   const { showToast } = useToast();
   const [selectedWorker, setSelectedWorker] = useState<string>("local");
+  const [selectedAgent, setSelectedAgent] = useState<string>("claude-code");
   const [doneExpanded, setDoneExpanded] = useState(false);
   const sessionsRef = useRef(sessions);
 
@@ -282,7 +284,7 @@ function DashboardInner({
   // Real-time SSE refresh — listen to /api/events for session lifecycle changes
   // and trigger a client-side refresh so the board stays in sync.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || typeof window.EventSource === "undefined") return;
     const source = new EventSource("/api/events");
     source.onmessage = () => {
       routerRef.current?.refresh();
@@ -464,7 +466,11 @@ function DashboardInner({
       const res = await fetch("/api/orchestrators", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: project.id, workerProvider: selectedWorker }),
+        body: JSON.stringify({
+          projectId: project.id,
+          workerProvider: selectedWorker,
+          agent: selectedAgent,
+        }),
       });
 
       const data = (await res.json().catch(() => null)) as {
@@ -613,6 +619,7 @@ function DashboardInner({
           <div className="dashboard-app-header__actions">
             {showDebugBundleButton ? <CopyDebugBundleButton projectId={projectId} /> : null}
             <DashboardNotificationButton />
+            <OrchestratorAgentPicker value={selectedAgent} onChange={setSelectedAgent} />
             <WorkerPicker value={selectedWorker} onChange={setSelectedWorker} />
             {!allProjectsView && orchestratorHref ? (
               <Link

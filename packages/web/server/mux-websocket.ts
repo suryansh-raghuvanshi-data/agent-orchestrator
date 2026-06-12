@@ -135,7 +135,7 @@ export class SessionBroadcaster {
           .finally(() => {
             this.polling = false;
           });
-      }, 500);
+      }, 3000);
     }
 
     return () => {

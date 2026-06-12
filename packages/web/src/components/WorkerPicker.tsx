@@ -18,14 +18,19 @@ function WorkerPickerView({ value, onChange, disabled, className }: WorkerPicker
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch("/api/workers")
-      .then((res) => res.json())
+    const p = fetch("/api/workers");
+    if (!p || typeof p.then !== "function") {
+      setLoading(false);
+      return;
+    }
+    p.then((res) => res.json())
       .then((data: { providers: WorkerProviderInfo[] }) => {
         if (!cancelled) {
-          setProviders(data.providers);
+          const fetchedProviders = data.providers || [];
+          setProviders(fetchedProviders);
           setLoading(false);
-          if (!value && data.providers.length > 0 && onChange) {
-            onChange(data.providers[0].name);
+          if (!value && fetchedProviders.length > 0 && onChange) {
+            onChange(fetchedProviders[0].name);
           }
         }
       })

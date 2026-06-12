@@ -188,7 +188,7 @@ describe("SessionPage project polling", () => {
 
     expect(
       vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/sessions?fresh=true"),
-    ).toHaveLength(3);
+    ).toHaveLength(11);
   });
 
   it("does not deadlock project polling after a cached worker poll is skipped", async () => {
@@ -434,7 +434,7 @@ describe("SessionPage project polling", () => {
     expect(screen.queryByText("Failed to load session")).not.toBeInTheDocument();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(3_000);
+      await vi.advanceTimersByTimeAsync(1_000);
     });
     await flushAsyncWork();
 
@@ -442,7 +442,7 @@ describe("SessionPage project polling", () => {
     expect(screen.queryByText("Failed to load session")).not.toBeInTheDocument();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(4_000);
+      await vi.advanceTimersByTimeAsync(1_500);
     });
     await flushAsyncWork();
 

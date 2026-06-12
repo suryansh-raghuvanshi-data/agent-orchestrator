@@ -42,13 +42,13 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
 
   const behaviorPayload = useMemo(
     () => ({
-      agent: agent.trim() || null,
-      runtime: runtime.trim() || null,
-      tracker: trackerPlugin.trim() ? { plugin: trackerPlugin.trim() } : null,
-      scm: scmPlugin.trim() ? { plugin: scmPlugin.trim() } : null,
+      agent: (agent || "").trim() || null,
+      runtime: (runtime || "").trim() || null,
+      tracker: (trackerPlugin || "").trim() ? { plugin: trackerPlugin.trim() } : null,
+      scm: (scmPlugin || "").trim() ? { plugin: scmPlugin.trim() } : null,
       reactions,
-      workerProvider: workerProvider.trim() || null,
-      fallbackWorkerProvider: fallbackWorkerProvider.trim() || null,
+      workerProvider: (workerProvider || "").trim() || null,
+      fallbackWorkerProvider: (fallbackWorkerProvider || "").trim() || null,
     }),
     [agent, runtime, trackerPlugin, scmPlugin, reactions, workerProvider, fallbackWorkerProvider],
   );
@@ -59,7 +59,7 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
 
     let parsedReactions: Record<string, unknown> | undefined;
     try {
-      const trimmed = reactions.trim();
+      const trimmed = (reactions || "").trim();
       parsedReactions = trimmed ? (JSON.parse(trimmed) as Record<string, unknown>) : undefined;
     } catch {
       setInlineError("Reactions must be valid JSON.");

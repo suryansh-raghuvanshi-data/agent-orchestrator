@@ -571,3 +571,8 @@ function getDetailedAttentionLevel(session: DashboardSession): AttentionLevel {
   // ── Working: agents doing their thing ─────────────────────────────
   return "working";
 }
+
+export interface OrchestratorAgentInfo {
+  name: string;
+  displayName: string;
+}

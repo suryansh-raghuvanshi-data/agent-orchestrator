@@ -76,7 +76,11 @@ describe("Dashboard empty state", () => {
       expect(fetch).toHaveBeenCalledWith("/api/orchestrators", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: "hello-world" }),
+        body: JSON.stringify({
+          projectId: "hello-world",
+          workerProvider: "local",
+          agent: "claude-code",
+        }),
       });
     });
   });

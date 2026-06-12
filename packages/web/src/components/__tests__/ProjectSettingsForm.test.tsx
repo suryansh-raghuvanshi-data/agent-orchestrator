@@ -60,6 +60,8 @@ describe("ProjectSettingsForm", () => {
               action: "send-to-agent",
             },
           },
+          workerProvider: null,
+          fallbackWorkerProvider: null,
         }),
       });
     });

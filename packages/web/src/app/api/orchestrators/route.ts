@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
 
   const clean = body.clean === true;
   const workerProvider = (body.workerProvider as string) ?? undefined;
+  const agent = (body.agent as string) ?? undefined;
 
   try {
     const { config, sessionManager } = await getServices();
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     const project = config.projects[projectId];
 
     const systemPrompt = generateOrchestratorPrompt({ config, projectId, project });
-    const spawnConfig = { projectId, systemPrompt, workerProvider };
+    const spawnConfig = { projectId, systemPrompt, workerProvider, agent };
     const session = clean
       ? await sessionManager.relaunchOrchestrator(spawnConfig)
       : await sessionManager.spawnOrchestrator(spawnConfig);

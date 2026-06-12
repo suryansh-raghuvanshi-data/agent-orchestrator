@@ -203,7 +203,11 @@ describe("Dashboard project overview cards", () => {
       expect(fetch).toHaveBeenCalledWith("/api/orchestrators", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: "docs-app" }),
+        body: JSON.stringify({
+          projectId: "docs-app",
+          workerProvider: "local",
+          agent: "claude-code",
+        }),
       });
     });
 
