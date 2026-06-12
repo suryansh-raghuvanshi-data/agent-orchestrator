@@ -1,10 +1,10 @@
 # AO Refactor — Handoff & Resume Guide
 
 > **Resume point**: start here on fresh checkout.
-> **Last saved commit**: `56726617` (docs: inline implementation plan and task checklist directly into handoff guide)
+> **Last saved commit**: `3ee6e2ed` (feat: complete Mission Control theme + provider-cli plugin + SSE events)
 > **Branch**: `feat/multi-worker`
 > **Core typecheck status**: passing (`pnpm --dir packages/core typecheck` clean)
-> **Date**: 2026-06-11
+> **Date**: 2026-06-12
 
 ---
 
@@ -123,25 +123,25 @@ The codebase is fully refactored, typechecking, and ready for the next phase. Be
 ## Actionable Checklist / TODO List
 
 ### CLI Worker & Settings UI
-- [ ] Create `packages/plugins/provider-cli` package.
-- [ ] Implement `WorkerProvider` contract in `packages/plugins/provider-cli/src/index.ts`.
-- [ ] Register `"cli-worker"` in `packages/core/src/plugin-registry.ts`.
-- [ ] Add config fields to `LocalProjectConfigSchema` in `packages/core/src/global-config.ts`.
-- [ ] Support both fields in `packages/web/src/app/api/projects/[id]/route.ts`.
-- [ ] Expose inputs in `packages/web/src/components/ProjectSettingsForm.tsx`.
+- [x] Create `packages/plugins/provider-cli` package.
+- [x] Implement `WorkerProvider` contract in `packages/plugins/provider-cli/src/index.ts`.
+- [x] Register `"cli-worker"` in `packages/core/src/plugin-registry.ts`.
+- [x] Add config fields to `LocalProjectConfigSchema` in `packages/core/src/global-config.ts`.
+- [x] Support both fields in `packages/web/src/app/api/projects/[id]/route.ts`.
+- [x] Expose inputs in `packages/web/src/components/ProjectSettingsForm.tsx`.
 
 ### Devin Cloud Fallback
-- [ ] Wire local failure/timeout catch and cloud handoff fallback in `packages/core/src/worker-failure-handler.ts`.
-- [ ] Support status polling and output fetching from the cloud API.
+- [x] Wire local failure/timeout catch and cloud handoff fallback in `packages/core/src/worker-failure-handler.ts`.
+- [x] Support status polling and output fetching from the cloud API.
 
 ### Visual Overhaul & Live SSE
-- [ ] Update `packages/web/src/app/globals.css` with Mission Control palette and `.activity-dot` styles.
-- [ ] Replace emoji indicators with CSS dots in `SessionCard.tsx`.
-- [ ] Implement solid green merge buttons and remove merge confirmation dialogs in `SessionCard.tsx` and `Dashboard.tsx`.
-- [ ] Style the zones and cards into a compact multi-column grid in `AttentionZone.tsx` and `mc-board.css`.
-- [ ] Hook up client-side `EventSource` for real-time SSE refresh in `Dashboard.tsx`.
-- [ ] Add breadcrumb nav header updates in `SessionDetail.tsx`.
-- [ ] Tune xterm.js themes in `DirectTerminal.tsx`.
+- [x] Update `packages/web/src/app/globals.css` with Mission Control palette and `.activity-dot` styles.
+- [x] Replace emoji indicators with CSS dots in `SessionCard.tsx`.
+- [x] Implement solid green merge buttons and remove merge confirmation dialogs in `SessionCard.tsx` and `Dashboard.tsx`.
+- [x] Style the zones and cards into a compact multi-column grid in `AttentionZone.tsx` and `mc-board.css`.
+- [x] Hook up client-side `EventSource` for real-time SSE refresh in `Dashboard.tsx`.
+- [x] Add breadcrumb nav header updates in `SessionDetail.tsx`.
+- [x] Tune xterm.js themes in `DirectTerminal.tsx`.
 
 ---
 
