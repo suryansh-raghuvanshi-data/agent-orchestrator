@@ -8,6 +8,7 @@ interface TaskCardProps {
   onKill?: (sessionId: string) => void;
   onMerge?: (prNumber: number, owner?: string, repo?: string) => void;
   onRestore?: (sessionId: string) => void;
+  pendingActions?: Record<string, boolean>;
 }
 
 /**

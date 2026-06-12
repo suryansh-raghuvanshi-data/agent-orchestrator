@@ -49,6 +49,8 @@ interface DashboardProps {
 const SIMPLE_KANBAN_LEVELS = ["working", "action", "pending", "merge"] as const;
 const DETAILED_KANBAN_LEVELS = ["working", "respond", "review", "pending", "merge"] as const;
 const EMPTY_ORCHESTRATORS: DashboardOrchestratorLink[] = [];
+const SSE_INITIAL_RECONNECT_DELAY_MS = 500;
+const SSE_MAX_RECONNECT_DELAY_MS = 30_000;
 
 function formatRelativeTimeCompact(isoDate: string | null): string {
   if (!isoDate) return "just now";
@@ -251,6 +253,7 @@ function DashboardInner({
   const [selectedWorkerAgents, setSelectedWorkerAgents] = useState<string[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string>("claude-code");
   const [doneExpanded, setDoneExpanded] = useState(false);
+  const [pendingActions, setPendingActions] = useState<Record<string, boolean>>({});
   const sessionsRef = useRef(sessions);
 
   sessionsRef.current = sessions;
@@ -291,7 +294,9 @@ function DashboardInner({
     if (typeof window === "undefined" || typeof window.EventSource === "undefined") return;
 
     let cancelled = false;
-    const source = new EventSource("/api/events");
+    let source: EventSource | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectDelay = SSE_INITIAL_RECONNECT_DELAY_MS;
 
     const fetchSessionPatches = async () => {
       try {
@@ -308,6 +313,33 @@ function DashboardInner({
           console.warn("[Dashboard] SSE patch fetch failed:", error);
         }
       }
+    };
+
+    const scheduleReconnect = (failedSource: EventSource) => {
+      if (cancelled || reconnectTimer !== null) return;
+
+      const delay = reconnectDelay;
+      reconnectDelay = Math.min(reconnectDelay * 2, SSE_MAX_RECONNECT_DELAY_MS);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (cancelled) return;
+        failedSource.close();
+        source = new EventSource("/api/events");
+        wireEventSource(source);
+      }, delay);
+    };
+
+    const wireEventSource = (nextSource: EventSource) => {
+      nextSource.onmessage = (event: MessageEvent) => {
+        reconnectDelay = SSE_INITIAL_RECONNECT_DELAY_MS;
+        void handleMessage(event);
+      };
+      nextSource.onerror = () => {
+        if (cancelled) return;
+        setSsePatches(null);
+        void fetchSessionPatches();
+        scheduleReconnect(nextSource);
+      };
     };
 
     const handleMessage = async (event: MessageEvent) => {
@@ -328,18 +360,15 @@ function DashboardInner({
       await fetchSessionPatches();
     };
 
-    source.onmessage = (event: MessageEvent) => {
-      void handleMessage(event);
-    };
-    source.onerror = () => {
-      if (cancelled) return;
-      source.close();
-      setSsePatches(null);
-    };
+    source = new EventSource("/api/events");
+    wireEventSource(source);
 
     return () => {
       cancelled = true;
-      source.close();
+      if (reconnectTimer !== null) {
+        clearTimeout(reconnectTimer);
+      }
+      source?.close();
     };
   }, []);
 
@@ -411,6 +440,9 @@ function DashboardInner({
 
   const killSession = useCallback(
     async (sessionId: string) => {
+      const key = `kill:${sessionId}`;
+      if (pendingActions[key]) return;
+      setPendingActions((prev) => ({ ...prev, [key]: true }));
       try {
         const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/kill`, {
           method: "POST",
@@ -425,9 +457,11 @@ function DashboardInner({
       } catch (error) {
         console.error(`Network error killing ${sessionId}:`, error);
         showToast("Network error while terminating session", "error");
+      } finally {
+        setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [showToast],
+    [pendingActions, showToast],
   );
 
   const handleKill = useCallback(
@@ -460,6 +494,9 @@ function DashboardInner({
 
   const handleMerge = useCallback(
     async (prNumber: number, owner?: string, repo?: string) => {
+      const key = `merge:${prNumber}`;
+      if (pendingActions[key]) return;
+      setPendingActions((prev) => ({ ...prev, [key]: true }));
       try {
         const params = new URLSearchParams();
         if (owner) params.set("owner", owner);
@@ -477,13 +514,18 @@ function DashboardInner({
       } catch (error) {
         console.error(`Network error merging PR #${prNumber}:`, error);
         showToast("Network error while merging PR", "error");
+      } finally {
+        setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [showToast],
+    [pendingActions, showToast],
   );
 
   const handleRestore = useCallback(
     async (sessionId: string) => {
+      const key = `restore:${sessionId}`;
+      if (pendingActions[key]) return;
+      setPendingActions((prev) => ({ ...prev, [key]: true }));
       try {
         const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/restore`, {
           method: "POST",
@@ -499,9 +541,11 @@ function DashboardInner({
       } catch (error) {
         console.error(`Network error restoring ${sessionId}:`, error);
         showToast("Network error while restoring session", "error");
+      } finally {
+        setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [showToast],
+    [pendingActions, showToast],
   );
 
   const handleSpawnOrchestrator = async (project: ProjectInfo) => {
@@ -795,7 +839,9 @@ function DashboardInner({
                     level={level}
                     sessions={grouped[level]}
                     onKill={handleKill}
+                    onMerge={handleMerge}
                     onRestore={handleRestore}
+                    pendingActions={pendingActions}
                     compactMobile={isMobile}
                     collapsed={isMobile && collapsedZones.has(level)}
                     onToggle={isMobile ? handleZoneToggle : undefined}

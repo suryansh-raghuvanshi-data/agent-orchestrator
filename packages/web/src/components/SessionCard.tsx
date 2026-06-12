@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, type MouseEvent } from "react";
 import {
   type DashboardSession,
   type DashboardPR,
@@ -30,6 +30,7 @@ interface SessionCardProps {
   onKill?: (sessionId: string) => void;
   onMerge?: (prNumber: number, owner?: string, repo?: string) => void;
   onRestore?: (sessionId: string) => void;
+  pendingActions?: Record<string, boolean>;
 }
 
 function getPRDotClass(p: DashboardPR): string {
@@ -80,8 +81,16 @@ function getRepoInitials(repo: string): string {
     .slice(0, 3);
 }
 
-function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardProps) {
+function SessionCardView({
+  session,
+  onKill,
+  onMerge,
+  onRestore,
+  pendingActions,
+}: SessionCardProps) {
   const [killConfirming, setKillConfirming] = useState(false);
+  const killPending = pendingActions?.[`kill:${session.id}`] ?? false;
+  const restorePending = pendingActions?.[`restore:${session.id}`] ?? false;
 
   // Only play the entrance animation on the very first mount of this session.
   // Subsequent remounts (e.g. attention-level column change) skip the animation
@@ -110,6 +119,9 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
   const selectedPR = prs.length > 1 ? (prs[safeIndex] ?? pr) : pr;
 
   const effectivePR = prs.length > 1 ? selectedPR : pr;
+  const mergePending = effectivePR
+    ? (pendingActions?.[`merge:${effectivePR.number}`] ?? false)
+    : false;
   const rateLimited = effectivePR ? isPRRateLimited(effectivePR) : false;
   const prUnenriched = effectivePR ? isPRUnenriched(effectivePR) : false;
   const isReadyToMerge =
@@ -121,8 +133,9 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
   const footerDetail = getFooterDetail(session, Boolean(isReadyToMerge), rateLimited, prUnenriched);
   const isDone = isDashboardSessionDone(session) || level === "done";
 
-  const handleKillClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleKillClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+    if (killPending) return;
     if (!killConfirming) {
       setKillConfirming(true);
       return;
@@ -134,7 +147,9 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
 
   /* ── Done card variant (split out into SessionCard.parts) ───────── */
   if (isDone) {
-    return <DoneSessionCard session={session} onRestore={onRestore} />;
+    return (
+      <DoneSessionCard session={session} onRestore={onRestore} pendingActions={pendingActions} />
+    );
   }
 
   /* ── Standard card (non-done) — compact / informational ──────────── */
@@ -147,24 +162,32 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
         {isRestorable && (
           <button
             onClick={(e) => {
+              if (restorePending) return;
               e.stopPropagation();
               onRestore?.(session.id);
             }}
+            disabled={restorePending}
             className="session-card__control session-card__restore-control"
           >
-            <svg
-              className="session-card__control-icon"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M20 11a8 8 0 0 0-14.9-3.98" />
-              <path d="M4 5v4h4" />
-              <path d="M4 13a8 8 0 0 0 14.9 3.98" />
-              <path d="M20 19v-4h-4" />
-            </svg>
-            restore
+            {restorePending ? (
+              "restoring"
+            ) : (
+              <>
+                <svg
+                  className="session-card__control-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M20 11a8 8 0 0 0-14.9-3.98" />
+                  <path d="M4 5v4h4" />
+                  <path d="M4 13a8 8 0 0 0 14.9 3.98" />
+                  <path d="M20 19v-4h-4" />
+                </svg>
+                restore
+              </>
+            )}
           </button>
         )}
         {!isTerminal && (
@@ -353,9 +376,11 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
             {isReadyToMerge && effectivePR ? (
               <button
                 onClick={(e) => {
+                  if (mergePending) return;
                   e.stopPropagation();
                   onMerge?.(effectivePR.number, effectivePR.owner, effectivePR.repo);
                 }}
+                disabled={mergePending}
                 className="session-card__control session-card__merge-control bg-[var(--color-accent-green)] hover:bg-[var(--color-accent-green)]/90 text-white border border-[var(--color-accent-green)]"
               >
                 <svg
@@ -370,21 +395,33 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
                   <circle cx="18" cy="6" r="2" />
                   <path d="M8 6h5a3 3 0 0 1 3 3v7" />
                 </svg>
-                Merge PR #{effectivePR.number}
+                {mergePending ? "Merging..." : `Merge PR #${effectivePR.number}`}
               </button>
             ) : null}
             {!isTerminal ? (
               <button
                 onClick={handleKillClick}
-                onMouseLeave={() => setKillConfirming(false)}
-                onBlur={() => setKillConfirming(false)}
-                aria-label={killConfirming ? "Confirm terminate session" : "Terminate session"}
+                onMouseLeave={() => !killPending && setKillConfirming(false)}
+                onBlur={() => !killPending && setKillConfirming(false)}
+                disabled={killPending}
+                aria-label={
+                  killPending
+                    ? "Terminating session"
+                    : killConfirming
+                      ? "Confirm terminate session"
+                      : "Terminate session"
+                }
                 className={cn(
                   "session-card__control session-card__terminate btn--danger",
                   killConfirming && "is-confirming",
+                  killPending && "disabled:cursor-wait disabled:opacity-70",
                 )}
               >
-                {killConfirming ? (
+                {killPending ? (
+                  <span className="font-mono text-[10px] font-semibold tracking-[0.04em]">
+                    killing...
+                  </span>
+                ) : killConfirming ? (
                   <span className="font-mono text-[10px] font-semibold tracking-[0.04em]">
                     kill?
                   </span>
@@ -415,7 +452,8 @@ function areSessionCardPropsEqual(prev: SessionCardProps, next: SessionCardProps
     prev.session === next.session &&
     prev.onKill === next.onKill &&
     prev.onMerge === next.onMerge &&
-    prev.onRestore === next.onRestore
+    prev.onRestore === next.onRestore &&
+    prev.pendingActions === next.pendingActions
   );
 }
 

@@ -102,4 +102,48 @@ describe("Dashboard SSE session patches", () => {
     expect(fetch).not.toHaveBeenCalledWith("/api/sessions/patches", { cache: "no-store" });
     expect(navigationMocks.refresh).not.toHaveBeenCalled();
   });
+
+  it("reconnects SSE after transient errors with backoff", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      render(<Dashboard initialSessions={[makeSession({ id: "test-1", summary: "Stay put" })]} />);
+
+      await waitFor(() => expect(global.EventSource).toHaveBeenCalledWith("/api/events"));
+      eventSourceMock.onerror?.(new Event("error"));
+
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(fetch).toHaveBeenCalledWith("/api/sessions/patches", { cache: "no-store" });
+
+      await vi.runOnlyPendingTimersAsync();
+
+      expect(global.EventSource).toHaveBeenCalledTimes(2);
+      expect(eventSourceMock.close).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("cancels pending SSE reconnect on unmount", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { unmount } = render(
+        <Dashboard initialSessions={[makeSession({ id: "test-1", summary: "Stay put" })]} />,
+      );
+
+      await waitFor(() => expect(global.EventSource).toHaveBeenCalledWith("/api/events"));
+      eventSourceMock.onerror?.(new Event("error"));
+
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(fetch).toHaveBeenCalledWith("/api/sessions/patches", { cache: "no-store" });
+
+      unmount();
+      await vi.runOnlyPendingTimersAsync();
+
+      expect(global.EventSource).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
