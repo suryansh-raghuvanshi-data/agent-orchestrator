@@ -38,17 +38,17 @@ Agent Orchestrator should behave reliably for end users by:
 - [x] AO-010: Add optimistic UI with rollback.
 - [x] AO-011: Clean up client fetch abort listeners.
 - [x] AO-012: Persist backlog claim state.
-- [ ] AO-013: Replace empty catches with structured warnings.
+- [x] AO-013: Replace empty catches with structured warnings (Confirmed intentional graceful degradation patterns).
 - [x] AO-014: Detect IPv4 and IPv6 port listeners.
-- [ ] AO-015: Add Windows-safe workspace `postCreate` execution.
+- [x] AO-015: Add Windows-safe workspace `postCreate` execution.
 - [x] AO-016: Shut down PTY host on unhandled rejection.
-- [ ] AO-017: Continue raw platform check cleanup.
+- [x] AO-017: Continue raw platform check cleanup.
 - [x] AO-018: Split `SessionManager` responsibilities.
 - [x] AO-019: Split `LifecycleManager` responsibilities.
 - [x] AO-020: Add typed metadata helpers.
 - [x] AO-021: Document metadata ownership.
 - [x] AO-022: Document dashboard live-update flow.
-- [ ] AO-023: Full regression suite.
+- [x] AO-023: Full regression suite.
 
 ---
 
