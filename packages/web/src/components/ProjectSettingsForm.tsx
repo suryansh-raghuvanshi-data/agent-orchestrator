@@ -15,6 +15,8 @@ interface ProjectSettingsFormProps {
     trackerPlugin: string;
     scmPlugin: string;
     reactions: string;
+    workerProvider: string;
+    fallbackWorkerProvider: string;
     identity: {
       projectId: string;
       path: string;
@@ -32,6 +34,8 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
   const [trackerPlugin, setTrackerPlugin] = useState(initialValues.trackerPlugin);
   const [scmPlugin, setScmPlugin] = useState(initialValues.scmPlugin);
   const [reactions, setReactions] = useState(initialValues.reactions);
+  const [workerProvider, setWorkerProvider] = useState(initialValues.workerProvider);
+  const [fallbackWorkerProvider, setFallbackWorkerProvider] = useState(initialValues.fallbackWorkerProvider);
   const [submitting, setSubmitting] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [networkError, setNetworkError] = useState<string | null>(null);
@@ -43,8 +47,10 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
       tracker: trackerPlugin.trim() ? { plugin: trackerPlugin.trim() } : null,
       scm: scmPlugin.trim() ? { plugin: scmPlugin.trim() } : null,
       reactions,
+      workerProvider: workerProvider.trim() || null,
+      fallbackWorkerProvider: fallbackWorkerProvider.trim() || null,
     }),
-    [agent, runtime, trackerPlugin, scmPlugin, reactions],
+    [agent, runtime, trackerPlugin, scmPlugin, reactions, workerProvider, fallbackWorkerProvider],
   );
 
   const submit = async () => {
@@ -71,6 +77,8 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
           tracker: behaviorPayload.tracker,
           scm: behaviorPayload.scm,
           reactions: parsedReactions ?? null,
+          workerProvider: behaviorPayload.workerProvider,
+          fallbackWorkerProvider: behaviorPayload.fallbackWorkerProvider,
         }),
       });
 
@@ -145,6 +153,20 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
             value={scmPlugin}
             onChange={setScmPlugin}
             placeholder="github"
+          />
+          <EditableField
+            id="worker-provider"
+            label="Worker provider"
+            value={workerProvider}
+            onChange={setWorkerProvider}
+            placeholder="local"
+          />
+          <EditableField
+            id="fallback-worker-provider"
+            label="Fallback worker provider"
+            value={fallbackWorkerProvider}
+            onChange={setFallbackWorkerProvider}
+            placeholder="optional"
           />
         </div>
 

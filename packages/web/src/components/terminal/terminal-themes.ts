@@ -14,10 +14,10 @@ export function buildTerminalThemes(_variant: TerminalVariant): { dark: ITheme; 
   };
 
   const dark: ITheme = {
-    background: "#0c0d10", // --term
+    background: "#0a0a0f",
     foreground: "#c5ccd3",
-    cursor: accent.cursor,
-    cursorAccent: "#0c0d10",
+    cursor: "#5b7ef8",
+    cursorAccent: "#0a0a0f",
     selectionBackground: accent.selDark,
     selectionInactiveBackground: "rgba(128, 128, 128, 0.2)",
     // ANSI palette tied to the mission-control tokens

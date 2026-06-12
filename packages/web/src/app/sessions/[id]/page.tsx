@@ -79,7 +79,7 @@ interface ProjectSessionsBody {
 
 let cachedProjects: ProjectInfo[] | null = null;
 let cachedSidebarSessions: DashboardSession[] | null = null;
-const SESSION_PAGE_REFRESH_INTERVAL_MS = 2000;
+const SESSION_PAGE_REFRESH_INTERVAL_MS = 500;
 const SESSION_FETCH_TIMEOUT_MS = 8000;
 const SESSION_LOAD_MAX_CONSECUTIVE_FAILURES = 4;
 const SESSION_LOAD_MAX_RETRY_ELAPSED_MS = 30_000;

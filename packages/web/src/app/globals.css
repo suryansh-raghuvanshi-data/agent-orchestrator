@@ -26,21 +26,16 @@
 
 /* ── Light mode (default) ─────────────────────────────────────────── */
 :root {
-  /* --font-schibsted-grotesk (UI / product voice) and --font-jetbrains-mono
-     (machine voice) are injected on <html> by next/font/local (src/fonts/fonts.ts).
-     Do NOT redeclare them here — a :root value would shadow next/font's. The
-     system fallbacks live in the --font-sans / --font-mono chains in @theme. */
-
-  /* Base surfaces — design-system light palette */
-  --color-bg-base: #f5f3f0;
-  --color-bg-surface: #ffffff;
-  --color-bg-elevated: #f9f7f5;
-  --color-bg-elevated-hover: #f7f5f2;
-  --color-bg-subtle: rgba(120, 100, 80, 0.06);
-  --color-bg-hover: #f7f5f2;
-  --color-bg-inset: #f0ede9;
-  --color-bg-sidebar: #f0ede9;
-  --color-bg-card: #ffffff;
+  /* Mission Control palette — cool blue-cast dark theme base (also used in light mode tokens) */
+  --color-bg-base: #0c0c11;
+  --color-bg-surface: #141419;
+  --color-bg-elevated: #1a1a22;
+  --color-bg-elevated-hover: #1f1f28;
+  --color-bg-subtle: rgba(255, 255, 255, 0.04);
+  --color-bg-hover: rgba(255, 255, 255, 0.07);
+  --color-bg-inset: #111118;
+  --color-bg-sidebar: #0c0c11;
+  --color-bg-card: #141419;
 
   /* Backward-compat aliases */
   --color-bg-primary: var(--color-bg-base);
@@ -56,22 +51,22 @@
   --color-border-muted: var(--color-border-subtle);
   --color-border-emphasis: var(--color-border-strong);
 
-  /* Text — warm near-black and stone tones */
-  --color-text-primary: #1c1917;
-  --color-text-secondary: #57534e;
-  --color-text-tertiary: #78716c;
-  --color-text-muted: #a8a29e;
-  --color-text-inverse: #ffffff;
+  /* Text — cool neutral ramp */
+  --color-text-primary: #0c0c11;
+  --color-text-secondary: #4a4a55;
+  --color-text-tertiary: #7a7a88;
+  --color-text-muted: #a0a0ae;
+  --color-text-inverse: #f4f5f7;
 
-  /* Interactive accent — warm periwinkle, darkened for light mode contrast */
-  --color-accent: #5c64b5;
-  --color-accent-hover: #4a52a0;
-  --color-accent-subtle: rgba(92, 100, 181, 0.1);
+  /* Interactive accent — brand blue-indigo */
+  --color-accent: #5b7ef8;
+  --color-accent-hover: #5b7ef8;
+  --color-accent-subtle: rgba(91, 126, 248, 0.12);
 
   /* Amber accent — orchestrator / CTA */
-  --color-accent-amber: #d97706;
-  --color-accent-amber-dim: rgba(217, 119, 6, 0.1);
-  --color-accent-amber-border: rgba(217, 119, 6, 0.3);
+  --color-accent-amber: #e8c14a;
+  --color-accent-amber-dim: rgba(232, 193, 74, 0.1);
+  --color-accent-amber-border: rgba(232, 193, 74, 0.3);
 
   /* Status / semantic colors */
   --color-status-working: #16a34a;
@@ -83,20 +78,20 @@
   --color-status-idle: #a8a29e;
   --color-status-done: #a8a29e;
   --color-status-error: #dc2626;
-  --color-status-merge: #16a34a;
-  --color-ci-pass: #16a34a;
+  --color-status-merge: #22c55e;
+  --color-ci-pass: #22c55e;
   --color-ci-fail: #dc2626;
 
   /* Semantic aliases */
   --color-accent-blue: #2563eb;
-  --color-accent-green: #16a34a;
+  --color-accent-green: #22c55e;
   --color-accent-yellow: #ca8a04;
   --color-accent-orange: #bc4c00;
   --color-accent-red: #dc2626;
   --color-accent-violet: #7c3aed;
   --color-accent-purple: #7c3aed;
 
-  /* Theme-adaptive tints (bg tints behind status pills) */
+  /* Theme-adaptive tints */
   --color-tint-blue: rgba(37, 99, 235, 0.08);
   --color-tint-green: rgba(22, 163, 74, 0.07);
   --color-tint-yellow: rgba(184, 134, 11, 0.07);
@@ -189,13 +184,13 @@
      needs-input; red = failing/stuck; green = mergeable; else grayscale.
      These literal tokens are the source; the --color-* semantic tokens
      below alias them so the rest of the stylesheet keeps working. */
-  --bg: #0a0b0d; /* app base */
-  --bg-side: #08090b; /* sidebar */
-  --bg-top: #0a0b0d; /* topbar */
-  --col: #0e0f12; /* kanban column trough */
-  --card: #15171b; /* the only bordered surface */
-  --card-hover: #191b20;
-  --term: #0c0d10; /* terminal / xterm background */
+  --bg: #0c0c11; /* app base */
+  --bg-side: #0c0c11; /* sidebar */
+  --bg-top: #0c0c11; /* topbar */
+  --col: #111118; /* kanban column trough */
+  --card: #141419; /* the only bordered surface */
+  --card-hover: #1a1a22;
+  --term: #0a0a0f; /* terminal / xterm background */
 
   --t1: #f4f5f7; /* text: primary */
   --t2: #9ba1aa; /* text: secondary */
@@ -207,12 +202,12 @@
   --hover: rgba(255, 255, 255, 0.04);
   --hover-2: rgba(255, 255, 255, 0.07);
 
-  --blue: #4d8dff; /* orchestrator / you */
-  --blue-soft: #7eaaff;
+  --blue: #5b7ef8; /* orchestrator / you */
+  --blue-soft: #8aa8ff;
   --orange: #f59f4c; /* a working agent */
   --amber: #e8c14a; /* needs-your-input / attention */
   --red: #ef6b6b; /* failing / stuck */
-  --green: #74b98a; /* mergeable / passed / resolved */
+  --green: #22c55e; /* mergeable / passed / resolved */
 
   /* Base surfaces */
   --color-bg-base: var(--bg);
@@ -239,8 +234,8 @@
 
   /* Interactive accent — blue = orchestrator / you (links, focus, selection) */
   --color-accent: var(--blue);
-  --color-accent-hover: #5b97ff;
-  --color-accent-subtle: rgba(77, 141, 255, 0.12);
+  --color-accent-hover: #5b7ef8;
+  --color-accent-subtle: rgba(91, 126, 248, 0.12);
 
   /* Amber accent — needs-input / attention (NOT the orchestrator CTA anymore) */
   --color-accent-amber: var(--amber);
@@ -271,11 +266,11 @@
   --color-accent-purple: var(--blue-soft);
 
   /* Theme-adaptive tints (bg behind status pills/badges) */
-  --color-tint-blue: rgba(77, 141, 255, 0.12);
+  --color-tint-blue: rgba(91, 126, 248, 0.12);
   --color-tint-green: rgba(116, 185, 138, 0.13);
   --color-tint-yellow: rgba(232, 193, 74, 0.13);
   --color-tint-red: rgba(239, 107, 107, 0.12);
-  --color-tint-violet: rgba(77, 141, 255, 0.1);
+  --color-tint-violet: rgba(91, 126, 248, 0.1);
   --color-tint-orange: rgba(245, 159, 76, 0.13);
   --color-tint-neutral: rgba(255, 255, 255, 0.05);
 

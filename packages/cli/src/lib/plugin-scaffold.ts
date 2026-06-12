@@ -23,6 +23,7 @@ const SLOT_HINTS: Record<PluginSlot, string> = {
   scm: "Implement an SCM-compatible object from create() for branch, PR, CI, and review operations.",
   notifier: "Implement a Notifier-compatible object from create() for notify() delivery logic.",
   terminal: "Implement a Terminal-compatible object from create() for attach/open UX.",
+  "worker-provider": "Implement a WorkerProvider-compatible object from create() for remote/cloud agent task execution.",
 };
 
 function slugify(value: string): string {

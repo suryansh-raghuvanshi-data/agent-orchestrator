@@ -33,8 +33,6 @@ import {
   type Agent,
   type SCM,
   type Notifier,
-  type Session,
-  type CanonicalSessionLifecycle,
   type EventPriority,
   type ProjectConfig as _ProjectConfig,
   type PREnrichmentData,
@@ -43,8 +41,7 @@ import {
   type PRInfo,
   type ReviewComment,
   type ReviewSummary,
-  type ProcessProbeResult,
-  isProcessProbeIndeterminate,
+  type Session,
 } from "./types.js";
 import {
   buildLifecycleMetadataPatch,
@@ -81,6 +78,14 @@ import {
   resolveProbeDecision,
   type LifecycleDecision,
 } from "./lifecycle-status-decisions.js";
+import {
+  type DeterminedStatus,
+  type ProbeResult,
+  type TransitionReaction,
+  processProbeResultToProbeResult,
+  primaryLifecycleReason,
+  buildTransitionObservabilityData,
+} from "./probe-strategy.js";
 import { dedupePrInfos } from "./utils/pr.js";
 import {
   buildCIFailureNotificationData,
@@ -121,11 +126,6 @@ const PERSISTENT_REACTION_KEYS = new Set(["ci-failed"]);
  *  next real CI failure incident. */
 const CI_PASSING_STABLE_THRESHOLD = 2;
 
-type TransitionReaction = {
-  key: string;
-  result: ReactionResult | null;
-  messageEnriched?: boolean;
-};
 
 type WorkspaceBranchProbe =
   | { kind: "branch"; branch: string }
@@ -394,85 +394,6 @@ function transitionLogLevel(status: SessionStatus): "info" | "warn" | "error" {
   return "info";
 }
 
-interface DeterminedStatus {
-  status: SessionStatus;
-  evidence: string;
-  detectingAttempts: number;
-  /** True when probes produced no reliable verdict and lifecycle metadata must remain untouched. */
-  skipMetadataWrite?: boolean;
-  /** ISO timestamp when detecting first started. */
-  detectingStartedAt?: string;
-  /** Hash of evidence for unchanged-evidence detection. */
-  detectingEvidenceHash?: string;
-}
-
-interface ProbeResult {
-  state: "alive" | "dead" | "unknown";
-  failed: boolean;
-  indeterminate?: boolean;
-}
-
-function processProbeResultToProbeResult(result: ProcessProbeResult): ProbeResult {
-  if (isProcessProbeIndeterminate(result)) {
-    return { state: "unknown", failed: false, indeterminate: true };
-  }
-  return { state: result ? "alive" : "dead", failed: false };
-}
-
-function splitEvidenceSignals(evidence: string): string[] {
-  return evidence
-    .split(/\s+/)
-    .map((signal) => signal.trim())
-    .filter((signal) => signal.length > 0);
-}
-
-function primaryLifecycleReason(lifecycle: CanonicalSessionLifecycle): string {
-  if (lifecycle.session.state === "detecting") return lifecycle.session.reason;
-  if (lifecycle.pr.reason !== "not_created" && lifecycle.pr.reason !== "in_progress") {
-    return lifecycle.pr.reason;
-  }
-  if (lifecycle.runtime.reason !== "process_running") {
-    return lifecycle.runtime.reason;
-  }
-  return lifecycle.session.reason;
-}
-
-function buildTransitionObservabilityData(
-  previous: CanonicalSessionLifecycle,
-  next: CanonicalSessionLifecycle,
-  oldStatus: SessionStatus,
-  newStatus: SessionStatus,
-  evidence: string,
-  detectingAttempts: number,
-  statusTransition: boolean,
-  reaction?: { key: string; result: ReactionResult | null },
-): Record<string, unknown> {
-  return {
-    oldStatus,
-    newStatus,
-    statusTransition,
-    previousSessionState: previous.session.state,
-    newSessionState: next.session.state,
-    previousSessionReason: previous.session.reason,
-    newSessionReason: next.session.reason,
-    previousPRState: previous.pr.state,
-    newPRState: next.pr.state,
-    previousPRReason: previous.pr.reason,
-    newPRReason: next.pr.reason,
-    previousRuntimeState: previous.runtime.state,
-    newRuntimeState: next.runtime.state,
-    previousRuntimeReason: previous.runtime.reason,
-    newRuntimeReason: next.runtime.reason,
-    primaryReason: primaryLifecycleReason(next),
-    evidence,
-    signalsConsulted: splitEvidenceSignals(evidence),
-    detectingAttempts,
-    recoveryAction: reaction?.result?.action ?? null,
-    reactionKey: reaction?.key ?? null,
-    reactionSuccess: reaction?.result?.success ?? null,
-    escalated: reaction?.result?.escalated ?? null,
-  };
-}
 
 export interface LifecycleManagerDeps {
   config: OrchestratorConfig;

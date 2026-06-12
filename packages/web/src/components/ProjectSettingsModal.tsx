@@ -21,6 +21,8 @@ interface ProjectSettingsResponse {
     tracker?: { plugin?: string };
     scm?: { plugin?: string };
     reactions?: Record<string, unknown>;
+    workerProvider?: string;
+    fallbackWorkerProvider?: string;
   };
   error?: string;
   degraded?: boolean;
@@ -96,6 +98,8 @@ export function ProjectSettingsModal({ open, projectId, onClose }: ProjectSettin
       trackerPlugin: project.tracker?.plugin ?? "",
       scmPlugin: project.scm?.plugin ?? "",
       reactions: JSON.stringify(project.reactions ?? {}, null, 2),
+      workerProvider: project.workerProvider ?? "",
+      fallbackWorkerProvider: project.fallbackWorkerProvider ?? "",
       identity: {
         projectId,
         path: project.path,

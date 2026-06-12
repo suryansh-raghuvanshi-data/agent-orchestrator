@@ -262,6 +262,16 @@ export interface DashboardOrchestratorLink {
   isRestorable?: boolean;
 }
 
+export interface WorkerProviderInfo {
+  name: string;
+  displayName: string;
+  description: string;
+  isDefault: boolean;
+  status: WorkerProviderHealthStatus;
+}
+
+export type WorkerProviderHealthStatus = "healthy" | "degraded" | "offline" | "unknown";
+
 /**
  * Returns true when this PR's enrichment data couldn't be fetched due to
  * API rate limiting. When true, CI status / review decision / mergeability

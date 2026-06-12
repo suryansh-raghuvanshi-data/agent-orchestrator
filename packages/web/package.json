@@ -30,7 +30,7 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm:dev:next\" \"npm:dev:direct-terminal\"",
-    "dev:next": "next dev -p ${PORT:-3000}",
+    "dev:next": "next dev --turbo -p ${PORT:-3000}",
     "dev:direct-terminal": "node scripts/dev-direct-terminal.mjs",
     "prebuild": "node scripts/guard-production-artifact-clean.mjs && rimraf .next dist-server",
     "build": "next build && tsc -p tsconfig.server.json && node scripts/stamp-version.js",
@@ -59,6 +59,9 @@
     "@aoagents/ao-plugin-tracker-github": "workspace:*",
     "@aoagents/ao-plugin-tracker-linear": "workspace:*",
     "@aoagents/ao-plugin-workspace-worktree": "workspace:*",
+    "@aoagents/ao-plugin-worker-antigravity": "workspace:*",
+    "@aoagents/ao-plugin-worker-kilo": "workspace:*",
+    "@aoagents/ao-plugin-worker-devin": "workspace:*",
     "@xterm/addon-fit": "0.12.0-beta.256",
     "@xterm/addon-unicode11": "0.10.0-beta.256",
     "@xterm/addon-web-links": "0.13.0-beta.256",
@@ -69,6 +72,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
+    "web-vitals": "^4.2.4",
     "ws": "^8.19.0"
   },
   "optionalDependencies": {

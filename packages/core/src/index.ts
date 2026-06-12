@@ -174,6 +174,25 @@ export {
 export { createSessionManager } from "./session-manager.js";
 export type { SessionManagerDeps } from "./session-manager.js";
 
+// Worker provider registry — provider discovery and health checks
+export { createWorkerProviderRegistry } from "./worker-provider-registry.js";
+
+// Local worker provider — built-in adapter wrapping the local Agent-based spawn flow
+export { createLocalWorkerProvider } from "./worker-provider-local.js";
+
+// Worker router — resolve which provider to use for a given spawn request
+export { resolveWorkerProvider, submitTaskToWorkerProvider } from "./worker-router.js";
+
+// Worker failure handler — retry, timeout, reassignment for external worker providers
+export {
+  executeTaskWithRetry,
+  waitForTask,
+  reassignTask,
+  DEFAULT_RETRY_POLICY,
+  DEFAULT_TIMEOUT_CONFIG,
+} from "./worker-failure-handler.js";
+export type { WorkerRetryPolicy, WorkerTaskResult, WorkerTimeoutConfig } from "./worker-failure-handler.js";
+
 // Process-scoped async memoization — used by plugins to dedupe shared
 // prerequisite checks (e.g. multiple github plugins checking gh auth).
 export { memoizeAsync, _clearProcessCacheForTests } from "./process-cache.js";

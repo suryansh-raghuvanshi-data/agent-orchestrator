@@ -49,3 +49,59 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+interface WebVitalPayload {
+  name: "LCP" | "FID" | "CLS" | "INP" | "TTFB" | "FCP";
+  value: number;
+  rating?: "good" | "needs-improvement" | "poor";
+  delta?: number;
+  id: string;
+  timestamp?: number;
+  pathname?: string;
+}
+
+export async function POST(request: NextRequest) {
+  const correlationId = getCorrelationId(request);
+  const startedAt = Date.now();
+
+  let payload: WebVitalPayload;
+  try {
+    payload = (await request.json()) as WebVitalPayload;
+    if (!payload?.name || typeof payload.value !== "number") {
+      throw new Error("Invalid web-vitals payload");
+    }
+  } catch {
+    return jsonWithCorrelation(
+      { error: "Invalid web-vitals payload" },
+      { status: 400 },
+      correlationId,
+    );
+  }
+
+  try {
+    const { config } = await getServices();
+    recordApiObservation({
+      config,
+      method: "POST",
+      path: "/api/observability",
+      correlationId,
+      startedAt,
+      outcome: "success",
+      statusCode: 202,
+      projectId: undefined,
+      data: {
+        type: "web_vital",
+        name: payload.name,
+        value: payload.value,
+        rating: payload.rating,
+        delta: payload.delta,
+        id: payload.id,
+        timestamp: payload.timestamp ?? Date.now(),
+        pathname: payload.pathname,
+      },
+    });
+    return jsonWithCorrelation({ accepted: true }, { status: 202 }, correlationId);
+  } catch {
+    return jsonWithCorrelation({ accepted: false }, { status: 202 }, correlationId);
+  }
+}

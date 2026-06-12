@@ -21,6 +21,7 @@ import {
   openSync,
   closeSync,
   constants,
+  utimesSync,
 } from "node:fs";
 import { basename, join, dirname } from "node:path";
 import type {
@@ -28,6 +29,9 @@ import type {
   RuntimeHandle,
   SessionId,
   SessionMetadata,
+  ProjectConfig,
+  OrchestratorConfig,
+  DefaultPlugins,
 } from "./types.js";
 import { atomicWriteFileSync } from "./atomic-write.js";
 import { recordActivityEvent, type ActivityEventSource } from "./activity-events.js";
@@ -36,11 +40,15 @@ import {
   cloneLifecycle,
   deriveLegacyStatus,
   parseCanonicalLifecycle,
+  clearTerminalMarkersForNonTerminalState,
 } from "./lifecycle-state.js";
 import { assertValidSessionIdComponent, SESSION_ID_COMPONENT_PATTERN } from "./utils/session-id.js";
 import { flattenToStringRecord } from "./utils/metadata-flatten.js";
 import { validateStatus } from "./utils/validation.js";
 import { withFileLockSync } from "./file-lock.js";
+import { resolveAgentSelectionForSession } from "./agent-selection.js";
+import { dedupePrUrls } from "./utils/pr.js";
+import { getProjectSessionsDir } from "./paths.js";
 
 const JSON_EXTENSION = ".json";
 
@@ -202,6 +210,8 @@ export function readMetadata(dataDir: string, sessionId: SessionId): SessionMeta
             raw["displayNameUserSet"] === true
           ? true
           : undefined,
+    workerProvider: raw["workerProvider"] as string | undefined,
+    workerTaskId: raw["workerTaskId"] as string | undefined,
   };
 }
 
@@ -320,6 +330,8 @@ export function writeMetadata(
   if (metadata.displayName) data["displayName"] = metadata.displayName;
   if (metadata.displayNameUserSet !== undefined)
     data["displayNameUserSet"] = metadata.displayNameUserSet;
+  if (metadata.workerProvider) data["workerProvider"] = metadata.workerProvider;
+  if (metadata.workerTaskId) data["workerTaskId"] = metadata.workerTaskId;
 
   atomicWriteFileSync(path, serializeMetadata(data));
 }
@@ -543,4 +555,315 @@ export function reserveSessionId(dataDir: string, sessionId: SessionId): boolean
   } catch {
     return false;
   }
+}
+
+export interface ActiveSessionRecord {
+  sessionName: string;
+  raw: Record<string, string>;
+  modifiedAt?: Date;
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
+}
+
+export const PR_TRACKING_STATUSES: ReadonlySet<string> = new Set([
+  "pr_open",
+  "ci_failed",
+  "review_pending",
+  "changes_requested",
+  "approved",
+  "mergeable",
+]);
+
+export const STALE_PR_OWNERSHIP_STATUSES: ReadonlySet<string> = new Set([
+  ...PR_TRACKING_STATUSES,
+  "merged",
+]);
+
+const INDEXED_PR_METADATA_KEY_REGEX = /^(prEnrichment|prReviewComments)_\d+$/;
+
+export function isOrchestratorSessionRecord(
+  sessionId: string,
+  raw: Record<string, string> | null | undefined,
+  sessionPrefix?: string,
+): boolean {
+  if (!raw) return false;
+  if (raw["role"] === "orchestrator") return true;
+  if (sessionPrefix) {
+    if (sessionId === `${sessionPrefix}-orchestrator`) {
+      return true;
+    }
+    return new RegExp(`^${escapeRegex(sessionPrefix)}-orchestrator-\\d+$`).test(sessionId);
+  }
+  return false;
+}
+
+export function updateMetadataPreservingMtime(
+  sessionsDir: string,
+  sessionName: string,
+  updates: Partial<Record<string, string>>,
+  modifiedAt?: Date,
+): void {
+  const metaPath = join(sessionsDir, `${sessionName}.json`);
+  let preservedMtime = modifiedAt;
+  if (!preservedMtime) {
+    try {
+      preservedMtime = statSync(metaPath).mtime;
+    } catch {
+      preservedMtime = undefined;
+    }
+  }
+
+  updateMetadata(sessionsDir, sessionName, updates);
+
+  if (!preservedMtime) return;
+  try {
+    utimesSync(metaPath, preservedMtime, preservedMtime);
+  } catch {
+    void 0;
+  }
+}
+
+export function repairSessionAgentMetadataOnRead(
+  sessionsDir: string,
+  record: ActiveSessionRecord,
+  project: ProjectConfig,
+  defaults: DefaultPlugins,
+  allSessionPrefixes: string[],
+): ActiveSessionRecord {
+  if (record.raw["agent"]) return record;
+
+  const agent = resolveAgentSelectionForSession({
+    sessionId: record.sessionName,
+    metadata: record.raw,
+    project,
+    defaults,
+    allSessionPrefixes,
+  }).agentName;
+  updateMetadataPreservingMtime(sessionsDir, record.sessionName, { agent }, record.modifiedAt);
+  return {
+    ...record,
+    raw: applyMetadataUpdates(record.raw, { agent }),
+  };
+}
+
+export function repairSingleSessionMetadataOnRead(
+  sessionsDir: string,
+  record: ActiveSessionRecord,
+  sessionPrefix?: string,
+): ActiveSessionRecord {
+  const repaired = { ...record, raw: { ...record.raw } };
+  if (!isOrchestratorSessionRecord(repaired.sessionName, repaired.raw, sessionPrefix)) {
+    return repaired;
+  }
+
+  const updates: Partial<Record<string, string>> = {};
+  if (repaired.raw["role"] !== "orchestrator") {
+    updates["role"] = "orchestrator";
+  }
+  if (repaired.raw["pr"]) {
+    updates["pr"] = "";
+  }
+  if (repaired.raw["prAutoDetect"] !== "off" && repaired.raw["prAutoDetect"] !== "false") {
+    updates["prAutoDetect"] = "false";
+  }
+  if (STALE_PR_OWNERSHIP_STATUSES.has(repaired.raw["status"] ?? "")) {
+    updates["status"] = "working";
+  }
+
+  if (Object.keys(updates).length > 0) {
+    const lifecycle = cloneLifecycle(
+      parseCanonicalLifecycle(repaired.raw, {
+        sessionId: repaired.sessionName,
+        status: validateStatus(repaired.raw["status"]),
+      }),
+    );
+    lifecycle.session.kind = "orchestrator";
+    lifecycle.pr.state = "none";
+    lifecycle.pr.reason = "not_created";
+    lifecycle.pr.number = null;
+    lifecycle.pr.url = null;
+    lifecycle.pr.lastObservedAt = null;
+    if (updates["status"] === "working") {
+      lifecycle.session.state = "working";
+      lifecycle.session.reason = "task_in_progress";
+    }
+    clearTerminalMarkersForNonTerminalState(lifecycle);
+
+    const lifecyclePatch = buildLifecycleMetadataPatch(lifecycle);
+    updateMetadataPreservingMtime(
+      sessionsDir,
+      repaired.sessionName,
+      { ...updates, ...lifecyclePatch },
+      repaired.modifiedAt,
+    );
+    repaired.raw = applyMetadataUpdates(repaired.raw, {
+      ...updates,
+      ...lifecyclePatch,
+    });
+  }
+
+  return repaired;
+}
+
+function sessionMetadataTimestamp(record: ActiveSessionRecord): number {
+  const metadataTimestamp = Date.parse(record.raw["restoredAt"] ?? record.raw["createdAt"] ?? "");
+  if (record.modifiedAt) return record.modifiedAt.getTime();
+  return Number.isNaN(metadataTimestamp) ? 0 : metadataTimestamp;
+}
+
+export function repairSessionMetadataOnRead(
+  sessionsDir: string,
+  records: ActiveSessionRecord[],
+  project: ProjectConfig,
+  defaults: DefaultPlugins,
+  allSessionPrefixes: string[],
+): ActiveSessionRecord[] {
+  const repaired = records.map((record) => ({ ...record, raw: { ...record.raw } }));
+  const duplicatePRAttachments = new Map<string, ActiveSessionRecord[]>();
+
+  for (const record of repaired) {
+    if (!record.raw["lifecycle"] && (!record.raw["statePayload"] || record.raw["stateVersion"] !== "2")) {
+      const lifecycle = cloneLifecycle(
+        parseCanonicalLifecycle(record.raw, {
+          sessionId: record.sessionName,
+          status: validateStatus(record.raw["status"]),
+          createdAt: record.raw["createdAt"] ? new Date(record.raw["createdAt"]) : undefined,
+          sessionKind: isOrchestratorSessionRecord(
+            record.sessionName,
+            record.raw,
+            project.sessionPrefix,
+          )
+            ? "orchestrator"
+            : "worker",
+        }),
+      );
+      const canonicalUpdates = buildLifecycleMetadataPatch(lifecycle);
+      updateMetadataPreservingMtime(
+        sessionsDir,
+        record.sessionName,
+        canonicalUpdates,
+        record.modifiedAt,
+      );
+      record.raw = applyMetadataUpdates(record.raw, canonicalUpdates);
+    }
+
+    if (isOrchestratorSessionRecord(record.sessionName, record.raw, project.sessionPrefix)) {
+      record.raw = repairSingleSessionMetadataOnRead(sessionsDir, record, project.sessionPrefix).raw;
+      record.raw = repairSessionAgentMetadataOnRead(sessionsDir, record, project, defaults, allSessionPrefixes).raw;
+      continue;
+    }
+
+    record.raw = repairSessionAgentMetadataOnRead(sessionsDir, record, project, defaults, allSessionPrefixes).raw;
+
+    const prUrl = record.raw["pr"];
+    if (!prUrl) continue;
+
+    const attached = duplicatePRAttachments.get(prUrl) ?? [];
+    attached.push(record);
+    duplicatePRAttachments.set(prUrl, attached);
+  }
+
+  for (const attachedRecords of duplicatePRAttachments.values()) {
+    if (attachedRecords.length < 2) continue;
+
+    const [owner, ...staleRecords] = [...attachedRecords].sort((a, b) => {
+      const trackingDiff =
+        Number(PR_TRACKING_STATUSES.has(b.raw["status"] ?? "")) -
+        Number(PR_TRACKING_STATUSES.has(a.raw["status"] ?? ""));
+      if (trackingDiff !== 0) return trackingDiff;
+
+      const timestampDiff = sessionMetadataTimestamp(b) - sessionMetadataTimestamp(a);
+      if (timestampDiff !== 0) return timestampDiff;
+
+      return b.sessionName.localeCompare(a.sessionName);
+    });
+
+    void owner;
+
+    for (const record of staleRecords) {
+      const updates: Partial<Record<string, string>> = {
+        pr: "",
+        prAutoDetect: "false",
+        ...(PR_TRACKING_STATUSES.has(record.raw["status"] ?? "") ? { status: "working" } : {}),
+      };
+      const lifecycle = cloneLifecycle(
+        parseCanonicalLifecycle(record.raw, {
+          sessionId: record.sessionName,
+          status: validateStatus(record.raw["status"]),
+        }),
+      );
+      lifecycle.pr.state = "none";
+      lifecycle.pr.reason = "not_created";
+      lifecycle.pr.number = null;
+      lifecycle.pr.url = null;
+      lifecycle.pr.lastObservedAt = null;
+      if (updates["status"] === "working") {
+        lifecycle.session.state = "working";
+        lifecycle.session.reason = "task_in_progress";
+      }
+      clearTerminalMarkersForNonTerminalState(lifecycle);
+
+      const lifecycleUpdates = buildLifecycleMetadataPatch(lifecycle);
+      updateMetadataPreservingMtime(
+        sessionsDir,
+        record.sessionName,
+        { ...updates, ...lifecycleUpdates },
+        record.modifiedAt,
+      );
+      record.raw = applyMetadataUpdates(record.raw, { ...updates, ...lifecycleUpdates });
+    }
+  }
+
+  return repaired;
+}
+
+export function deduplicatePRStorageOnStartup(config: OrchestratorConfig): boolean {
+  let migrated = false;
+
+  for (const [projectId] of Object.entries(config.projects)) {
+    const sessionsDir = getProjectSessionsDir(projectId);
+    if (!existsSync(sessionsDir)) continue;
+
+    for (const sessionName of listMetadata(sessionsDir)) {
+      const raw = readMetadataRaw(sessionsDir, sessionName);
+      if (!raw) continue;
+
+      const rawPrUrls = raw["prs"]
+        ? raw["prs"].split(",").map((url) => url.trim()).filter(Boolean)
+        : [];
+      const uniquePrUrls = dedupePrUrls(rawPrUrls);
+      const updates: Partial<Record<string, string>> = {};
+      if (rawPrUrls.length !== uniquePrUrls.length) {
+        updates["prs"] = uniquePrUrls.join(",");
+      }
+
+      let deletedIndexedKeyCount = 0;
+      for (const key of Object.keys(raw)) {
+        if (!INDEXED_PR_METADATA_KEY_REGEX.test(key)) continue;
+        updates[key] = "";
+        deletedIndexedKeyCount += 1;
+      }
+
+      if (Object.keys(updates).length === 0) continue;
+
+      updateMetadata(sessionsDir, sessionName, updates);
+      migrated = true;
+      recordActivityEvent({
+        projectId,
+        sessionId: sessionName,
+        source: "session-manager",
+        kind: "metadata.deduplicated",
+        summary: `deduplicated PR metadata: ${sessionName}`,
+        data: {
+          beforePrCount: rawPrUrls.length,
+          afterPrCount: uniquePrUrls.length,
+          deletedIndexedKeyCount,
+        },
+      });
+    }
+  }
+
+  return migrated;
 }

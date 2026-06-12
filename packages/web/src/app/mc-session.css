@@ -46,13 +46,45 @@
   flex-shrink: 0;
 }
 
-/* Session identity — title first, branch to its right (mockup .sess-id) */
+/* Session identity — breadcrumb trail + title + branch (mockup .sess-id) */
 .session-topbar__id {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 11px;
+  gap: 8px;
   min-width: 0;
+}
+.session-topbar__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--t3);
+  white-space: nowrap;
+  min-width: 0;
+}
+.session-topbar__crumb {
+  color: var(--t3);
+  text-decoration: none;
+  transition: color 0.12s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+.session-topbar__crumb:hover {
+  color: var(--t2);
+  text-decoration: none;
+}
+.session-topbar__crumb--current {
+  color: var(--t1);
+  font-weight: 500;
+  max-width: 220px;
+}
+.session-topbar__crumb-sep {
+  color: var(--t4);
+  font-size: 11px;
+  flex-shrink: 0;
 }
 .session-topbar__title {
   font-size: 13.5px;

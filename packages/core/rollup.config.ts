@@ -43,6 +43,7 @@ function cleanDist(): Plugin {
 const config: RollupOptions = {
   input: {
     index: "src/index.ts",
+    types: "src/types.ts",
     "migration/storage-v2": "src/migration/storage-v2.ts",
   },
   output: {

@@ -204,6 +204,7 @@ async function spawnSession(
   agent?: string,
   claimOptions?: SpawnClaimOptions,
   prompt?: string,
+  workerProvider?: string,
 ): Promise<void> {
   const spinner = ora("Creating session").start();
 
@@ -236,6 +237,7 @@ async function spawnSession(
       issueId,
       agent,
       prompt: sanitizedPrompt,
+      workerProvider,
     });
 
     let claimedPrUrl: string | null = null;
@@ -308,6 +310,7 @@ export function registerSpawn(program: Command): void {
       "--prompt <text>",
       "Initial prompt/instructions for the agent (use instead of an issue)",
     )
+    .option("--worker-provider <name>", "Specify the worker provider for the session")
     .action(
       async (
         issue: string | undefined,
@@ -317,6 +320,7 @@ export function registerSpawn(program: Command): void {
           claimPr?: string;
           assignOnGithub?: boolean;
           prompt?: string;
+          workerProvider?: string;
         },
         command: Command,
       ) => {
@@ -381,6 +385,7 @@ export function registerSpawn(program: Command): void {
             opts.agent,
             claimOptions,
             opts.prompt,
+            opts.workerProvider,
           );
         } catch (err) {
           console.error(chalk.red(`✗ ${err instanceof Error ? err.message : String(err)}`));

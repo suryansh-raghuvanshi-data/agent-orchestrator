@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       projectId,
       issueId: (body.issueId as string) ?? undefined,
       prompt: prompt || undefined,
+      workerProvider: (body.workerProvider as string) ?? undefined,
     });
 
     recordApiObservation({

@@ -69,6 +69,8 @@ export default async function ProjectSettingsPage(props: {
             trackerPlugin: project.tracker?.plugin ?? "",
             scmPlugin: project.scm?.plugin ?? "",
             reactions: JSON.stringify(project.reactions ?? {}, null, 2),
+            workerProvider: project.workerProvider ?? "",
+            fallbackWorkerProvider: project.fallbackWorkerProvider ?? "",
             identity: {
               projectId,
               path: project.path,

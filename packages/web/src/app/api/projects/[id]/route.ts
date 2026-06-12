@@ -24,7 +24,7 @@ import { stopStaleWindowsPtyHosts } from "@/lib/windows-pty-cleanup";
 export const dynamic = "force-dynamic";
 
 const IDENTITY_FIELDS = new Set(["projectId", "path", "repo", "defaultBranch"]);
-const EDITABLE_CONFIG_FIELDS = new Set(["agent", "runtime", "tracker", "scm", "reactions"]);
+const EDITABLE_CONFIG_FIELDS = new Set(["agent", "runtime", "tracker", "scm", "reactions", "workerProvider", "fallbackWorkerProvider"]);
 
 function sanitizeString(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -162,6 +162,8 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
           tracker: state.project?.tracker,
           scm: state.project?.scm,
           reactions: state.project?.reactions,
+          workerProvider: state.project?.workerProvider,
+          fallbackWorkerProvider: state.project?.fallbackWorkerProvider,
         },
       },
       { status: 200 },
@@ -251,6 +253,12 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         body["reactions"] && typeof body["reactions"] === "object"
           ? (body["reactions"] as LocalProjectConfig["reactions"])
           : undefined;
+    }
+    if (hasOwn("workerProvider")) {
+      nextConfig.workerProvider = sanitizeString(body["workerProvider"]);
+    }
+    if (hasOwn("fallbackWorkerProvider")) {
+      nextConfig.fallbackWorkerProvider = sanitizeString(body["fallbackWorkerProvider"]);
     }
 
     const validated = LocalProjectConfigSchema.parse(nextConfig);
