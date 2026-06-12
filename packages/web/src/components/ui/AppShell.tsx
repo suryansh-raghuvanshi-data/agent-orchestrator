@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 interface AppShellProps {
@@ -28,16 +28,8 @@ export function AppShell({
   defaultSidebarCollapsed = false,
   className,
 }: AppShellProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(defaultSidebarCollapsed);
+  const [sidebarCollapsed] = useState(defaultSidebarCollapsed);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed((v) => !v);
-  }, []);
-
-  const toggleMobileSidebar = useCallback(() => {
-    setMobileSidebarOpen((v) => !v);
-  }, []);
 
   return (
     <div className={cn("dashboard-app-shell", className)}>

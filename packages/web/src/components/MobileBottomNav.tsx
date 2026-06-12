@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { cn } from "@/lib/cn";
 
 export type MobileBottomNavTab = "dashboard" | "prs" | "orchestrator" | "board" | "logs" | "menu";
 

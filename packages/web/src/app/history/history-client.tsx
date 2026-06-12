@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar } from "@/components/ui/Avatar";

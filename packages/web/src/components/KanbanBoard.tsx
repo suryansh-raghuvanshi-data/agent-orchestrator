@@ -2,12 +2,12 @@
 
 import { useMemo, useState, useCallback } from "react";
 import { cn } from "@/lib/cn";
-import type {
-  DashboardSession,
-  AttentionLevel,
-  DashboardAttentionZoneMode,
+import {
+  type DashboardSession,
+  type AttentionLevel,
+  type DashboardAttentionZoneMode,
+  getAttentionLevel,
 } from "@/lib/types";
-import { getAttentionLevel } from "@/lib/types";
 import { AttentionZone } from "./AttentionZone";
 import { KanbanBoardHeader } from "./KanbanBoardHeader";
 import { EmptyState } from "./Skeleton";

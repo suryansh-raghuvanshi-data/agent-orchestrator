@@ -183,8 +183,6 @@ export default function NewTaskPage() {
   );
 
   const renderStep2 = () => {
-    const selectedAgentInfo = agents.find((a) => a.name === selectedAgent);
-
     return (
       <div>
         <h1 className="text-[20px] font-semibold text-[var(--color-text-primary)] mb-1">

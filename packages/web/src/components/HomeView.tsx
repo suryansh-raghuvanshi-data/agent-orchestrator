@@ -5,7 +5,6 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import type { DashboardSession, SessionStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Avatar } from "@/components/ui/Avatar";
 
 interface HomeViewProps {
   sessions: DashboardSession[];
