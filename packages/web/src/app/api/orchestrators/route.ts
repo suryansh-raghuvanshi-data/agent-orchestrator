@@ -49,14 +49,23 @@ export async function POST(request: NextRequest) {
   }
 
   const clean = body.clean === true;
-  const workerProvider = (body.workerProvider as string) ?? undefined;
-  const agent = (body.agent as string) ?? undefined;
+  let workerProvider = (body.workerProvider as string) ?? undefined;
+  let agent = (body.agent as string) ?? undefined;
   const workerAgents = Array.isArray(body.workerAgents)
     ? (body.workerAgents as string[])
     : undefined;
 
   try {
-    const { config, sessionManager } = await getServices();
+    const { config, registry, sessionManager } = await getServices();
+    
+    // Check if the agent name is actually a registered worker provider
+    const manifests = registry.list("worker-provider");
+    const providerNames = manifests.map((m) => m.name);
+    if (agent && providerNames.includes(agent)) {
+      workerProvider = agent;
+      agent = undefined;
+    }
+
     const projectId = body.projectId as string;
     const configProjectErr = validateConfiguredProject(config.projects, projectId);
     if (configProjectErr) {
