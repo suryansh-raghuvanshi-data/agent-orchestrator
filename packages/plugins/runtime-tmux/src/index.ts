@@ -103,6 +103,19 @@ export function create(): Runtime {
           ? writeLaunchScript(launchCommand)
           : withKeepAliveShell(launchCommand);
 
+      // Kill any pre-existing session with this name before creating a new
+      // one. This handles the case where orchestrator metadata was cleaned
+      // (e.g. by 'ao stop' or manual deletion) but the tmux session survived
+      // because the keep-alive shell kept the pane alive. Without this check,
+      // tmux new-session would fail with "duplicate session: <name>".
+      try {
+        await tmux("has-session", "-t", sessionName);
+        // Session exists — kill it first
+        await tmux("kill-session", "-t", sessionName);
+      } catch {
+        // Session doesn't exist — proceed to create
+      }
+
       await tmux(
         "new-session",
         "-d",
