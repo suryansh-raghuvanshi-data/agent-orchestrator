@@ -60,13 +60,15 @@ export default function NewTaskPage() {
   const handleSpawn = useCallback(async () => {
     if (!selectedProject || !selectedAgent || spawning) return;
     setSpawning(true);
+    const isProvider = providers.some((p) => p.name === selectedAgent);
     try {
       const res = await fetch("/api/orchestrators", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId: selectedProject,
-          agent: selectedAgent,
+          agent: isProvider ? undefined : selectedAgent,
+          workerProvider: isProvider ? selectedAgent : undefined,
           workerAgents: autoSelectWorkers ? [] : selectedWorkers,
         }),
       });
@@ -81,7 +83,7 @@ export default function NewTaskPage() {
     } catch {
       setSpawning(false);
     }
-  }, [selectedProject, selectedAgent, selectedWorkers, autoSelectWorkers, spawning, router]);
+  }, [selectedProject, selectedAgent, selectedWorkers, autoSelectWorkers, spawning, router, providers]);
 
   if (loading) {
     return (
@@ -227,6 +229,31 @@ export default function NewTaskPage() {
               </button>
             );
           })}
+          {providers.map((provider) => {
+            const selected = selectedAgent === provider.name;
+            return (
+              <button
+                key={provider.name}
+                type="button"
+                onClick={() => setSelectedAgent(provider.name)}
+                className={cn(
+                  "flex flex-col gap-1.5 px-3 py-2.5 rounded-[var(--radius-md)] border text-left transition-all duration-[var(--duration-fast)]",
+                  selected
+                    ? "border-[var(--color-accent)] bg-[var(--color-accent-dim)]"
+                    : "border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)]",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-medium text-[var(--color-text-primary)]">
+                    {provider.displayName}
+                  </span>
+                </div>
+                <span className="text-[10px] text-[var(--color-text-tertiary)] line-clamp-1">
+                  {provider.displayName} worker provider
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Worker selection */}
@@ -336,7 +363,7 @@ export default function NewTaskPage() {
   };
 
   const renderStep3 = () => {
-    const agentName = agents.find((a) => a.name === selectedAgent)?.displayName ?? selectedAgent;
+    const agentName = agents.find((a) => a.name === selectedAgent)?.displayName ?? providers.find((p) => p.name === selectedAgent)?.displayName ?? selectedAgent;
     const projectName = projects.find((p) => p.id === selectedProject)?.name ?? selectedProject;
     const workerNames = autoSelectWorkers
       ? ["Auto (dynamic)"]

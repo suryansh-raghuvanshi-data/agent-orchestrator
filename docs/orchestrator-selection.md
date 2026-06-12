@@ -15,7 +15,7 @@ graph TD
     C --> D[Orchestrator Selection Dropdown & Worker Checklist Render]
     D --> E[User Selects 1 Orchestrator + Checks N Worker Agents]
     E --> F[User Clicks 'Spawn Orchestrator']
-    F --> G[POST /api/orchestrators Sent with { agent, workerAgents: [...] }]
+    F --> G[POST /api/orchestrators Sent with { agent|workerProvider, workerAgents: [...] }]
     G --> H[sessionManager Saves Selected Pool in Orchestrator Metadata]
     H --> I[Orchestrator Starts & Executes Workflows]
     I --> J[Orchestrator Runs 'ao spawn' or Requests Worker Session]
@@ -32,17 +32,25 @@ graph TD
 - **Accessing the UI**: The user navigates to the Agent Orchestrator web dashboard.
 - **Dynamic Loading**: The dashboard fetches registered agent plugins from GET `/api/agents` and worker providers from GET `/api/workers`.
 - **Selection Controls**:
-  - **Orchestrator Agent Picker**: A select dropdown allowing exactly **one** agent to be chosen as the conductor.
+  - **Orchestrator Agent Picker**: A select dropdown allowing exactly **one** agent or worker provider to be chosen as the conductor. If a worker provider (e.g. Devin, Kilo) is selected, it is sent as `workerProvider` in the spawn payload instead of `agent`.
   - **Worker Agents Checklist Picker**: A multi-select dropdown popover where the user ticks/unticks checkable options (combining local agent plugins and external providers). A minimum of 1 selection is enforced.
 
 ### Phase 3: Triggering (Spawning)
 
-- **Spawning Action**: The user selects their orchestrator (e.g. Claude Code) and checks their allowed worker pool (e.g. Devin, Kilo, Claude Code).
-- **Payload**: The client sends a POST request containing:
+- **Spawning Action**: The user selects their orchestrator (e.g. Claude Code, a worker provider like Devin, or the Custom agent) and checks their allowed worker pool (e.g. Devin, Kilo, Claude Code).
+- **Payload**: The client sends a POST request. If an agent plugin is the orchestrator:
   ```json
   {
     "projectId": "my-project",
     "agent": "claude-code",
+    "workerAgents": ["devin", "kilo", "claude-code"]
+  }
+  ```
+  If a worker provider is the orchestrator:
+  ```json
+  {
+    "projectId": "my-project",
+    "workerProvider": "devin",
     "workerAgents": ["devin", "kilo", "claude-code"]
   }
   ```
@@ -106,6 +114,14 @@ To ensure consistent routing and prevent invalid worker sessions, the system res
 
 - [x] Run `pnpm typecheck` and `pnpm build` to ensure project builds cleanly.
 - [x] Run the complete test suite (`pnpm test` and `pnpm --filter @aoagents/ao-web test`).
+
+### Phase 4: Custom Agent & Unified Orchestrator Selection
+
+- [x] Create `packages/plugins/agent-custom/` — a new agent plugin that checks `agentConfig.command` or defaults to `"bash"`.
+- [x] Register the custom agent in `plugin-registry.ts` BUILTIN_PLUGINS and `services.ts`.
+- [x] Update `new-task/page.tsx` to merge agents and worker providers into a unified "Who leads this task?" selector.
+- [x] Map worker provider selections to `workerProvider` in the spawn payload (instead of `agent`).
+- [x] Update `OrchestratorAgentPicker.tsx` to fetch both `/api/agents` and `/api/workers` and display them as grouped options.
 
 ---
 

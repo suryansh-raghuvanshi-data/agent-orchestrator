@@ -875,6 +875,27 @@ CSS animations added to `globals.css`:
 - Kanban horizontal scroll on mobile: columns fixed at 280px with `scroll-snap`, `overflow-x: auto`, hidden scrollbar, touch-friendly scrolling
 - All 1036 tests pass, backward compatible with existing `PullRequestsPage` and `SessionDetail` callers
 
+
+---
+
+## PHASE 11 — ORCHESTRATOR & WORKER OPTIONS AND CUSTOM AGENT
+
+### Task 11.1 — Custom Agent Plugin
+- Create a new agent plugin package at `packages/plugins/agent-custom/`.
+- Read custom command from `agentConfig.command` in the project config or default to `"bash"`.
+- Implement minimal required Agent methods (`getLaunchCommand`, `getEnvironment`, `detectActivity`, `isProcessRunning`).
+- Register the plugin in `packages/core/src/plugin-registry.ts` and `packages/web/src/lib/services.ts`.
+
+### Task 11.2 — Unified Orchestrator Selection
+- Modify `packages/web/src/app/new-task/page.tsx` step 2 to allow selecting agents or worker providers as the orchestrator.
+- Fetch both `/api/agents` and `/api/workers`.
+- Map selected worker providers to the `workerProvider` parameter and selected agent plugins (including `custom`) to the `agent` parameter in the spawn request payload.
+- Update the layout and cards style to display them unified under "Who leads this task?".
+
+### Task 11.3 — Update Web Dashboard Selectors
+- Modify `OrchestratorAgentPicker.tsx` to display both agent plugins and worker providers in its select dropdown.
+- Update `Dashboard.tsx` to handle spawning with the new parameters appropriately.
+
 ---
 
 ## BUILD ORDER (For Orchestrator Agent to Schedule)
@@ -923,7 +944,13 @@ PHASE 9  ✅
 
 PHASE 10  ✅
   10.1  Responsive behavior — done
+
+PHASE 11  ✅
+  11.1  Custom Agent Plugin — done
+  11.2  Unified Orchestrator Selection — done
+  11.3  Update Web Dashboard Selectors — pending
 ```
+
 
 ---
 

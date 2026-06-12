@@ -41,6 +41,7 @@ import pluginAgentCursor from "@aoagents/ao-plugin-agent-cursor";
 import pluginAgentKimicode from "@aoagents/ao-plugin-agent-kimicode";
 import pluginAgentGrok from "@aoagents/ao-plugin-agent-grok";
 import pluginAgentOpencode from "@aoagents/ao-plugin-agent-opencode";
+import pluginAgentCustom from "@aoagents/ao-plugin-agent-custom";
 import pluginWorkspaceWorktree from "@aoagents/ao-plugin-workspace-worktree";
 import pluginScmGithub from "@aoagents/ao-plugin-scm-github";
 import pluginTrackerGithub from "@aoagents/ao-plugin-tracker-github";
@@ -117,6 +118,7 @@ async function initServices(): Promise<Services> {
   registry.register(pluginAgentKimicode);
   registry.register(pluginAgentGrok);
   registry.register(pluginAgentOpencode);
+  registry.register(pluginAgentCustom);
   registry.register(pluginWorkspaceWorktree);
   registry.register(pluginScmGithub);
   registry.register(pluginTrackerGithub);
