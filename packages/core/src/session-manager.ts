@@ -120,6 +120,9 @@ const OPENCODE_INTERACTIVE_DISCOVERY_TIMEOUT_MS = 10_000;
 const EXEC_SHELL_OPTION =
   process.platform === "win32" ? ({ shell: true, windowsHide: true } as const) : ({} as const);
 
+/** Default concurrency limit for session listing probes. */
+const LIST_CONCURRENCY_LIMIT = 8;
+
 function errorIncludesSessionNotFound(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   const e = err as Error & { stderr?: string; stdout?: string };
@@ -2170,6 +2173,27 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     return promise;
   }
 
+  /**
+   * Map items concurrently, limiting parallel executions to `limit`.
+   * Preserves output order.
+   */
+  async function mapLimit<T, R>(
+    items: T[],
+    limit: number,
+    fn: (item: T) => Promise<R>,
+  ): Promise<R[]> {
+    const results: R[] = new Array(items.length);
+    let index = 0;
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (index < items.length) {
+        const i = index++;
+        results[i] = await fn(items[i]);
+      }
+    });
+    await Promise.all(workers);
+    return results;
+  }
+
   async function list(projectId?: string, options?: ListOptions): Promise<Session[]> {
     const allSessions = Object.entries(config.projects).flatMap(([entryProjectId, project]) => {
       if (projectId && entryProjectId !== projectId) return [];
@@ -2181,7 +2205,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     });
     let openCodeSessionListPromise: Promise<OpenCodeSessionListEntry[]> | undefined;
 
-    const tasks = allSessions.map(async ({ sessionName, projectId: sessionProjectId, raw }) => {
+    const resolved = await mapLimit(allSessions, LIST_CONCURRENCY_LIMIT, async ({ sessionName, projectId: sessionProjectId, raw }) => {
       const project = config.projects[sessionProjectId];
       if (!project) return null;
 
@@ -2298,8 +2322,6 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
 
       return session;
     });
-
-    const resolved = await Promise.all(tasks);
     return resolved.filter((session): session is Session => session !== null);
   }
 

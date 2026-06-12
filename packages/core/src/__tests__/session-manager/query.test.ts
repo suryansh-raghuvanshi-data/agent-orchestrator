@@ -835,6 +835,57 @@ describe("get", () => {
     expect(listInvocations).toHaveLength(1);
   });
 
+  describe("concurrency", () => {
+    it("enumerates all sessions with mapLimit", async () => {
+      for (let i = 1; i <= 3; i++) {
+        writeMetadata(sessionsDir, `app-con-${i}`, {
+          worktree: "/tmp",
+          branch: `feat/con-${i}`,
+          status: "working",
+          project: "my-app",
+          agent: "mock-agent",
+          runtimeHandle: makeHandle(`rt-con-${i}`),
+        });
+      }
+
+      const sm = createSessionManager({ config, registry: mockRegistry });
+      const sessions = await sm.list();
+
+      const conSessions = sessions.filter((s) => s.id.startsWith("app-con-"));
+      expect(conSessions).toHaveLength(3);
+    });
+
+    it("limits concurrent runtime probes to the configured maximum", async () => {
+      let concurrent = 0;
+      let maxConcurrent = 0;
+      mockRuntime.isAlive = vi.fn().mockImplementation(async () => {
+        concurrent++;
+        maxConcurrent = Math.max(maxConcurrent, concurrent);
+        await new Promise((r) => setTimeout(r, 10));
+        concurrent--;
+        return true;
+      });
+
+      // Create 10 sessions — more than the default limit of 8
+      for (let i = 1; i <= 10; i++) {
+        writeMetadata(sessionsDir, `app-con-lim-${i}`, {
+          worktree: "/tmp",
+          branch: `feat/con-lim-${i}`,
+          status: "working",
+          project: "my-app",
+          agent: "mock-agent",
+          runtimeHandle: makeHandle(`rt-con-lim-${i}`),
+        });
+      }
+
+      const sm = createSessionManager({ config, registry: mockRegistry });
+      await sm.list();
+
+      // No more than 8 concurrent probes should have been observed
+      expect(maxConcurrent).toBeLessThanOrEqual(8);
+    });
+  });
+
   it("preserves arbitrary metadata flags on loaded sessions", async () => {
     writeMetadata(sessionsDir, "app-1", {
       worktree: "/tmp",
