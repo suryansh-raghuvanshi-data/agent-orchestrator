@@ -771,6 +771,9 @@ export function findConfigFile(startDir?: string): string | null {
     if (existsSync(envPath)) {
       return envPath;
     }
+    throw new ConfigNotFoundError(
+      `AO_CONFIG_PATH is set to "${process.env["AO_CONFIG_PATH"]}" but no config file found at "${envPath}"`,
+    );
   }
 
   // 2. Search up directory tree from CWD (like git)

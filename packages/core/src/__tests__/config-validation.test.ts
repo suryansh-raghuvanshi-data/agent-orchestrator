@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { validateConfig } from "../config.js";
+import { validateConfig, findConfigFile } from "../config.js";
+import { ConfigNotFoundError } from "../errors.js";
 
 describe("Config Validation - Project Uniqueness", () => {
   it("accepts projects that share a basename when projectIds differ", () => {
@@ -1303,5 +1304,41 @@ describe("Config Validation - Observability Config", () => {
         },
       }),
     ).toThrow();
+  });
+});
+
+describe("AO_CONFIG_PATH (AO-006)", () => {
+  it("loads config when AO_CONFIG_PATH points to an existing file", () => {
+    const prev = process.env["AO_CONFIG_PATH"];
+    process.env["AO_CONFIG_PATH"] = __filename;
+    try {
+      expect(findConfigFile()).toBe(__filename);
+    } finally {
+      process.env["AO_CONFIG_PATH"] = prev;
+    }
+  });
+
+  it("throws ConfigNotFoundError when AO_CONFIG_PATH points to a missing file", () => {
+    const prev = process.env["AO_CONFIG_PATH"];
+    const missing = "/tmp/__ao_nonexistent_config.yaml";
+    process.env["AO_CONFIG_PATH"] = missing;
+    try {
+      expect(() => findConfigFile()).toThrow(ConfigNotFoundError);
+      expect(() => findConfigFile()).toThrow(/AO_CONFIG_PATH is set/);
+      expect(() => findConfigFile()).toThrow(missing);
+    } finally {
+      process.env["AO_CONFIG_PATH"] = prev;
+    }
+  });
+
+  it("falls back to normal search when AO_CONFIG_PATH is unset", () => {
+    const prev = process.env["AO_CONFIG_PATH"];
+    delete process.env["AO_CONFIG_PATH"];
+    try {
+      // Should not throw — falls through to directory search
+      expect(() => findConfigFile()).not.toThrow();
+    } finally {
+      process.env["AO_CONFIG_PATH"] = prev;
+    }
   });
 });
