@@ -111,6 +111,7 @@ import {
   PREFERRED_GH_PATH,
 } from "./agent-workspace-hooks.js";
 import { resolveWorkerProvider, submitTaskToWorkerProvider } from "./worker-router.js";
+import { isWindows } from "./platform.js";
 
 const execFileAsync = promisify(execFile);
 const OPENCODE_DISCOVERY_TIMEOUT_MS = 10_000;
@@ -118,7 +119,7 @@ const OPENCODE_INTERACTIVE_DISCOVERY_TIMEOUT_MS = 10_000;
 // On Windows, execFile cannot resolve .cmd shim extensions without invoking the shell.
 // windowsHide:true suppresses the conhost popup that the shell would otherwise flash.
 const EXEC_SHELL_OPTION =
-  process.platform === "win32" ? ({ shell: true, windowsHide: true } as const) : ({} as const);
+  isWindows() ? ({ shell: true, windowsHide: true } as const) : ({} as const);
 
 /** Default concurrency limit for session listing probes. */
 const LIST_CONCURRENCY_LIMIT = 8;

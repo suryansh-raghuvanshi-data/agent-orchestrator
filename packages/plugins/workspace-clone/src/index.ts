@@ -275,16 +275,20 @@ export function create(config?: Record<string, unknown>): Workspace {
       };
     },
 
-    async postCreate(info: WorkspaceInfo, project: ProjectConfig): Promise<void> {
-      // Run postCreate hooks
-      // NOTE: commands run with full shell privileges — they come from trusted YAML config
-      if (project.postCreate) {
-        const shell = getShell();
-        for (const command of project.postCreate) {
-          await execFileAsync(shell.cmd, shell.args(command), { cwd: info.path });
-        }
-      }
-    },
+async postCreate(info: WorkspaceInfo, project: ProjectConfig): Promise<void> {
+       // Run postCreate hooks
+       // NOTE: commands run with full shell privileges — they come from trusted YAML config
+       if (project.postCreate) {
+         const shell = getShell();
+         for (const command of project.postCreate) {
+           await execFileAsync(shell.cmd, shell.args(command), {
+             cwd: info.path,
+             timeout: 30_000,
+             windowsHide: true,
+           });
+         }
+       }
+     },
   };
 }
 
