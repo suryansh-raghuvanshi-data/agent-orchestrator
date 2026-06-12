@@ -33,6 +33,13 @@
 - All styles use existing Mission Control design tokens (`--color-bg-*`, `--color-border-*`, `--color-text-*`)
 - CSS added to `packages/web/src/app/mc-session.css`
 
+### Phase 6.1 — New Task Setup Screen ✅
+- New route `/new-task` with 3-step form flow
+- Step 1: Large textarea input with example prompt chips, character count, Continue button (disabled until 10+ chars)
+- Step 2: Orchestrator selection cards (horizontal grid, recommended chip) + worker checkboxes with auto-select toggle
+- Step 3: Review summary card + Launch button with spinner animation, navigates to session workspace
+- Fetches projects, agents, and workers on mount; spawns via `POST /api/orchestrators`
+
 ### Phase 4 — Kanban Board ✅
 - `KanbanBoard` groups sessions by attention level into columns with column count chips, search filtering, density toggle, done/terminated collapsible section
 - `KanbanBoardHeader`: title, counts, search, filter, density toggle
@@ -977,8 +984,8 @@ PHASE 5  ✅
   5.1  Logs view — done
   5.2  Status monitoring widget — done
 
-PHASE 6  ←  Depends on 2.x and 3.x
-  6.1  New task setup screen
+PHASE 6 — in progress
+  6.1  New task setup screen — done
   6.2  Dashboard / home view
 
 PHASE 7  ←  Depends on 3.x and 4.x
