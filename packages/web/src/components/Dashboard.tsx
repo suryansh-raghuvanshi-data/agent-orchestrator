@@ -289,8 +289,16 @@ function DashboardInner({
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.EventSource === "undefined") return;
     const source = new EventSource("/api/events");
-    source.onmessage = () => {
-      routerRef.current?.refresh();
+    source.onmessage = (event: MessageEvent) => {
+      let parsed: { type?: string } | null = null;
+      try {
+        parsed = JSON.parse(event.data as string) as { type?: string };
+      } catch {
+        // Ignore malformed SSE payloads.
+      }
+      if (parsed?.type === "sessions.updated") {
+        routerRef.current?.refresh();
+      }
     };
     source.onerror = () => {
       source.close();

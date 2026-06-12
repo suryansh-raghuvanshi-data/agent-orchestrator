@@ -6,6 +6,7 @@ export async function GET(_request: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
+
       const send = (data: string) => {
         controller.enqueue(encoder.encode(`data: ${data}\n\n`));
       };
@@ -13,7 +14,12 @@ export async function GET(_request: NextRequest) {
       send(JSON.stringify({ type: "connected", timestamp: Date.now() }));
 
       setInterval(() => {
-        send(JSON.stringify({ type: "heartbeat", timestamp: Date.now() }));
+        send(
+          JSON.stringify({
+            type: "sessions.updated",
+            timestamp: Date.now(),
+          }),
+        );
       }, 5000);
 
       setInterval(() => {

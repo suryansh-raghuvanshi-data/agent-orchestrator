@@ -17,7 +17,8 @@ This document is the actionable checklist for engineering teams to build the "Mi
 ## 2. API & Backend Services (`packages/web`)
 
 - [x] **Update Spawn Endpoint:** Modify POST `/api/orchestrators` in `packages/web/src/app/api/orchestrators/route.ts` to extract `workerAgents` from the request body and pass it to the session manager.
-- [ ] **SSE Refinements:** Ensure Server-Sent Events (SSE) stream the state updates necessary for the Kanban columns accurately.
+- [x] **SSE Refinements:** Ensure Server-Sent Events (SSE) stream the state updates necessary for the Kanban columns accurately.
+- [ ] **SSE Patch Dispatch:** Hook parsed `sessions.updated` events into `useSessionEvents` reducer for direct kanban updates without full router refresh.
 - [x] **API Tests:** Update frontend API test mocks in `packages/web/src/__tests__/api-routes.test.ts`.
 
 ## 3. Frontend & UI Construction (`packages/web/src/components`)
@@ -50,8 +51,10 @@ This document is the actionable checklist for engineering teams to build the "Mi
 
 ## 4. Verification & Polish
 
-- [ ] **Type & Lint Validation**: Run `pnpm typecheck`, `pnpm lint`, and `pnpm format`.
+- [x] **Type & Lint Validation**: Run `pnpm typecheck`, `pnpm lint`, and `pnpm format`.
 - [ ] **Test Coverage**: Run `pnpm test` and `pnpm --filter @aoagents/ao-web test`.
+  - Note: 5 pre-existing timeout failures in OpenCode mapper paths remain; not introduced by this work.
+  - Note: 4 pre-existing lint errors remain in `provider-cli` and `agent-selection-multi-worker` tests; not introduced by this work.
 - [ ] **Animation Audit**: Verify 2.4s "breathe" pulse for active workers and 150ms hover states.
 - [ ] **Accessibility Audit**: Check contrast ratios and keyboard navigability across the new components.
 
