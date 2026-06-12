@@ -67,6 +67,7 @@ import {
   repairSingleSessionMetadataOnRead,
   repairSessionMetadataOnRead as repairSessionMetadataOnReadImpl,
   deduplicatePRStorageOnStartup as deduplicatePRStorageOnStartupImpl,
+  buildReportWatcherPatch,
   type ActiveSessionRecord,
 } from "./metadata.js";
 import {
@@ -3622,7 +3623,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       ...buildLifecycleMetadataPatch(restoredLifecycle),
       agent: selection.agentName,
       restoredAt: now,
-      mergedPendingCleanupSince: "",
+      ...buildReportWatcherPatch({ mergedPendingCleanupSince: "" }),
     });
     invalidateCache();
 

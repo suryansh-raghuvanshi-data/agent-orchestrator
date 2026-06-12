@@ -935,6 +935,7 @@ export interface MergeConflictGroup {
   lastMergeConflictFingerprint?: string;
   lastMergeConflictDispatchHash?: string;
   lastMergeConflictDispatchAt?: string;
+  lastMergeConflictDispatched?: string;
 }
 
 export interface ReportWatcherGroup {
@@ -1007,6 +1008,7 @@ export function getMergeConflictDispatch(metadata: Record<string, string>): Merg
     lastMergeConflictFingerprint: metadata["lastMergeConflictFingerprint"],
     lastMergeConflictDispatchHash: metadata["lastMergeConflictDispatchHash"],
     lastMergeConflictDispatchAt: metadata["lastMergeConflictDispatchAt"],
+    lastMergeConflictDispatched: metadata["lastMergeConflictDispatched"],
   };
 }
 
@@ -1016,6 +1018,7 @@ export function buildMergeConflictDispatchPatch(group: Partial<MergeConflictGrou
   if (group.lastMergeConflictFingerprint !== undefined) patch["lastMergeConflictFingerprint"] = group.lastMergeConflictFingerprint;
   if (group.lastMergeConflictDispatchHash !== undefined) patch["lastMergeConflictDispatchHash"] = group.lastMergeConflictDispatchHash;
   if (group.lastMergeConflictDispatchAt !== undefined) patch["lastMergeConflictDispatchAt"] = group.lastMergeConflictDispatchAt;
+  if (group.lastMergeConflictDispatched !== undefined) patch["lastMergeConflictDispatched"] = group.lastMergeConflictDispatched;
   return patch;
 }
 

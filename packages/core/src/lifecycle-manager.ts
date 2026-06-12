@@ -48,7 +48,19 @@ import {
   cloneLifecycle,
   deriveLegacyStatus,
 } from "./lifecycle-state.js";
-import { updateMetadata } from "./metadata.js";
+import {
+  updateMetadata,
+  getPRReviewComments,
+  buildPRReviewCommentsPatch,
+  getReviewDispatch,
+  buildReviewDispatchPatch,
+  getCIFailureDispatch,
+  buildCIFailureDispatchPatch,
+  getMergeConflictDispatch,
+  buildMergeConflictDispatchPatch,
+  getReportWatcher,
+  buildReportWatcherPatch,
+} from "./metadata.js";
 import { getProjectSessionsDir } from "./paths.js";
 import { applyDecisionToLifecycle as commitLifecycleDecisionInPlace } from "./lifecycle-transition.js";
 import {
@@ -1798,14 +1810,14 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
       clearReactionTracker(session.id, humanReactionKey);
       clearReactionTracker(session.id, automatedReactionKey);
       lastReviewBacklogCheckAt.delete(session.id);
-      updateSessionMetadata(session, {
+      updateSessionMetadata(session, buildReviewDispatchPatch({
         lastPendingReviewFingerprint: "",
         lastPendingReviewDispatchHash: "",
         lastPendingReviewDispatchAt: "",
         lastAutomatedReviewFingerprint: "",
         lastAutomatedReviewDispatchHash: "",
         lastAutomatedReviewDispatchAt: "",
-      });
+      }));
       return;
     }
 
@@ -1937,12 +1949,13 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
 
     const pendingComments = allThreads.filter((c) => !c.isBot);
     const automatedComments = allThreads.filter((c) => c.isBot);
+    const reviewDispatch = getReviewDispatch(session.metadata);
 
     // --- Pending (human) review comments ---
     {
       const pendingFingerprint = makeFingerprint(pendingComments.map((comment) => comment.id));
-      const lastPendingFingerprint = session.metadata["lastPendingReviewFingerprint"] ?? "";
-      const lastPendingDispatchHash = session.metadata["lastPendingReviewDispatchHash"] ?? "";
+      const lastPendingFingerprint = reviewDispatch.lastPendingReviewFingerprint ?? "";
+      const lastPendingDispatchHash = reviewDispatch.lastPendingReviewDispatchHash ?? "";
 
       if (
         pendingFingerprint !== lastPendingFingerprint &&
@@ -1951,18 +1964,18 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
         clearReactionTracker(session.id, humanReactionKey);
       }
       if (pendingFingerprint !== lastPendingFingerprint) {
-        updateSessionMetadata(session, {
+        updateSessionMetadata(session, buildReviewDispatchPatch({
           lastPendingReviewFingerprint: pendingFingerprint,
-        });
+        }));
       }
 
       if (!pendingFingerprint) {
         clearReactionTracker(session.id, humanReactionKey);
-        updateSessionMetadata(session, {
+        updateSessionMetadata(session, buildReviewDispatchPatch({
           lastPendingReviewFingerprint: "",
           lastPendingReviewDispatchHash: "",
           lastPendingReviewDispatchAt: "",
-        });
+        }));
       } else if (pendingFingerprint !== lastPendingDispatchHash) {
         const reactionConfig = getReactionConfigForSession(session, humanReactionKey);
         if (
@@ -1999,10 +2012,10 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
             success = result.success;
           }
           if (success) {
-            updateSessionMetadata(session, {
+            updateSessionMetadata(session, buildReviewDispatchPatch({
               lastPendingReviewDispatchHash: pendingFingerprint,
               lastPendingReviewDispatchAt: new Date().toISOString(),
-            });
+            }));
           }
         }
       }
@@ -2011,23 +2024,23 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     // --- Automated (bot) review comments ---
     {
       const automatedFingerprint = makeFingerprint(automatedComments.map((comment) => comment.id));
-      const lastAutomatedFingerprint = session.metadata["lastAutomatedReviewFingerprint"] ?? "";
-      const lastAutomatedDispatchHash = session.metadata["lastAutomatedReviewDispatchHash"] ?? "";
+      const lastAutomatedFingerprint = reviewDispatch.lastAutomatedReviewFingerprint ?? "";
+      const lastAutomatedDispatchHash = reviewDispatch.lastAutomatedReviewDispatchHash ?? "";
 
       if (automatedFingerprint !== lastAutomatedFingerprint) {
         clearReactionTracker(session.id, automatedReactionKey);
-        updateSessionMetadata(session, {
+        updateSessionMetadata(session, buildReviewDispatchPatch({
           lastAutomatedReviewFingerprint: automatedFingerprint,
-        });
+        }));
       }
 
       if (!automatedFingerprint) {
         clearReactionTracker(session.id, automatedReactionKey);
-        updateSessionMetadata(session, {
+        updateSessionMetadata(session, buildReviewDispatchPatch({
           lastAutomatedReviewFingerprint: "",
           lastAutomatedReviewDispatchHash: "",
           lastAutomatedReviewDispatchAt: "",
-        });
+        }));
       } else if (automatedFingerprint !== lastAutomatedDispatchHash) {
         const reactionConfig = getReactionConfigForSession(session, automatedReactionKey);
         if (
@@ -2054,10 +2067,10 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
             success = result.success;
           }
           if (success) {
-            updateSessionMetadata(session, {
+            updateSessionMetadata(session, buildReviewDispatchPatch({
               lastAutomatedReviewDispatchHash: automatedFingerprint,
               lastAutomatedReviewDispatchAt: new Date().toISOString(),
-            });
+            }));
           }
         }
       }
@@ -2214,25 +2227,26 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     // Clear tracking when PR is closed/merged
     if (newStatus === "merged" || newStatus === "killed") {
       clearReactionTracker(session.id, ciReactionKey);
-      updateSessionMetadata(session, {
+      updateSessionMetadata(session, buildCIFailureDispatchPatch({
         lastCIFailureFingerprint: "",
         lastCIFailureDispatchHash: "",
         lastCIFailureDispatchAt: "",
-      });
+      }));
       return;
     }
 
     // Only dispatch CI details when in ci_failed state
     if (newStatus !== "ci_failed") {
       // CI is no longer failing — clear tracking so next failure is dispatched fresh
-      const lastFingerprint = session.metadata["lastCIFailureFingerprint"] ?? "";
+      const ciDispatch = getCIFailureDispatch(session.metadata);
+      const lastFingerprint = ciDispatch.lastCIFailureFingerprint ?? "";
       if (lastFingerprint) {
         clearReactionTracker(session.id, ciReactionKey);
-        updateSessionMetadata(session, {
+        updateSessionMetadata(session, buildCIFailureDispatchPatch({
           lastCIFailureFingerprint: "",
           lastCIFailureDispatchHash: "",
           lastCIFailureDispatchAt: "",
-        });
+        }));
       }
       return;
     }
@@ -2241,17 +2255,18 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     if (!failedChecks) return;
 
     const ciFingerprint = makeCIFailureFingerprint(failedChecks);
-    const lastCIFingerprint = session.metadata["lastCIFailureFingerprint"] ?? "";
-    const lastCIDispatchHash = session.metadata["lastCIFailureDispatchHash"] ?? "";
+    const ciDispatch = getCIFailureDispatch(session.metadata);
+    const lastCIFingerprint = ciDispatch.lastCIFailureFingerprint ?? "";
+    const lastCIDispatchHash = ciDispatch.lastCIFailureDispatchHash ?? "";
 
     // Reset reaction tracker when failure set changes
     if (ciFingerprint !== lastCIFingerprint && transitionReaction?.key !== ciReactionKey) {
       clearReactionTracker(session.id, ciReactionKey);
     }
     if (ciFingerprint !== lastCIFingerprint) {
-      updateSessionMetadata(session, {
+      updateSessionMetadata(session, buildCIFailureDispatchPatch({
         lastCIFailureFingerprint: ciFingerprint,
-      });
+      }));
     }
 
     // If the transition reaction already delivered an enriched agent message,
@@ -2263,10 +2278,10 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
       (transitionReaction.messageEnriched === true ||
         transitionReaction.result.action !== "send-to-agent")
     ) {
-      updateSessionMetadata(session, {
+      updateSessionMetadata(session, buildCIFailureDispatchPatch({
         lastCIFailureDispatchHash: ciFingerprint,
         lastCIFailureDispatchAt: new Date().toISOString(),
-      });
+      }));
       return;
     }
 
@@ -2304,10 +2319,10 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
           await notifyHuman(event, reactionConfig.priority ?? "warning");
         }
 
-        updateSessionMetadata(session, {
+        updateSessionMetadata(session, buildCIFailureDispatchPatch({
           lastCIFailureDispatchHash: ciFingerprint,
           lastCIFailureDispatchAt: new Date().toISOString(),
-        });
+        }));
       } catch {
         // Send failed — will retry on next poll cycle
       }
@@ -2366,7 +2381,8 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     }
     const hasConflicts = cachedData.hasConflicts ?? false;
 
-    const lastDispatched = session.metadata["lastMergeConflictDispatched"] ?? "";
+    const mcDispatch = getMergeConflictDispatch(session.metadata);
+    const lastDispatched = mcDispatch.lastMergeConflictDispatched ?? "";
 
     if (hasConflicts) {
       // Already dispatched for current conflict state — skip
@@ -2397,9 +2413,9 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
           // to the human, so we must NOT suppress future agent dispatches if the
           // condition recurs after the tracker resets.
           if (result.success && result.action !== "escalated") {
-            updateSessionMetadata(session, {
+            updateSessionMetadata(session, buildMergeConflictDispatchPatch({
               lastMergeConflictDispatched: "true",
-            });
+            }));
           }
         } catch {
           // Dispatch failed — will retry on next poll cycle
@@ -2408,9 +2424,9 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     } else if (lastDispatched === "true") {
       // Conflicts resolved — clear dedup flag and reaction tracker so future
       // conflicts start a fresh incident with a fresh escalation budget.
-      updateSessionMetadata(session, {
+      updateSessionMetadata(session, buildMergeConflictDispatchPatch({
         lastMergeConflictDispatched: "",
-      });
+      }));
       clearReactionTracker(session.id, conflictReactionKey);
     }
   }
@@ -2483,7 +2499,7 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
 
     // Check for idleness: if the agent is still working, defer cleanup.
     const nowIso = new Date().toISOString();
-    const pendingSince = session.metadata["mergedPendingCleanupSince"] || nowIso;
+    const pendingSince = getReportWatcher(session.metadata).mergedPendingCleanupSince || nowIso;
     const pendingSinceMs = Date.parse(pendingSince);
     const graceElapsed = Number.isFinite(pendingSinceMs)
       ? Date.now() - pendingSinceMs >= graceMs
@@ -2496,8 +2512,8 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
       activity === ACTIVITY_STATE.BLOCKED;
 
     if (agentIsBusy && !graceElapsed) {
-      if (!session.metadata["mergedPendingCleanupSince"]) {
-        updateSessionMetadata(session, { mergedPendingCleanupSince: nowIso });
+      if (!getReportWatcher(session.metadata).mergedPendingCleanupSince) {
+        updateSessionMetadata(session, buildReportWatcherPatch({ mergedPendingCleanupSince: nowIso }));
       }
       observer.recordOperation({
         metric: "lifecycle_poll",
@@ -2566,8 +2582,8 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     } catch (err) {
       // Leave `merged` status in place so the next poll retries. Preserve the
       // deferral marker so idempotent retries don't restart the grace clock.
-      if (!session.metadata["mergedPendingCleanupSince"]) {
-        updateSessionMetadata(session, { mergedPendingCleanupSince: nowIso });
+      if (!getReportWatcher(session.metadata).mergedPendingCleanupSince) {
+        updateSessionMetadata(session, buildReportWatcherPatch({ mergedPendingCleanupSince: nowIso }));
       }
       const errorMsg = err instanceof Error ? err.message : String(err);
       observer.recordOperation({

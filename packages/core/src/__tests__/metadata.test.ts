@@ -1019,6 +1019,7 @@ describe("typed metadata helpers (AO-020)", () => {
       lastMergeConflictFingerprint: "fingerprint-mc",
       lastMergeConflictDispatchHash: "hash-mc",
       lastMergeConflictDispatchAt: "2026-06-12T21:15:00Z",
+      lastMergeConflictDispatched: "true",
     };
 
     const patch = buildMergeConflictDispatchPatch(group);
@@ -1027,8 +1028,8 @@ describe("typed metadata helpers (AO-020)", () => {
     const parsed = getMergeConflictDispatch(group);
     expect(parsed).toEqual(group);
 
-    const partialPatch = buildMergeConflictDispatchPatch({ lastMergeConflictFingerprint: "fingerprint-mc2" });
-    expect(partialPatch).toEqual({ lastMergeConflictFingerprint: "fingerprint-mc2" });
+    const partialPatch = buildMergeConflictDispatchPatch({ lastMergeConflictDispatched: "" });
+    expect(partialPatch).toEqual({ lastMergeConflictDispatched: "" });
   });
 
   it("handles ReportWatcherGroup", () => {
