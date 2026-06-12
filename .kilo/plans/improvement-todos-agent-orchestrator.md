@@ -35,9 +35,9 @@ Agent Orchestrator should behave reliably for end users by:
 - [x] AO-007: Dashboard kill/restore/merge pending-state guards added and tested.
 - [x] AO-008: SSE reconnects after transient errors with backoff and cleanup.
 - [x] AO-009: Central client API helper added for Dashboard actions and tested.
-- [ ] AO-010: Add optimistic UI with rollback.
+- [x] AO-010: Add optimistic UI with rollback.
 - [ ] AO-011: Clean up client fetch abort listeners.
-- [ ] AO-012: Persist backlog claim state.
+- [x] AO-012: Persist backlog claim state.
 - [ ] AO-013: Replace empty catches with structured warnings.
 - [ ] AO-014: Detect IPv4 and IPv6 port listeners.
 - [ ] AO-015: Add Windows-safe workspace `postCreate` execution.

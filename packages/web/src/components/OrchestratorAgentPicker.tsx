@@ -6,7 +6,7 @@ import type { OrchestratorAgentInfo, WorkerProviderInfo } from "@/lib/types";
 
 interface OrchestratorAgentPickerProps {
   value?: string;
-  onChange?: (agentName: string) => void;
+  onChange?: (agentName: string, type: "agent" | "workerProvider") => void;
   disabled?: boolean;
   className?: string;
 }
@@ -41,7 +41,7 @@ function OrchestratorAgentPickerView({
       setProviders(fetchedProviders);
       setLoading(false);
       if (!value && fetchedAgents.length > 0 && onChange) {
-        onChange(fetchedAgents[0].name);
+        onChange(fetchedAgents[0].name, "agent");
       }
     });
     return () => {
@@ -49,17 +49,18 @@ function OrchestratorAgentPickerView({
     };
   }, [value, onChange]);
 
+  const allOptions = [
+    ...agents.map((a) => ({ name: a.name, displayName: a.displayName, type: "agent" as const })),
+    ...providers.map((p) => ({ name: p.name, displayName: p.displayName, type: "workerProvider" as const })),
+  ];
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      onChange?.(e.target.value);
+      const selected = allOptions.find((o) => o.name === e.target.value);
+      onChange?.(e.target.value, selected?.type ?? "agent");
     },
-    [onChange],
+    [allOptions, onChange],
   );
-
-  const allOptions = [
-    ...agents.map((a) => ({ name: a.name, displayName: a.displayName, group: "Agent Plugins" as const })),
-    ...providers.map((p) => ({ name: p.name, displayName: p.displayName, group: "Worker Providers" as const })),
-  ];
 
   const selectedOption = allOptions.find((o) => o.name === value) ?? allOptions[0];
   const selectValue = value ?? selectedOption?.name ?? "claude-code";

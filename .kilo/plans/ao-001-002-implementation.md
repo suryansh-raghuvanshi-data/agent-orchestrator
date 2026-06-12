@@ -312,3 +312,61 @@ All in `packages/web/src/lib/__tests__/client-api.test.ts`:
 - `pnpm exec eslint packages/web/src/lib/client-api.ts packages/web/src/lib/__tests__/client-api.test.ts packages/web/src/components/Dashboard.tsx` — passed with only the repo-level `.eslintignore` warning.
 - `pnpm exec prettier --check packages/web/src/lib/client-api.ts packages/web/src/lib/__tests__/client-api.test.ts packages/web/src/components/Dashboard.tsx` — passed.
 
+ ---
+
+## AO-010: Add Optimistic UI With Rollback
+
+**Goal:** Make dashboard actions feel responsive without hiding failures.
+
+### Changes
+
+#### `packages/web/src/components/Dashboard.tsx`
+
+- Optimistic state updates already added in AO-007: `applyOptimisticSessionUpdate()` and `applyOptimisticMergeUpdate()` for kill/restore/merge actions.
+- Pending state guards prevent duplicate actions while optimistic state is in flight.
+- Failed API calls trigger `clearOptimisticSessionUpdates()` to rollback UI state.
+
+### Validation
+
+- `pnpm --filter @aoagents/ao-web test` — passed.
+- `pnpm --filter @aoagents/ao-web typecheck` — passed.
+
+---
+
+## AO-011: Clean Up Client Fetch Abort Listeners
+
+**Goal:** Prevent abort listener leaks during many fetches.
+
+### Changes
+
+No changes needed. The existing `mergeAbortSignals()` helper in `packages/web/src/lib/client-fetch.ts` is used exclusively for the SSE fallback polling path. The central `client-api.ts` helper uses `AbortController` directly with proper cleanup in `finally` blocks. No leaked listeners were detected in code review.
+
+---
+
+## AO-012: Persist Backlog Claim State
+
+**Status:** Implementation complete
+
+### Changes
+
+#### `packages/web/src/lib/services.ts`
+
+- Added import: `getBacklogClaimsPath` from core.
+- Added Node.js fs/path imports for file operations.
+- Added `loadClaims()` function — reads claims from `getBacklogClaimsPath()` on module load.
+- Added `saveClaims(claims: Set<string>)` function — persists claims to disk atomically.
+- Changed `processedIssues` from `new Set<string>()` to `loadClaims()` for durable state.
+- In `labelIssuesForVerification()` (line ~262): adds key to `processedIssues` and calls `saveClaims()` after successful label update.
+- In `pollBacklog()` (lines ~386-390): after successful spawn AND tracker update, adds claim key and calls `saveClaims()`.
+
+#### `packages/core/src/paths.ts`
+
+- Added `getBacklogClaimsPath()` function returning `~/.agent-orchestrator/backlog-claims.json`.
+
+#### `packages/core/src/index.ts`
+
+- Exported `getBacklogClaimsPath` from paths module.
+
+### Validation
+
+- `pnpm typecheck` — passed (all packages compile).

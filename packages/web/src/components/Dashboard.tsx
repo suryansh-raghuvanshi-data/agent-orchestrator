@@ -170,7 +170,7 @@ function DashboardInner({
     }
     return levels;
   }, [initialSessions, attentionZones]);
-  const { sessions, attentionLevels, liveSessionsResolved, loadError } = useSessionEvents({
+  const { sessions, liveSessionsResolved, loadError } = useSessionEvents({
     initialSessions,
     // No project filter — sidebar needs all sessions across all projects.
     // Kanban filtering is applied client-side via projectSessions below.
@@ -252,9 +252,13 @@ function DashboardInner({
     (process.env.NODE_ENV === "development" || debugParam === "1" || debugParam === "true");
   const { showToast } = useToast();
   const [selectedWorkerAgents, setSelectedWorkerAgents] = useState<string[]>([]);
-  const [selectedAgent, setSelectedAgent] = useState<string>("claude-code");
+  const [selectedOrchestrator, setSelectedOrchestrator] = useState<string>("claude-code");
+  const [selectedOrchestratorType, setSelectedOrchestratorType] = useState<"agent" | "workerProvider">("agent");
   const [doneExpanded, setDoneExpanded] = useState(false);
   const [pendingActions, setPendingActions] = useState<Record<string, boolean>>({});
+  const [optimisticSessionOverrides, setOptimisticSessionOverrides] = useState<
+    Record<string, Partial<DashboardSession>>
+  >({});
   const sessionsRef = useRef(sessions);
 
   sessionsRef.current = sessions;
@@ -283,9 +287,22 @@ function DashboardInner({
   const currentProjectSpawnError = projectId ? (spawnErrors[projectId] ?? null) : null;
 
   const displaySessions = useMemo(() => {
-    if (allProjectsView || !activeSessionId) return projectSessions;
-    return projectSessions.filter((s) => s.id === activeSessionId);
-  }, [projectSessions, allProjectsView, activeSessionId]);
+    const sessionsWithOptimisticUpdates = projectSessions.map((session) => {
+      const override = optimisticSessionOverrides[session.id];
+      return override ? { ...session, ...override } : session;
+    });
+
+    if (allProjectsView || !activeSessionId) return sessionsWithOptimisticUpdates;
+    return sessionsWithOptimisticUpdates.filter((s) => s.id === activeSessionId);
+  }, [projectSessions, optimisticSessionOverrides, allProjectsView, activeSessionId]);
+
+  const displayAttentionLevels = useMemo(() => {
+    const levels: Record<string, AttentionLevel> = {};
+    for (const session of displaySessions) {
+      levels[session.id] = getAttentionLevel(session, attentionZones);
+    }
+    return levels;
+  }, [displaySessions, attentionZones]);
 
   useEffect(() => {
     setActiveOrchestrators((current) => mergeOrchestrators(current, orchestratorLinks));
@@ -375,10 +392,10 @@ function DashboardInner({
 
   // Update document title with live attention counts
   useEffect(() => {
-    const needsAttention = countNeedingAttention(attentionLevels);
+    const needsAttention = countNeedingAttention(displayAttentionLevels);
     const label = projectName ?? "ao";
     document.title = needsAttention > 0 ? `${label} (${needsAttention} need attention)` : label;
-  }, [attentionLevels, projectName]);
+  }, [displayAttentionLevels, projectName]);
 
   const grouped = useMemo(() => {
     const zones: Record<AttentionLevel, DashboardSession[]> = {
@@ -398,7 +415,7 @@ function DashboardInner({
 
   const sessionsByProject = useMemo(() => {
     const groupedSessions = new Map<string, DashboardSession[]>();
-    for (const session of sessions) {
+    for (const session of displaySessions) {
       const projectSessions = groupedSessions.get(session.projectId);
       if (projectSessions) {
         projectSessions.push(session);
@@ -407,7 +424,7 @@ function DashboardInner({
       groupedSessions.set(session.projectId, [session]);
     }
     return groupedSessions;
-  }, [sessions]);
+  }, [displaySessions]);
 
   const projectOverviews = useMemo(() => {
     if (!allProjectsView) return [];
@@ -439,11 +456,56 @@ function DashboardInner({
     });
   }, [activeOrchestrators, allProjectsView, attentionZones, projects, sessionsByProject]);
 
+  const applyOptimisticSessionUpdate = useCallback(
+    (sessionId: string, patch: Partial<DashboardSession>) => {
+      setOptimisticSessionOverrides((current) => ({
+        ...current,
+        [sessionId]: patch,
+      }));
+    },
+    [],
+  );
+
+  const clearOptimisticSessionUpdates = useCallback((sessionIds: string[]) => {
+    if (sessionIds.length === 0) return;
+    setOptimisticSessionOverrides((current) =>
+      Object.fromEntries(Object.entries(current).filter(([id]) => !sessionIds.includes(id))),
+    );
+  }, []);
+
+  const applyOptimisticMergeUpdate = useCallback((prNumber: number) => {
+    const now = new Date().toISOString();
+    setOptimisticSessionOverrides((current) => {
+      const next = { ...current };
+      for (const session of sessionsRef.current) {
+        const prs = session.prs ?? [];
+        const matchingPR = prs.find((pr) => pr.number === prNumber) ?? session.pr;
+        if (!matchingPR || matchingPR.number !== prNumber) continue;
+
+        const nextPR = { ...matchingPR, state: "merged" as const };
+        const nextPRs = prs.map((pr) => (pr.number === prNumber ? nextPR : pr));
+        next[session.id] = {
+          ...session,
+          pr: session.pr?.number === prNumber ? nextPR : session.pr,
+          prs: nextPRs,
+          status: "merged",
+          lastActivityAt: now,
+        };
+      }
+      return next;
+    });
+  }, []);
+
   const killSession = useCallback(
     async (sessionId: string) => {
       const key = `kill:${sessionId}`;
       if (pendingActions[key]) return;
       setPendingActions((prev) => ({ ...prev, [key]: true }));
+      applyOptimisticSessionUpdate(sessionId, {
+        status: "terminated",
+        activity: "exited",
+        lastActivityAt: new Date().toISOString(),
+      });
       try {
         await postDashboardAction(`/api/sessions/${encodeURIComponent(sessionId)}/kill`, {
           method: "POST",
@@ -451,6 +513,7 @@ function DashboardInner({
         showToast("Session terminated", "success");
       } catch (error) {
         console.error(`Network error killing ${sessionId}:`, error);
+        clearOptimisticSessionUpdates([sessionId]);
         const message =
           error instanceof Error ? error.message : "Network error while terminating session";
         showToast(message, "error");
@@ -458,7 +521,7 @@ function DashboardInner({
         setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [pendingActions, showToast],
+    [applyOptimisticSessionUpdate, clearOptimisticSessionUpdates, pendingActions, showToast],
   );
 
   const handleKill = useCallback(
@@ -494,6 +557,7 @@ function DashboardInner({
       const key = `merge:${prNumber}`;
       if (pendingActions[key]) return;
       setPendingActions((prev) => ({ ...prev, [key]: true }));
+      applyOptimisticMergeUpdate(prNumber);
       try {
         await postDashboardAction(`/api/prs/${prNumber}/merge`, {
           method: "POST",
@@ -502,13 +566,17 @@ function DashboardInner({
         showToast(`PR #${prNumber} merged`, "success");
       } catch (error) {
         console.error(`Network error merging PR #${prNumber}:`, error);
+        const failedSessionIds = sessionsRef.current
+          .filter((session) => (session.prs ?? []).some((pr) => pr.number === prNumber))
+          .map((session) => session.id);
+        clearOptimisticSessionUpdates(failedSessionIds);
         const message = error instanceof Error ? error.message : "Network error while merging PR";
         showToast(message, "error");
       } finally {
         setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [pendingActions, showToast],
+    [applyOptimisticMergeUpdate, clearOptimisticSessionUpdates, pendingActions, showToast],
   );
 
   const handleRestore = useCallback(
@@ -516,6 +584,11 @@ function DashboardInner({
       const key = `restore:${sessionId}`;
       if (pendingActions[key]) return;
       setPendingActions((prev) => ({ ...prev, [key]: true }));
+      applyOptimisticSessionUpdate(sessionId, {
+        status: "working",
+        activity: "active",
+        lastActivityAt: new Date().toISOString(),
+      });
       try {
         await postDashboardAction(`/api/sessions/${encodeURIComponent(sessionId)}/restore`, {
           method: "POST",
@@ -524,6 +597,7 @@ function DashboardInner({
         routerRef.current.refresh();
       } catch (error) {
         console.error(`Network error restoring ${sessionId}:`, error);
+        clearOptimisticSessionUpdates([sessionId]);
         const message =
           error instanceof Error ? error.message : "Network error while restoring session";
         showToast(message, "error");
@@ -531,7 +605,7 @@ function DashboardInner({
         setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [pendingActions, showToast],
+    [applyOptimisticSessionUpdate, clearOptimisticSessionUpdates, pendingActions, showToast],
   );
 
   const handleSpawnOrchestrator = async (project: ProjectInfo) => {
@@ -544,7 +618,9 @@ function DashboardInner({
       const data = await postSpawnOrchestrator({
         projectId: project.id,
         workerAgents: selectedWorkerAgents,
-        agent: selectedAgent,
+        ...(selectedOrchestratorType === "workerProvider"
+          ? { workerProvider: selectedOrchestrator }
+          : { agent: selectedOrchestrator }),
       });
 
       if (!data.orchestrator) {
@@ -588,8 +664,8 @@ function DashboardInner({
   ) : null;
 
   const anyRateLimited = useMemo(
-    () => sessions.some((session) => session.pr && isPRRateLimited(session.pr)),
-    [sessions],
+    () => displaySessions.some((session) => session.pr && isPRRateLimited(session.pr)),
+    [displaySessions],
   );
   // Always show the human-readable project name in the titlebar — never the raw
   // project id hash (that was a poor disambiguation hack and reads as gibberish).
@@ -687,7 +763,13 @@ function DashboardInner({
         <div className="dashboard-app-header__actions">
           {showDebugBundleButton ? <CopyDebugBundleButton projectId={projectId} /> : null}
           <DashboardNotificationButton />
-          <OrchestratorAgentPicker value={selectedAgent} onChange={setSelectedAgent} />
+          <OrchestratorAgentPicker
+             value={selectedOrchestrator}
+             onChange={(name, type) => {
+               setSelectedOrchestrator(name);
+               setSelectedOrchestratorType(type);
+             }}
+           />
           <WorkerAgentsCheckboxPicker
             value={selectedWorkerAgents}
             onChange={setSelectedWorkerAgents}
@@ -745,7 +827,7 @@ function DashboardInner({
       </header>
 
       <main className="dashboard-main flex flex-col flex-1 min-h-0 overflow-hidden">
-        <DynamicFavicon attentionLevels={attentionLevels} projectName={projectName} />
+        <DynamicFavicon attentionLevels={displayAttentionLevels} projectName={projectName} />
         <div className="dashboard-main__subhead">
           <h1 className="dashboard-main__title">Board</h1>
           <p className="dashboard-main__subtitle">
@@ -893,7 +975,7 @@ function DashboardInner({
       onConfirm={handleBottomSheetConfirmKill}
       onRequestKill={handleRequestKill}
       onMerge={handleMerge}
-      isMergeReady={previewSession ? attentionLevels[previewSession.id] === "merge" : false}
+      isMergeReady={previewSession ? displayAttentionLevels[previewSession.id] === "merge" : false}
     />
   );
 

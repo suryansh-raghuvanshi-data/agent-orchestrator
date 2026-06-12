@@ -296,6 +296,11 @@ export function getRegisteredPath(): string {
   return join(getPortfolioDir(), "registered.json");
 }
 
+/** Get the backlog claims file path */
+export function getBacklogClaimsPath(): string {
+  return join(getAoBaseDir(), "backlog-claims.json");
+}
+
 /**
  * @deprecated No longer needed — storageKey and .origin collision detection are removed.
  * Validate and store the .origin file for a project.

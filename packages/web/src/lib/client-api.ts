@@ -124,7 +124,8 @@ export async function postSpawnOrchestrator(
   body: {
     projectId: string;
     workerAgents: string[];
-    agent: string;
+    agent?: string;
+    workerProvider?: string;
   },
   init: DashboardActionOptions = {},
 ): Promise<SpawnOrchestratorResponse> {
