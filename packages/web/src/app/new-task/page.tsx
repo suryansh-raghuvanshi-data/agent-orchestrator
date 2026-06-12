@@ -439,8 +439,8 @@ export default function NewTaskPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center p-4">
-      <div className="w-full max-w-[640px]">
+    <div className="h-screen bg-[var(--color-bg-base)] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="w-full max-w-[640px] py-4">
         {stepIndicator}
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}

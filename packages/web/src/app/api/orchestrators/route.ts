@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
   }
 
   const clean = body.clean === true;
-  let workerProvider = (body.workerProvider as string) ?? undefined;
-  let agent = (body.agent as string) ?? undefined;
+  let workerProvider = body.workerProvider as string | undefined;
+  let agent = body.agent as string | undefined;
   const workerAgents = Array.isArray(body.workerAgents)
     ? (body.workerAgents as string[])
     : undefined;

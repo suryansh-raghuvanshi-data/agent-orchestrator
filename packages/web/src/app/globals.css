@@ -455,12 +455,14 @@ html:not(.dark) body {
     linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 28%), var(--color-bg-base);
 }
 
-a {
-  color: var(--color-accent);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
+@layer base {
+  a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────────────── */
