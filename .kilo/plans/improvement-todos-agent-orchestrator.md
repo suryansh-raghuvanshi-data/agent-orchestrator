@@ -46,8 +46,8 @@ Agent Orchestrator should behave reliably for end users by:
 - [ ] AO-018: Split `SessionManager` responsibilities.
 - [ ] AO-019: Split `LifecycleManager` responsibilities.
 - [ ] AO-020: Add typed metadata helpers.
-- [ ] AO-021: Document metadata ownership.
-- [ ] AO-022: Document dashboard live-update flow.
+- [x] AO-021: Document metadata ownership.
+- [x] AO-022: Document dashboard live-update flow.
 - [ ] AO-023: Full regression suite.
 
 ---
