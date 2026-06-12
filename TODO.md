@@ -1,6 +1,30 @@
 # Agent Orchestrator — World-Class UI/UX Implementation Plan
 ### A Complete Blueprint for Multi-Agent Build Teams
 
+## COMPLETED WORK
+
+### Phase 3.1 — Chat Panel Component ✅
+- `ChatThread` component built with Markdown rendering (`react-markdown` + `remark-gfm`)
+- Slash command autocomplete (`/help`, `/status`, `/summary`, `/review`, `/fix`, `/retry`, `/kill`)
+- Context chips (`@file`, `@agent`) in composer
+- Message send via `/api/sessions/[id]/send`
+- New route: `/projects/[projectId]/sessions/[id]/chat/page.tsx`
+
+### Phase 3.2 — Strategy / Orchestration Map Panel ✅
+- `StrategyMap` placeholder component renders structured strategy when `session.metadata["strategy"]` exists
+- Falls back to demo node/edge graph with status indicators
+- Right rail in split-pane layout (desktop) or stacked (mobile)
+
+### Phase 3 — Chat Workspace Layout ✅
+- `ChatWorkspace` split-pane: chat thread (left) + strategy map (right)
+- Responsive: stacks vertically on mobile, side-by-side on desktop
+- All styles use existing Mission Control design tokens (`--color-bg-*`, `--color-border-*`, `--color-text-*`)
+- CSS added to `packages/web/src/app/mc-session.css`
+
+### Dependencies Added
+- `react-markdown` ^10.1.0
+- `remark-gfm` ^4.0.1
+
 ---
 
 ## OVERVIEW FOR ORCHESTRATOR AGENT
