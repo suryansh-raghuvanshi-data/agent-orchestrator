@@ -165,8 +165,9 @@ function AttentionZoneView({
     <div className="kanban-column" data-level={level}>
       <div className="kanban-column__header">
         <div className="kanban-column__title-row">
-          <div className="kanban-column__dot" data-level={level} />
+          <span className="kanban-column__dot" data-level={level} />
           <span className="kanban-column__title">{config.label}</span>
+          <span className="kanban-column__divider" aria-hidden="true" />
           <span className="kanban-column__count">{sessions.length}</span>
         </div>
       </div>

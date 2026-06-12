@@ -279,6 +279,20 @@ function DashboardInner({
     setActiveOrchestrators((current) => mergeOrchestrators(current, orchestratorLinks));
   }, [orchestratorLinks]);
 
+  // Real-time SSE refresh — listen to /api/events for session lifecycle changes
+  // and trigger a client-side refresh so the board stays in sync.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const source = new EventSource("/api/events");
+    source.onmessage = () => {
+      routerRef.current?.refresh();
+    };
+    source.onerror = () => {
+      source.close();
+    };
+    return () => source.close();
+  }, []);
+
   // Update document title with live attention counts
   useEffect(() => {
     const needsAttention = countNeedingAttention(attentionLevels);

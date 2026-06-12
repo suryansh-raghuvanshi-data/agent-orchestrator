@@ -143,6 +143,14 @@
   color: var(--t3);
 }
 
+.kanban-column__divider {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  margin: 0 10px;
+  opacity: 0.7;
+}
+
 /* Per-column dot glow + tinted title, mirroring kanban.html .c-work/.c-attn/.c-rev/.c-ready */
 .kanban-column[data-level="working"] {
   --ctc: rgb(231, 180, 131);

@@ -18,6 +18,8 @@ import { StatusBadge } from "./StatusBadge";
 import { DoneSessionCard } from "./SessionCard.parts";
 import { projectSessionHashPath } from "@/lib/routes";
 
+
+
 /**
  * Tracks which session IDs have already played their entrance animation.
  * Prevents the kanban-card-enter animation from replaying when React
@@ -196,7 +198,10 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
 
       <div className="session-card__body flex min-h-0 flex-1 flex-col">
         <div className="card__title-wrap">
-          <p className="card__title">{title}</p>
+          <div className="flex items-center gap-2">
+            <span className="activity-dot" data-level={level} />
+            <p className="card__title">{title}</p>
+          </div>
         </div>
 
         <div className="card__meta">
@@ -327,7 +332,7 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
                   e.stopPropagation();
                   onMerge?.(effectivePR.number, effectivePR.owner, effectivePR.repo);
                 }}
-                className="session-card__control session-card__merge-control"
+                className="session-card__control session-card__merge-control bg-[var(--color-accent-green)] hover:bg-[var(--color-accent-green)]/90 text-white border border-[var(--color-accent-green)]"
               >
                 <svg
                   className="session-card__control-icon"

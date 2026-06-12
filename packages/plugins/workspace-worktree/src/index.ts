@@ -154,21 +154,16 @@ async function isRegisteredWorktree(repoPath: string, worktreePath: string): Pro
 }
 
 async function clearStaleWorktreePath(repoPath: string, worktreePath: string): Promise<void> {
-  if (!existsSync(worktreePath)) return;
-
   try {
-    await git(repoPath, "worktree", "prune");
+    await git(repoPath, "worktree", "remove", "--force", worktreePath);
   } catch {
-    // Best-effort prune before checking whether the path is still registered.
+    // Best-effort: removes stale registration even when the directory is
+    // missing (git's "missing but already registered" state).
   }
 
-  if (await isRegisteredWorktree(repoPath, worktreePath)) {
-    throw new Error(
-      `Worktree path "${worktreePath}" already exists and is still registered with git`,
-    );
+  if (existsSync(worktreePath)) {
+    await removeDirWithRetry(worktreePath);
   }
-
-  rmSync(worktreePath, { recursive: true, force: true });
 }
 
 /**

@@ -71,6 +71,7 @@ const BUILTIN_PLUGINS: Array<{ slot: PluginSlot; name: string; pkg: string }> = 
   { slot: "terminal", name: "web", pkg: "@aoagents/ao-plugin-terminal-web" },
   // Worker Providers
   { slot: "worker-provider", name: "antigravity", pkg: "@aoagents/ao-plugin-worker-antigravity" },
+  { slot: "worker-provider", name: "cli", pkg: "@aoagents/ao-plugin-provider-cli" },
   { slot: "worker-provider", name: "kilo", pkg: "@aoagents/ao-plugin-worker-kilo" },
   { slot: "worker-provider", name: "devin", pkg: "@aoagents/ao-plugin-worker-devin" },
 ];

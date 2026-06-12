@@ -142,7 +142,7 @@ export function SessionDetail({
         onRestore={handleRestore}
         onKill={handleKill}
       />
-      <main className="session-detail-page session-workspace flex-1 min-h-0 flex bg-[var(--color-bg-base)]">
+      <main className="session-detail-page session-workspace flex-1 min-h-0 flex bg-[var(--color-bg-base)]" style={{ height: "calc(100dvh - 56px)" }}>
         <div className="session-workspace__main flex-1 min-h-0 flex flex-col">
           {!showTerminal ? (
             <div className="session-detail-terminal-placeholder h-full" />

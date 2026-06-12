@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CI_STATUS } from "@aoagents/ao-core/types";
 import { cn } from "@/lib/cn";
-import { type DashboardSession, type DashboardPR, isPRMergeReady } from "@/lib/types";
+import { type DashboardSession, type DashboardPR, isPRMergeReady, getAttentionLevel } from "@/lib/types";
 import type { ProjectInfo } from "@/lib/project-name";
 import { DashboardNotificationButton } from "./DashboardNotificationButton";
 import { SessionDetailPRCard } from "./SessionDetailPRCard";
@@ -163,17 +163,24 @@ export function SessionDetailHeader({
             </span>
           </div>
           <div className="topbar-session-pills">
-            <StatusBadge session={session} variant="pill" />
+          <StatusBadge session={session} variant="pill" />
+          <span className="activity-dot" data-level={getAttentionLevel(session)} />
             {orchestratorZones ? <OrchestratorZonePills zones={orchestratorZones} /> : null}
           </div>
         </div>
       ) : (
         <>
-          {/* Session identity — TITLE first, BRANCH to its right (mono + git icon). */}
+          {/* Session identity — BREADCRUMB · TITLE + BRANCH (mockup .sess-id) */}
           <div className="session-topbar__id">
-            <span className="session-topbar__title" title={headline}>
-              {headline}
-            </span>
+            <nav className="session-topbar__breadcrumb" aria-label="Breadcrumb">
+              <a href={projectDashboardPath(session.projectId)} className="session-topbar__crumb" title="Kanban">
+                Kanban
+              </a>
+              <span className="session-topbar__crumb-sep" aria-hidden="true">/</span>
+              <span className="session-topbar__crumb session-topbar__crumb--current" aria-current="page" title={headline}>
+                {headline}
+              </span>
+            </nav>
             {session.branch ? (
               pr ? (
                 <a
