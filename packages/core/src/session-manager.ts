@@ -1129,6 +1129,8 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         prompt: spawnConfig.prompt ?? "",
         systemPrompt: undefined,
       });
+      const taskId = taskHandle.taskId;
+      const provider = route.provider;
       const createdAt = new Date();
       const lifecycle = createInitialCanonicalLifecycle("worker", createdAt);
       const externalSession: Session = {
@@ -1153,35 +1155,55 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         lastActivityAt: createdAt,
         metadata: {
           workerProvider: route.providerName,
-          workerTaskId: taskHandle.taskId,
+          workerTaskId: taskId,
           ...(spawnConfig.prompt ? { userPrompt: spawnConfig.prompt } : {}),
         },
       };
-      writeMetadata(getProjectSessionsDir(spawnConfig.projectId), externalSessionId, {
-        worktree: project.path,
-        branch: externalSession.branch ?? `session/${externalSessionId}`,
-        status: "working",
-        ...buildLifecycleMetadataPatch(lifecycle),
-        lifecycle,
-        issue: spawnConfig.issueId,
-        project: spawnConfig.projectId,
-        agent: selection.agentName,
-        createdAt: createdAt.toISOString(),
-        userPrompt: spawnConfig.prompt,
-        workerProvider: route.providerName,
-        workerTaskId: taskHandle.taskId,
-        displayName: "External Worker",
-      });
-      invalidateCache();
-      recordActivityEvent({
-        projectId: spawnConfig.projectId,
-        sessionId: externalSessionId,
-        source: "session-manager",
-        kind: "session.spawned",
-        summary: `spawned (external: ${route.providerName}): ${externalSessionId}`,
-        data: { provider: route.providerName, taskId: taskHandle.taskId },
-      });
-      return externalSession;
+      const sessionsDir = getProjectSessionsDir(spawnConfig.projectId);
+      try {
+        writeMetadata(sessionsDir, externalSessionId, {
+          worktree: project.path,
+          branch: externalSession.branch ?? `session/${externalSessionId}`,
+          status: "working",
+          ...buildLifecycleMetadataPatch(lifecycle),
+          lifecycle,
+          issue: spawnConfig.issueId,
+          project: spawnConfig.projectId,
+          agent: selection.agentName,
+          createdAt: createdAt.toISOString(),
+          userPrompt: spawnConfig.prompt,
+          workerProvider: route.providerName,
+          workerTaskId: taskId,
+          displayName: "External Worker",
+        });
+        invalidateCache();
+        recordActivityEvent({
+          projectId: spawnConfig.projectId,
+          sessionId: externalSessionId,
+          source: "session-manager",
+          kind: "session.spawned",
+          summary: `spawned (external: ${route.providerName}): ${externalSessionId}`,
+          data: { provider: route.providerName, taskId },
+        });
+        return externalSession;
+      } catch (err) {
+        // Rollback: external task was submitted but local metadata write failed.
+        // Cancel the remote task to avoid orphaned work.
+        try {
+          await provider.cancelTask(taskHandle);
+        } catch (cancelErr) {
+          recordActivityEvent({
+            projectId: spawnConfig.projectId,
+            sessionId: externalSessionId,
+            source: "session-manager",
+            kind: "worker.task_cancel_failed",
+            level: "error",
+            summary: `failed to cancel external task ${taskId} after metadata write failure`,
+            data: { reason: cancelErr instanceof Error ? cancelErr.message : String(cancelErr) },
+          });
+        }
+        throw err;
+      }
     }
 
     // Get the sessions directory for this project
