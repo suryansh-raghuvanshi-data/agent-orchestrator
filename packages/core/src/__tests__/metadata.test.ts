@@ -21,6 +21,16 @@ import {
   updateMetadata,
   deleteMetadata,
   listMetadata,
+  getPRReviewComments,
+  buildPRReviewCommentsPatch,
+  getReviewDispatch,
+  buildReviewDispatchPatch,
+  getCIFailureDispatch,
+  buildCIFailureDispatchPatch,
+  getMergeConflictDispatch,
+  buildMergeConflictDispatchPatch,
+  getReportWatcher,
+  buildReportWatcherPatch,
 } from "../metadata.js";
 import { recordActivityEvent } from "../activity-events.js";
 
@@ -931,5 +941,108 @@ describe("corrupt JSON handling", () => {
     const meta = readMetadata(dataDir, "corrupt-mut");
     expect(meta).not.toBeNull();
     expect(meta!.status).toBe("working");
+  });
+});
+
+describe("typed metadata helpers (AO-020)", () => {
+  it("roundtrips PRReviewComments", () => {
+    const comments = {
+      unresolvedThreads: 2,
+      unresolvedComments: [
+        {
+          path: "src/foo.ts",
+          author: "octocat",
+          body: "Please fix this",
+        },
+      ],
+      reviews: [
+        {
+          author: "octocat",
+          state: "CHANGES_REQUESTED",
+        },
+      ],
+      commentsUpdatedAt: "2026-06-12T21:00:00Z",
+    };
+
+    const patch = buildPRReviewCommentsPatch(comments);
+    expect(patch.prReviewComments).toBe(JSON.stringify(comments));
+
+    const record = { prReviewComments: JSON.stringify(comments) };
+    const parsed = getPRReviewComments(record);
+    expect(parsed).toEqual(comments);
+
+    // returns null if missing or invalid
+    expect(getPRReviewComments({})).toBeNull();
+    expect(getPRReviewComments({ prReviewComments: "{invalid" })).toBeNull();
+  });
+
+  it("handles ReviewDispatchGroup", () => {
+    const group = {
+      lastPendingReviewFingerprint: "fingerprint-1",
+      lastPendingReviewDispatchHash: "hash-1",
+      lastPendingReviewDispatchAt: "2026-06-12T21:00:00Z",
+      lastAutomatedReviewFingerprint: "fingerprint-2",
+      lastAutomatedReviewDispatchHash: "hash-2",
+      lastAutomatedReviewDispatchAt: "2026-06-12T21:05:00Z",
+    };
+
+    const patch = buildReviewDispatchPatch(group);
+    expect(patch).toEqual(group);
+
+    const parsed = getReviewDispatch(group);
+    expect(parsed).toEqual(group);
+
+    const partialPatch = buildReviewDispatchPatch({ lastPendingReviewFingerprint: "fingerprint-3" });
+    expect(partialPatch).toEqual({ lastPendingReviewFingerprint: "fingerprint-3" });
+  });
+
+  it("handles CIFailureDispatchGroup", () => {
+    const group = {
+      lastCIFailureFingerprint: "fingerprint-ci",
+      lastCIFailureDispatchHash: "hash-ci",
+      lastCIFailureDispatchAt: "2026-06-12T21:10:00Z",
+      ciPassingStableCount: "5",
+    };
+
+    const patch = buildCIFailureDispatchPatch(group);
+    expect(patch).toEqual(group);
+
+    const parsed = getCIFailureDispatch(group);
+    expect(parsed).toEqual(group);
+
+    const partialPatch = buildCIFailureDispatchPatch({ ciPassingStableCount: "6" });
+    expect(partialPatch).toEqual({ ciPassingStableCount: "6" });
+  });
+
+  it("handles MergeConflictGroup", () => {
+    const group = {
+      lastMergeConflictFingerprint: "fingerprint-mc",
+      lastMergeConflictDispatchHash: "hash-mc",
+      lastMergeConflictDispatchAt: "2026-06-12T21:15:00Z",
+    };
+
+    const patch = buildMergeConflictDispatchPatch(group);
+    expect(patch).toEqual(group);
+
+    const parsed = getMergeConflictDispatch(group);
+    expect(parsed).toEqual(group);
+
+    const partialPatch = buildMergeConflictDispatchPatch({ lastMergeConflictFingerprint: "fingerprint-mc2" });
+    expect(partialPatch).toEqual({ lastMergeConflictFingerprint: "fingerprint-mc2" });
+  });
+
+  it("handles ReportWatcherGroup", () => {
+    const group = {
+      mergedPendingCleanupSince: "2026-06-12T21:20:00Z",
+    };
+
+    const patch = buildReportWatcherPatch(group);
+    expect(patch).toEqual(group);
+
+    const parsed = getReportWatcher(group);
+    expect(parsed).toEqual(group);
+
+    const partialPatch = buildReportWatcherPatch({ mergedPendingCleanupSince: "2026-06-12T21:25:00Z" });
+    expect(partialPatch).toEqual({ mergedPendingCleanupSince: "2026-06-12T21:25:00Z" });
   });
 });
