@@ -83,8 +83,8 @@ export type AttentionLevel =
  * Maps to core Session but uses string dates (JSON-serializable for SSR/client boundary)
  * and inlines PR state.
  *
- * TODO: When wiring to real data, add a serialization layer that converts
- * core Session (Date objects) → DashboardSession (string dates).
+ * Sourced/serialized from core Session (Date objects) → DashboardSession (string dates)
+ * via serialize.ts.
  */
 export interface DashboardSession {
   id: string;

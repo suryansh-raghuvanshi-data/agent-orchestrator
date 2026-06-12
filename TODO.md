@@ -952,6 +952,6 @@ PHASE 10  ✅
 
 ## OUTSTANDING CODEBASE TODOS (Pre-existing)
 
-- [ ] `packages/cli/src/lib/plugin-scaffold.ts`: Replace placeholder with a real plugin slot implementation.
-- [ ] `packages/web/src/lib/types.ts`: When wiring to real data, add a serialization layer that converts values.
+- [x] `packages/cli/src/lib/plugin-scaffold.ts`: Replace placeholder with a real plugin slot implementation.
+- [x] `packages/web/src/lib/types.ts`: When wiring to real data, add a serialization layer that converts values.
 - [ ] `website/content/docs/plugins/authoring.mdx`: Update placeholder with a real notifier implementation in the docs.
