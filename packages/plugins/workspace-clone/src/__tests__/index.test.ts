@@ -716,10 +716,14 @@ describe("workspace.postCreate()", () => {
 
     expect(mockExecFileAsync).toHaveBeenNthCalledWith(1, "sh", ["-c", "pnpm install"], {
       cwd: "/mock-home/.ao-clones/proj/sess",
+      timeout: 30_000,
+      windowsHide: true,
     });
 
     expect(mockExecFileAsync).toHaveBeenNthCalledWith(2, "sh", ["-c", "pnpm build"], {
       cwd: "/mock-home/.ao-clones/proj/sess",
+      timeout: 30_000,
+      windowsHide: true,
     });
   });
 

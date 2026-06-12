@@ -5,6 +5,7 @@ import { delimiter, dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { promisify } from "node:util";
 import type { SessionId } from "./types.js";
+import { isWindows } from "./platform.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -38,7 +39,7 @@ async function resolveGhBinary(): Promise<string> {
   // On Windows the binary is `gh.exe` (or `gh.cmd` for npm shims). Honor
   // PATHEXT so we match whatever the user actually installed.
   const exts =
-    process.platform === "win32"
+    isWindows()
       ? (process.env["PATHEXT"]?.split(";").filter(Boolean) ?? [".EXE", ".CMD", ".BAT"]).map((e) =>
           e.toLowerCase(),
         )

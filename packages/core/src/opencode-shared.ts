@@ -25,6 +25,7 @@ import { promisify } from "node:util";
 import { getAoBaseDir } from "./paths.js";
 import { safeJsonParse } from "./utils/validation.js";
 import { asValidOpenCodeSessionId } from "./opencode-session-id.js";
+import { isWindows } from "./platform.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -189,7 +190,7 @@ export async function getCachedOpenCodeSessionList(options?: {
       env: getOpenCodeChildEnv(),
       // On Windows, execFile cannot resolve .cmd shim extensions without
       // invoking the shell; windowsHide:true suppresses the conhost popup.
-      ...(process.platform === "win32" ? { shell: true, windowsHide: true } : {}),
+      ...(isWindows() ? { shell: true, windowsHide: true } : {}),
     },
   )
     .then(({ stdout }) => {
