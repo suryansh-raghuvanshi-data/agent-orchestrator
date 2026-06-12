@@ -390,7 +390,8 @@ All importable from `@aoagents/ao-core` unless noted:
 | `packages/web/src/components/CompletionOverlay.tsx` | Full-viewport completion overlay: dark dim + checkmark card, auto-fades after 800ms                                                |
 | `packages/web/src/components/CompletionSummary.tsx` | Completion summary card with counts, elapsed time, skipped/failed tasks, key outputs, action strip                                |
 | `packages/web/src/lib/empty-states.tsx`             | Centralized empty state configs and icons for all major views (dashboard, kanban, logs, history, agents)                         |
-| `packages/web/src/app/globals.css`                  | Design tokens, base styles, motion system animations (pulse-border, stagger, drawer/dropdown/modal entrances)                    |
+| `packages/web/src/app/globals.css`                  | Design tokens, base styles, motion system animations (pulse-border, stagger, drawer/dropdown/modal entrances), mobile kanban scroll    |
+| `packages/web/src/components/MobileBottomNav.tsx`    | Responsive bottom nav with legacy (Dashboard/PRs/Orchestrator) and new (Board/Logs/Menu) tab sets, auto-detects mode               |
 
 ## Skills
 

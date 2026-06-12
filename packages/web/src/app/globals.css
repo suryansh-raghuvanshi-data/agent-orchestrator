@@ -7018,6 +7018,26 @@ body:not(.is-resizing-x) .sidebar-wrapper {
     cursor: default;
   }
 
+  /* ── Kanban: horizontal scroll on mobile ──────────────────────────── */
+
+  .kanban-columns-wrapper {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 8px;
+  }
+
+  .kanban-columns-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kanban-column {
+    min-width: 280px;
+    max-width: 280px;
+    scroll-snap-align: start;
+  }
+
   /* ── Mobile action strip ─────────────────────────────────────────────── */
 
   .mobile-action-strip {

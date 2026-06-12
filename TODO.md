@@ -869,21 +869,11 @@ CSS animations added to `globals.css`:
 
 ## PHASE 10 — RESPONSIVE BEHAVIOR
 
-### Task 10.1 — Breakpoint Implementation
+### Task 10.1 — Breakpoint Implementation ✅
 
-**Owner:** Responsive Agent
-
-**Breakpoints:**
-- Desktop: ≥1280px — full layout as described
-- Tablet: 768–1279px — sidebar collapses to icon-only, chat and map stack vertically in Workspace
-- Mobile: <768px — single-column, bottom tab bar replaces TopBar tabs, all panels become full-screen drawers
-
-**Mobile-specific changes:**
-- TopBar shows only: logo, active task name, notification bell
-- Bottom tab bar (60px): Chat | Board | Logs | Menu
-- Agent pickers moved into a "Menu" full-screen drawer
-- Kanban scrolls horizontally (columns are 280px fixed width, outer container scrolls)
-- Chat takes full screen; returning to board navigates via tab bar
+- `MobileBottomNav` extended: supports both legacy (Dashboard/PRs/Orchestrator) and new (Board/Logs/Menu) tab sets with flexible `tabs` prop; auto-detects legacy mode via `dashboardHref` presence
+- Kanban horizontal scroll on mobile: columns fixed at 280px with `scroll-snap`, `overflow-x: auto`, hidden scrollbar, touch-friendly scrolling
+- All 1036 tests pass, backward compatible with existing `PullRequestsPage` and `SessionDetail` callers
 
 ---
 
@@ -931,8 +921,8 @@ PHASE 9  ✅
   9.1  Motion system audit — done
   9.2  Empty states — done
 
-PHASE 10  ←  Can be done in parallel with Phase 9
-  10.1  Responsive behavior
+PHASE 10  ✅
+  10.1  Responsive behavior — done
 ```
 
 ---
