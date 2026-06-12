@@ -69,7 +69,7 @@ describe("AntigravityWorkerProvider", () => {
     expect(status.progress).toBe(100);
 
     const output = await provider.getTaskOutput(handle);
-    expect(output).toContain('calculate meaning of life');
+    expect(output).toContain("calculate meaning of life");
   });
 
   it("handles cancelTask", async () => {
@@ -89,7 +89,9 @@ describe("AntigravityWorkerProvider", () => {
   it("canRetry returns true for transient errors, false otherwise", () => {
     const provider = create();
     expect(provider.canRetry!({ code: "ERR", message: "transient", isTransient: true })).toBe(true);
-    expect(provider.canRetry!({ code: "ERR", message: "permanent", isTransient: false })).toBe(false);
+    expect(provider.canRetry!({ code: "ERR", message: "permanent", isTransient: false })).toBe(
+      false,
+    );
   });
 
   describe("mock failures via prompt", () => {
@@ -100,7 +102,7 @@ describe("AntigravityWorkerProvider", () => {
           sessionId: "s1",
           projectId: "p1",
           prompt: "test fail:unavailable",
-        })
+        }),
       ).rejects.toThrow("Anti-Gravity service unavailable");
     });
 

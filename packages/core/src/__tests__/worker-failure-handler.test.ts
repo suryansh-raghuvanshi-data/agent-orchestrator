@@ -27,7 +27,9 @@ describe("waitForTask", () => {
   it("returns completed status when task completes", async () => {
     const { waitForTask } = await import("../worker-failure-handler.js");
     const provider = makeProvider({
-      getTaskStatus: vi.fn().mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
+      getTaskStatus: vi
+        .fn()
+        .mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
     });
 
     const status = await waitForTask(
@@ -71,7 +73,9 @@ describe("waitForTask", () => {
     const { waitForTask } = await import("../worker-failure-handler.js");
 
     const provider = makeProvider({
-      getTaskStatus: vi.fn().mockResolvedValue({ state: "running", lastUpdatedAt: new Date().toISOString() }),
+      getTaskStatus: vi
+        .fn()
+        .mockResolvedValue({ state: "running", lastUpdatedAt: new Date().toISOString() }),
       cancelTask: vi.fn().mockResolvedValue(undefined),
     });
 
@@ -95,7 +99,9 @@ describe("executeTaskWithRetry", () => {
 
     const provider = makeProvider({
       submitTask: vi.fn().mockResolvedValue({ taskId: "t1", providerName: "test", data: {} }),
-      getTaskStatus: vi.fn().mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
+      getTaskStatus: vi
+        .fn()
+        .mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
     });
 
     const result = await executeTaskWithRetry(
@@ -204,8 +210,12 @@ describe("reassignTask", () => {
       cancelTask: vi.fn().mockResolvedValue(undefined),
     });
     const targetProvider = makeProvider({
-      submitTask: vi.fn().mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
-      getTaskStatus: vi.fn().mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
+      submitTask: vi
+        .fn()
+        .mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
+      getTaskStatus: vi
+        .fn()
+        .mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
     });
 
     const sourceHandle = { taskId: "source-task", providerName: "source", data: {} };
@@ -216,7 +226,7 @@ describe("reassignTask", () => {
       sourceHandle,
       targetProvider as never,
       taskConfig,
-      { taskTimeoutMs: 5000, pollIntervalMs: 50 }
+      { taskTimeoutMs: 5000, pollIntervalMs: 50 },
     );
 
     expect(sourceProvider.cancelTask).toHaveBeenCalledWith(sourceHandle);
@@ -232,8 +242,12 @@ describe("reassignTask", () => {
       cancelTask: vi.fn().mockRejectedValue(new Error("Cancel failed")),
     });
     const targetProvider = makeProvider({
-      submitTask: vi.fn().mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
-      getTaskStatus: vi.fn().mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
+      submitTask: vi
+        .fn()
+        .mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
+      getTaskStatus: vi
+        .fn()
+        .mockResolvedValue({ state: "completed", lastUpdatedAt: new Date().toISOString() }),
     });
 
     const sourceHandle = { taskId: "source-task", providerName: "source", data: {} };
@@ -244,7 +258,7 @@ describe("reassignTask", () => {
       sourceHandle,
       targetProvider as never,
       taskConfig,
-      { taskTimeoutMs: 5000, pollIntervalMs: 50 }
+      { taskTimeoutMs: 5000, pollIntervalMs: 50 },
     );
 
     expect(sourceProvider.cancelTask).toHaveBeenCalledWith(sourceHandle);
@@ -260,7 +274,9 @@ describe("reassignTask", () => {
       cancelTask: vi.fn().mockResolvedValue(undefined),
     });
     const targetProvider = makeProvider({
-      submitTask: vi.fn().mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
+      submitTask: vi
+        .fn()
+        .mockResolvedValue({ taskId: "target-task", providerName: "target", data: {} }),
       getTaskStatus: vi.fn().mockResolvedValue({
         state: "failed",
         lastUpdatedAt: new Date().toISOString(),
@@ -276,7 +292,7 @@ describe("reassignTask", () => {
       sourceHandle,
       targetProvider as never,
       taskConfig,
-      { taskTimeoutMs: 5000, pollIntervalMs: 50 }
+      { taskTimeoutMs: 5000, pollIntervalMs: 50 },
     );
 
     expect(result.success).toBe(false);
@@ -302,7 +318,7 @@ describe("reassignTask", () => {
       sourceHandle,
       targetProvider as never,
       taskConfig,
-      { taskTimeoutMs: 5000, pollIntervalMs: 50 }
+      { taskTimeoutMs: 5000, pollIntervalMs: 50 },
     );
 
     expect(result.success).toBe(false);

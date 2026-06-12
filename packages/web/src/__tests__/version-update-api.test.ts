@@ -82,10 +82,7 @@ describe("GET /api/version", () => {
   });
 
   function writeCache(data: object) {
-    writeFileSync(
-      join(tmpCacheDir, "ao", "update-check.json"),
-      JSON.stringify(data),
-    );
+    writeFileSync(join(tmpCacheDir, "ao", "update-check.json"), JSON.stringify(data));
   }
 
   it("returns current version, channel='manual' default, latest=null when cache absent", async () => {
@@ -111,7 +108,11 @@ describe("GET /api/version", () => {
       channel: "nightly",
     });
     const res = await versionGET();
-    const body = (await res.json()) as { latest: string | null; channel: string; isOutdated: boolean };
+    const body = (await res.json()) as {
+      latest: string | null;
+      channel: string;
+      isOutdated: boolean;
+    };
     expect(body.channel).toBe("nightly");
     expect(body.latest).toBe("0.6.0-nightly-abc");
   });
@@ -229,14 +230,11 @@ describe("POST /api/update", () => {
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it.each(["working", "idle", "needs_input", "stuck"])(
-    "refuses for status %s",
-    async (status) => {
-      mockSessionList.mockResolvedValue([{ id: "s1", status }]);
-      const res = await updatePOST(makeReq());
-      expect(res.status).toBe(409);
-    },
-  );
+  it.each(["working", "idle", "needs_input", "stuck"])("refuses for status %s", async (status) => {
+    mockSessionList.mockResolvedValue([{ id: "s1", status }]);
+    const res = await updatePOST(makeReq());
+    expect(res.status).toBe(409);
+  });
 
   it("does not refuse for terminal statuses (kicks off update)", async () => {
     mockSessionList.mockResolvedValue([

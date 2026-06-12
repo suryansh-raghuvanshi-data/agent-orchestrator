@@ -362,13 +362,13 @@ Agent code remains the same regardless of deployment target.
 
 ### Heartbeat / Health Detection
 
-| Pattern                  | Description                          | Used By                     |
-| ------------------------ | ------------------------------------ | --------------------------- |
-| **WebSocket ping/pong**  | Periodic heartbeats                  | OpenHands                   |
-| **Process polling**      | Check PID alive                      | Claude Agent SDK            |
+| Pattern                  | Description                          | Used By                 |
+| ------------------------ | ------------------------------------ | ----------------------- |
+| **WebSocket ping/pong**  | Periodic heartbeats                  | OpenHands               |
+| **Process polling**      | Check PID alive                      | Claude Agent SDK        |
 | **tmux capture-pane**    | Scrape terminal output               | Our `ao-session-status` |
-| **File-based signaling** | Status to shared filesystem          | Our metadata files          |
-| **HTTP health endpoint** | `/health` or `/status`               | OpenHands server            |
+| **File-based signaling** | Status to shared filesystem          | Our metadata files      |
+| **HTTP health endpoint** | `/health` or `/status`               | OpenHands server        |
 | **JSONL mtime**          | Check session file modification time | Our `ao-status`         |
 
 ---

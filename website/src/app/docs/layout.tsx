@@ -51,10 +51,9 @@ const links: LinkItemType[] = [
 async function GitHubStars() {
   let stars: string | null = null;
   try {
-    const res = await fetch(
-      "https://api.github.com/repos/ComposioHQ/agent-orchestrator",
-      { next: { revalidate: 3600 } },
-    );
+    const res = await fetch("https://api.github.com/repos/ComposioHQ/agent-orchestrator", {
+      next: { revalidate: 3600 },
+    });
     if (res.ok) {
       const data = await res.json();
       const count = data.stargazers_count as number;

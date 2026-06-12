@@ -8,7 +8,14 @@ export default function NotFound() {
           href="/"
           className="mb-14 inline-flex w-fit items-center gap-2 text-sm font-semibold text-white no-underline"
         >
-          <img src="/ao-logo.svg" alt="" aria-hidden="true" width={28} height={28} className="h-7 w-7" />
+          <img
+            src="/ao-logo.svg"
+            alt=""
+            aria-hidden="true"
+            width={28}
+            height={28}
+            className="h-7 w-7"
+          />
           Agent Orchestrator
         </a>
 
@@ -21,8 +28,8 @@ export default function NotFound() {
               This path is not in the fleet.
             </h1>
             <p className="mt-6 max-w-xl text-base leading-7 text-[var(--landing-muted)]">
-              The page may have moved during the rebuild, or the URL may be out of date. Start from the
-              product site or jump straight into the docs.
+              The page may have moved during the rebuild, or the URL may be out of date. Start from
+              the product site or jump straight into the docs.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link

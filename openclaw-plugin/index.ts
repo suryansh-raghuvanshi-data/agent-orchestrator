@@ -35,8 +35,16 @@ interface PluginConfig {
 interface PluginApi {
   pluginConfig?: PluginConfig;
   logger: { info: (msg: string) => void; warn: (msg: string) => void };
-  on?: (name: string, handler: (event: PluginEvent) => Promise<void>, opts?: { priority: number }) => void;
-  registerHook?: (name: string, handler: (event: PluginEvent) => Promise<void>, opts?: { priority: number }) => void;
+  on?: (
+    name: string,
+    handler: (event: PluginEvent) => Promise<void>,
+    opts?: { priority: number },
+  ) => void;
+  registerHook?: (
+    name: string,
+    handler: (event: PluginEvent) => Promise<void>,
+    opts?: { priority: number },
+  ) => void;
   registerCommand?: (cmd: CommandRegistration) => void;
   registerTool?: (tool: Record<string, unknown>) => void;
   registerService?: (svc: Record<string, unknown>) => void;
@@ -835,7 +843,9 @@ export default function (api: PluginApi) {
           steps.push("⚠️  Action required — run these once to avoid conflicts:");
           steps.push("   openclaw config set skills.entries.coding-agent.enabled false");
           steps.push("   openclaw config set skills.entries.gh-issues.enabled false");
-          steps.push('   openclaw config set tools.deny \'["exec","write","str_replace_based_edit_tool","create_file","str_replace_editor"]\'');
+          steps.push(
+            '   openclaw config set tools.deny \'["exec","write","str_replace_based_edit_tool","create_file","str_replace_editor"]\'',
+          );
           steps.push("Without these, the bot may code directly instead of delegating to AO.");
 
           return { text: `AO Plugin Setup\n\n${steps.join("\n")}` };
@@ -992,7 +1002,11 @@ export default function (api: PluginApi) {
       required: ["issues"],
     },
     async execute(_toolCallId: string, params: { issues: string[] }) {
-      const result = tryRunAo(config, ["batch-spawn", ...params.issues.map(sanitizeCliArg)], 60_000);
+      const result = tryRunAo(
+        config,
+        ["batch-spawn", ...params.issues.map(sanitizeCliArg)],
+        60_000,
+      );
 
       if (!result.ok) {
         return {
@@ -1235,7 +1249,11 @@ export default function (api: PluginApi) {
       required: ["sessionId"],
     },
     async execute(_toolCallId: string, params: { sessionId: string }) {
-      const result = tryRunAo(config, ["session", "restore", sanitizeCliArg(params.sessionId)], 30_000);
+      const result = tryRunAo(
+        config,
+        ["session", "restore", sanitizeCliArg(params.sessionId)],
+        30_000,
+      );
       if (!result.ok) {
         return {
           content: [{ type: "text", text: `Restore failed: ${result.error}` }],

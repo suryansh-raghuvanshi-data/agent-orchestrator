@@ -39,17 +39,16 @@ export const DEFAULT_TIMEOUT_CONFIG: WorkerTimeoutConfig = {
 };
 
 function isTerminal(state: string): boolean {
-  return state === "completed" || state === "failed" || state === "cancelled" || state === "timed_out";
+  return (
+    state === "completed" || state === "failed" || state === "cancelled" || state === "timed_out"
+  );
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function computeBackoff(
-  attempt: number,
-  policy: WorkerRetryPolicy,
-): number {
+function computeBackoff(attempt: number, policy: WorkerRetryPolicy): number {
   const delay = policy.baseDelayMs * Math.pow(policy.backoffFactor, attempt);
   return Math.min(delay, policy.maxDelayMs);
 }
@@ -83,7 +82,11 @@ export async function waitForTask(
   return {
     state: "timed_out",
     lastUpdatedAt: new Date().toISOString(),
-    error: { code: "TIMEOUT", message: `Task exceeded ${timeoutConfig.taskTimeoutMs}ms`, isTransient: true },
+    error: {
+      code: "TIMEOUT",
+      message: `Task exceeded ${timeoutConfig.taskTimeoutMs}ms`,
+      isTransient: true,
+    },
   };
 }
 
@@ -142,8 +145,10 @@ export async function executeTaskWithRetry(
 
     lastError = status.error;
     const canRetry = provider.canRetry
-      ? provider.canRetry(status.error ?? { code: "UNKNOWN", message: "Unknown error", isTransient: true })
-      : status.error?.isTransient ?? true;
+      ? provider.canRetry(
+          status.error ?? { code: "UNKNOWN", message: "Unknown error", isTransient: true },
+        )
+      : (status.error?.isTransient ?? true);
 
     if (!canRetry) {
       return {
@@ -159,7 +164,11 @@ export async function executeTaskWithRetry(
     status: {
       state: "failed",
       lastUpdatedAt: new Date().toISOString(),
-      error: lastError ?? { code: "RETRY_EXHAUSTED", message: `Exceeded ${retryPolicy.maxRetries} retries`, isTransient: false },
+      error: lastError ?? {
+        code: "RETRY_EXHAUSTED",
+        message: `Exceeded ${retryPolicy.maxRetries} retries`,
+        isTransient: false,
+      },
     },
     handle: { taskId: "", providerName: provider.name, data: {} },
     retriesAttempted,

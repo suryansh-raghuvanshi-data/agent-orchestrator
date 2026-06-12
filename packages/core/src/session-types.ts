@@ -8,9 +8,7 @@ import type {
   PluginManifest,
   PluginModule,
 } from "./plugin-types.js";
-import type {
-  OrchestratorConfig,
-} from "./config-types.js";
+import type { OrchestratorConfig } from "./config-types.js";
 
 // =============================================================================
 // SESSION
@@ -263,10 +261,7 @@ export function isRestorable(session: {
   lifecycle?: CanonicalSessionLifecycle;
 }): boolean {
   if (session.lifecycle) {
-    return (
-      isTerminalSession(session) &&
-      !NON_RESTORABLE_STATUSES.has(session.status)
-    );
+    return isTerminalSession(session) && !NON_RESTORABLE_STATUSES.has(session.status);
   }
   return isTerminalSession(session) && !NON_RESTORABLE_STATUSES.has(session.status);
 }
@@ -351,11 +346,7 @@ export function isOrchestratorSession(
   if (allSessionPrefixes) {
     for (const prefix of allSessionPrefixes) {
       if (prefix === sessionPrefix) continue;
-      if (
-        new RegExp(
-          `^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}-\\d+$`,
-        ).test(session.id)
-      ) {
+      if (new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}-\\d+$`).test(session.id)) {
         return false;
       }
     }

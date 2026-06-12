@@ -1,17 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  mkdirSync,
-  readFileSync,
-  existsSync,
-} from "node:fs";
+import { mkdirSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { createSessionManager } from "../../session-manager.js";
-import {
-  writeMetadata,
-  readMetadataRaw,
-  updateMetadata,
-} from "../../metadata.js";
+import { writeMetadata, readMetadataRaw, updateMetadata } from "../../metadata.js";
 import { getProjectSessionsDir, getProjectWorktreesDir } from "../../paths.js";
 import type {
   OrchestratorConfig,
@@ -22,8 +14,17 @@ import type {
   Tracker,
   SCM,
 } from "../../types.js";
-import { setupTestContext, teardownTestContext, makeHandle, type TestContext } from "../test-utils.js";
-import { installMockOpencode, installMockOpencodeWithNotFoundDelete, PATH_SEP } from "./opencode-helpers.js";
+import {
+  setupTestContext,
+  teardownTestContext,
+  makeHandle,
+  type TestContext,
+} from "../test-utils.js";
+import {
+  installMockOpencode,
+  installMockOpencodeWithNotFoundDelete,
+  PATH_SEP,
+} from "./opencode-helpers.js";
 
 let ctx: TestContext;
 let tmpDir: string;
@@ -37,7 +38,16 @@ let originalPath: string | undefined;
 
 beforeEach(() => {
   ctx = setupTestContext();
-  ({ tmpDir, sessionsDir, mockRuntime, mockAgent, mockWorkspace, mockRegistry, config, originalPath } = ctx);
+  ({
+    tmpDir,
+    sessionsDir,
+    mockRuntime,
+    mockAgent,
+    mockWorkspace,
+    mockRegistry,
+    config,
+    originalPath,
+  } = ctx);
 });
 
 afterEach(() => {
@@ -46,10 +56,7 @@ afterEach(() => {
 
 describe("kill", () => {
   it("destroys runtime, workspace, and keeps terminated metadata", async () => {
-    const managedWorktree = join(
-      getProjectWorktreesDir("my-app"),
-      "app-1",
-    );
+    const managedWorktree = join(getProjectWorktreesDir("my-app"), "app-1");
     writeMetadata(sessionsDir, "app-1", {
       worktree: managedWorktree,
       branch: "main",
@@ -386,7 +393,9 @@ describe("cleanup", () => {
       runtimeHandle: makeHandle("rt-6"),
     });
     updateMetadata(sessionsDir, "app-6", {
-      lifecycle: JSON.stringify({ session: { state: "terminated", terminatedAt: new Date().toISOString() } }),
+      lifecycle: JSON.stringify({
+        session: { state: "terminated", terminatedAt: new Date().toISOString() },
+      }),
     });
 
     const sm = createSessionManager({ config, registry: mockRegistry });
@@ -439,7 +448,9 @@ describe("cleanup", () => {
       runtimeHandle: makeHandle("rt-2"),
     });
     updateMetadata(sessionsDir2, "app-1", {
-      lifecycle: JSON.stringify({ session: { state: "terminated", terminatedAt: new Date().toISOString() } }),
+      lifecycle: JSON.stringify({
+        session: { state: "terminated", terminatedAt: new Date().toISOString() },
+      }),
     });
 
     const sm = createSessionManager({ config: configWithSecondProject, registry: mockRegistry });
@@ -466,7 +477,9 @@ describe("cleanup", () => {
       runtimeHandle: makeHandle("rt-8"),
     });
     updateMetadata(sessionsDir, "app-8", {
-      lifecycle: JSON.stringify({ session: { state: "terminated", terminatedAt: new Date().toISOString() } }),
+      lifecycle: JSON.stringify({
+        session: { state: "terminated", terminatedAt: new Date().toISOString() },
+      }),
     });
 
     const sm = createSessionManager({ config, registry: mockRegistry });
@@ -493,7 +506,9 @@ describe("cleanup", () => {
       runtimeHandle: makeHandle("rt-7"),
     });
     updateMetadata(sessionsDir, "app-7", {
-      lifecycle: JSON.stringify({ session: { state: "terminated", terminatedAt: new Date().toISOString() } }),
+      lifecycle: JSON.stringify({
+        session: { state: "terminated", terminatedAt: new Date().toISOString() },
+      }),
     });
 
     const sm = createSessionManager({ config, registry: mockRegistry });
@@ -667,7 +682,9 @@ describe("cleanup", () => {
       runtimeHandle: makeHandle("rt-orchestrator"),
     });
     updateMetadata(sessionsDir, "app-orchestrator", {
-      lifecycle: JSON.stringify({ session: { state: "terminated", terminatedAt: new Date().toISOString() } }),
+      lifecycle: JSON.stringify({
+        session: { state: "terminated", terminatedAt: new Date().toISOString() },
+      }),
     });
 
     const sm = createSessionManager({ config, registry: mockRegistry });

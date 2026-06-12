@@ -40,7 +40,9 @@ function WorkerPickerView({ value, onChange, disabled, className }: WorkerPicker
           setLoading(false);
         }
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [value, onChange]);
 
   const handleChange = useCallback(
@@ -67,7 +69,8 @@ function WorkerPickerView({ value, onChange, disabled, className }: WorkerPicker
       >
         {providers.map((p) => (
           <option key={p.name} value={p.name}>
-            {p.displayName}{p.status !== "healthy" && p.status !== "unknown" ? ` (${p.status})` : ""}
+            {p.displayName}
+            {p.status !== "healthy" && p.status !== "unknown" ? ` (${p.status})` : ""}
           </option>
         ))}
       </select>

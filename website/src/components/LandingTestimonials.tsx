@@ -1,7 +1,6 @@
 const testimonials = [
   {
-    quote:
-      "Set up 12 agents on our backlog before lunch. By end of day, 8 PRs were merged.",
+    quote: "Set up 12 agents on our backlog before lunch. By end of day, 8 PRs were merged.",
     initials: "01",
     name: "Staff Engineer",
     role: "Series B Startup",

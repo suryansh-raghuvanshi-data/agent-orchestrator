@@ -128,11 +128,9 @@ function consolidateRanges(lines) {
 let comment = `${COMMENT_TAG}\n## Test Coverage Report\n\n`;
 
 if (fileReports.length === 0) {
-  comment +=
-    "_Changed files have no coverage data (not instrumented or no tests ran)._\n";
+  comment += "_Changed files have no coverage data (not instrumented or no tests ran)._\n";
 } else {
-  const pct =
-    totalLines > 0 ? ((coveredLines / totalLines) * 100).toFixed(1) : "0.0";
+  const pct = totalLines > 0 ? ((coveredLines / totalLines) * 100).toFixed(1) : "0.0";
   const uncoveredTotal = totalLines - coveredLines;
 
   comment += "| Metric | Value |\n";
@@ -153,20 +151,15 @@ if (fileReports.length === 0) {
   }
 
   // Uncovered lines section
-  const filesWithUncovered = fileReports.filter(
-    (f) => f.uncoveredLines.length > 0,
-  );
+  const filesWithUncovered = fileReports.filter((f) => f.uncoveredLines.length > 0);
   if (filesWithUncovered.length > 0) {
     comment += "### Uncovered lines\n\n";
-    for (const file of filesWithUncovered.sort((a, b) =>
-      a.path.localeCompare(b.path),
-    )) {
+    for (const file of filesWithUncovered.sort((a, b) => a.path.localeCompare(b.path))) {
       const ranges = consolidateRanges(file.uncoveredLines);
       comment += `- \`${file.path}\`: ${ranges}\n`;
     }
     comment += "\n";
   }
-
 }
 
 writeFileSync("coverage-comment.md", comment);

@@ -1,4 +1,9 @@
-export type OrchestratorIntelligenceState = "idle" | "collecting" | "synthesizing" | "acting" | "error";
+export type OrchestratorIntelligenceState =
+  | "idle"
+  | "collecting"
+  | "synthesizing"
+  | "acting"
+  | "error";
 
 export interface OrchestratorIntelligenceInput {
   sessionCount: number;

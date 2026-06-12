@@ -6,7 +6,6 @@ import {
   isProcessProbeIndeterminate,
 } from "./types.js";
 
-
 export interface DeterminedStatus {
   status: SessionStatus;
   evidence: string;

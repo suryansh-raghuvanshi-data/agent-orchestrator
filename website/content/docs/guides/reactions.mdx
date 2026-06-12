@@ -35,7 +35,10 @@ reactions:
 ```
 
 <Callout type="warning">
-The `auto-merge` action currently calls `notifyHuman()` internally — it does not perform a real merge. Actual merging still depends on your repository's branch protection rules and the "Allow auto-merge" setting on GitHub. AO does not bypass these gates. Treat `auto-merge` as an opt-in signal for when the SCM plugin adds real merge support.
+  The `auto-merge` action currently calls `notifyHuman()` internally — it does not perform a real
+  merge. Actual merging still depends on your repository's branch protection rules and the "Allow
+  auto-merge" setting on GitHub. AO does not bypass these gates. Treat `auto-merge` as an opt-in
+  signal for when the SCM plugin adds real merge support.
 </Callout>
 
 ## Recipe: Custom CI failure message
@@ -95,7 +98,7 @@ projects:
     path: ~/code/myapp
     reactions:
       all-complete:
-        auto: false   # suppress the "all sessions done" notification for this project
+        auto: false # suppress the "all sessions done" notification for this project
 
   otherproj:
     repo: org/otherproj

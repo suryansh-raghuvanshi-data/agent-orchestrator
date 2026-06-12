@@ -2,7 +2,12 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { resolveAgentSelection } from "../agent-selection.js";
 import { readMetadata } from "../metadata.js";
 import { resolveWorkerProvider } from "../worker-router.js";
-import type { OrchestratorConfig, ProjectConfig, WorkerProvider } from "../types.js";
+import type {
+  OrchestratorConfig,
+  ProjectConfig,
+  WorkerProvider,
+  DefaultPlugins,
+} from "../types.js";
 
 // We mock readMetadata to simulate the orchestrator's session metadata
 vi.mock("../metadata.js", async (importOriginal) => {
@@ -22,21 +27,21 @@ describe("Multi-Worker Resolution Logic", () => {
     mockProject = {
       path: "/fake/path",
       sessionPrefix: "app",
-    };
+    } as ProjectConfig;
     mockConfig = {
       projects: { default: mockProject },
       defaults: {
         agent: "claude-code",
         runtime: "local",
         workspace: "local",
-      },
-    };
+      } as unknown as DefaultPlugins,
+    } as unknown as OrchestratorConfig;
   });
 
   describe("resolveAgentSelection with workerAgents", () => {
     it("should resolve to the first allowed agent if no override is provided", () => {
       const allowedAgents = ["codex", "opencode"];
-      
+
       let effectiveAgentOverride: string | undefined = undefined;
       if (!effectiveAgentOverride && allowedAgents.length > 0) {
         effectiveAgentOverride = allowedAgents[0];
@@ -54,7 +59,7 @@ describe("Multi-Worker Resolution Logic", () => {
 
     it("should respect the explicit agent override even if allowedAgents exists", () => {
       const allowedAgents = ["codex", "opencode"];
-      
+
       let effectiveAgentOverride: string | undefined = "specific-agent";
       if (!effectiveAgentOverride && allowedAgents.length > 0) {
         effectiveAgentOverride = allowedAgents[0];
@@ -74,7 +79,7 @@ describe("Multi-Worker Resolution Logic", () => {
   describe("resolveWorkerProvider with workerAgents", () => {
     it("should resolve to the first allowed provider if no override is provided", () => {
       const allowedProviders = ["worker-antigravity", "worker-cloud"];
-      
+
       let effectiveProviderOverride: string | undefined = undefined;
       if (!effectiveProviderOverride && allowedProviders.length > 0) {
         effectiveProviderOverride = allowedProviders[0];
@@ -85,8 +90,8 @@ describe("Multi-Worker Resolution Logic", () => {
         mockProject,
         mockConfig,
         {
-          getProvider: (name) => ({ name } as unknown as WorkerProvider),
-        }
+          getProvider: (name) => ({ name }) as unknown as WorkerProvider,
+        },
       );
 
       expect(route.providerName).toBe("worker-antigravity");
@@ -96,7 +101,7 @@ describe("Multi-Worker Resolution Logic", () => {
     it("should fallback to orchestratorWorkerProvider if no allowedProviders exist", () => {
       const allowedProviders: string[] = [];
       const orchestratorWorkerProvider = "worker-fallback";
-      
+
       let effectiveProviderOverride: string | undefined = undefined;
       if (!effectiveProviderOverride && allowedProviders.length > 0) {
         effectiveProviderOverride = allowedProviders[0];
@@ -109,13 +114,13 @@ describe("Multi-Worker Resolution Logic", () => {
         mockProject,
         mockConfig,
         {
-          getProvider: (name) => ({ name } as unknown as WorkerProvider),
-        }
+          getProvider: (name) => ({ name }) as unknown as WorkerProvider,
+        },
       );
 
       expect(route.providerName).toBe("worker-fallback");
     });
-    
+
     it("should fallback to local if nothing is provided", () => {
       let effectiveProviderOverride: string | undefined = undefined;
 
@@ -124,8 +129,8 @@ describe("Multi-Worker Resolution Logic", () => {
         mockProject,
         mockConfig,
         {
-          getProvider: (name) => ({ name } as unknown as WorkerProvider),
-        }
+          getProvider: (name) => ({ name }) as unknown as WorkerProvider,
+        },
       );
 
       expect(route.providerName).toBe("local");

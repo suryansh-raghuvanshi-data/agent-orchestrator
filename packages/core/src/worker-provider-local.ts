@@ -29,12 +29,11 @@ export function createLocalWorkerProvider(
         activeTasks: 0,
         maxTasks: 10,
         lastHeartbeat: new Date().toISOString(),
-        error:
-          !agent
-            ? "Default agent plugin not loaded"
-            : !runtime
-              ? "Default runtime plugin not loaded"
-              : undefined,
+        error: !agent
+          ? "Default agent plugin not loaded"
+          : !runtime
+            ? "Default runtime plugin not loaded"
+            : undefined,
       };
     },
 

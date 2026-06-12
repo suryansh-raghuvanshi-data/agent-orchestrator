@@ -42,19 +42,19 @@ Human only intervenes when notified. Everything else is handled.
 
 ## Nomenclature
 
-| Term             | Definition                                 | Examples                         |
-| ---------------- | ------------------------------------------ | -------------------------------- |
-| **Orchestrator (daemon)** | The central server process that manages **all** registered projects | `ao start` + the Next.js app |
+| Term                      | Definition                                                                           | Examples                                          |
+| ------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| **Orchestrator (daemon)** | The central server process that manages **all** registered projects                  | `ao start` + the Next.js app                      |
 | **Orchestrator agent**    | A per-project agent session that spawns and supervises workers — **one per project** | `my-app-orchestrator`, `backend-api-orchestrator` |
-| **Project**      | A configured repository to work on         | `my-app`, `backend-api`          |
-| **Session**      | A running agent instance working on a task | `my-app-1`, `my-app-2`           |
-| **Runtime**      | Where/how the session executes             | tmux, docker, k8s, process       |
-| **Agent**        | The AI coding tool being used              | claude-code, codex, aider        |
-| **Workspace**    | Isolated code copy for a session           | git worktree, clone, volume      |
-| **Tracker**      | Issue/task tracking system                 | github, linear, jira             |
-| **SCM**          | Source code management platform            | github, gitlab, bitbucket        |
-| **Notifier**     | Communication/alert channel                | slack, discord, desktop, webhook |
-| **Terminal**     | Human interaction interface                | iterm2, web terminal, none       |
+| **Project**               | A configured repository to work on                                                   | `my-app`, `backend-api`                           |
+| **Session**               | A running agent instance working on a task                                           | `my-app-1`, `my-app-2`                            |
+| **Runtime**               | Where/how the session executes                                                       | tmux, docker, k8s, process                        |
+| **Agent**                 | The AI coding tool being used                                                        | claude-code, codex, aider                         |
+| **Workspace**             | Isolated code copy for a session                                                     | git worktree, clone, volume                       |
+| **Tracker**               | Issue/task tracking system                                                           | github, linear, jira                              |
+| **SCM**                   | Source code management platform                                                      | github, gitlab, bitbucket                         |
+| **Notifier**              | Communication/alert channel                                                          | slack, discord, desktop, webhook                  |
+| **Terminal**              | Human interaction interface                                                          | iterm2, web terminal, none                        |
 
 ---
 

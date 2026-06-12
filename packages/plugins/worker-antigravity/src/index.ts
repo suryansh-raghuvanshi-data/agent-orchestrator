@@ -79,7 +79,7 @@ export function create(config?: Record<string, unknown>): WorkerProvider {
     async health(): Promise<WorkerProviderHealth> {
       const tasks = loadTasks();
       const activeTasks = Object.values(tasks).filter(
-        (t) => t.state === "queued" || t.state === "running"
+        (t) => t.state === "queued" || t.state === "running",
       ).length;
 
       // Check if the project config or env indicates this provider is offline/degraded
@@ -113,7 +113,7 @@ export function create(config?: Record<string, unknown>): WorkerProvider {
 
       const tasks = loadTasks();
       const taskId = `antigravity-task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-      
+
       const newTask: StoredTask = {
         taskId,
         sessionId: taskConfig.sessionId,

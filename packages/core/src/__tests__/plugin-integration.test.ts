@@ -40,7 +40,13 @@ import { writeMetadata } from "../metadata.js";
 import { getProjectSessionsDir, getProjectDir } from "../paths.js";
 import trackerGithub from "@aoagents/ao-plugin-tracker-github";
 import scmGithub from "@aoagents/ao-plugin-scm-github";
-import { createMockPlugins, makeHandle, makeSession as makeSessionBase, makePR, type TestEnvironment } from "./test-utils.js";
+import {
+  createMockPlugins,
+  makeHandle,
+  makeSession as makeSessionBase,
+  makePR,
+  type TestEnvironment,
+} from "./test-utils.js";
 import type {
   OrchestratorConfig,
   PluginRegistry,
@@ -528,10 +534,18 @@ describe("plugin integration", () => {
       const scmPlugin = registry.get("scm", "github") as ReturnType<typeof scmGithub.create>;
       const originalBatch = scmPlugin.enrichSessionsPRBatch;
       scmPlugin.enrichSessionsPRBatch = vi.fn().mockResolvedValue(
-        new Map([[`${pr.owner}/${pr.repo}#${pr.number}`, {
-          state: "open", ciStatus: "failing", reviewDecision: "none", mergeable: false,
-          ciChecks: [{ name: "lint", status: "failed", conclusion: "FAILURE" }],
-        }]]),
+        new Map([
+          [
+            `${pr.owner}/${pr.repo}#${pr.number}`,
+            {
+              state: "open",
+              ciStatus: "failing",
+              reviewDecision: "none",
+              mergeable: false,
+              ciChecks: [{ name: "lint", status: "failed", conclusion: "FAILURE" }],
+            },
+          ],
+        ]),
       );
 
       const mockSM: OpenCodeSessionManager = {
@@ -563,9 +577,17 @@ describe("plugin integration", () => {
       const scmPlugin = registry.get("scm", "github") as ReturnType<typeof scmGithub.create>;
       const originalBatch = scmPlugin.enrichSessionsPRBatch;
       scmPlugin.enrichSessionsPRBatch = vi.fn().mockResolvedValue(
-        new Map([[`${pr.owner}/${pr.repo}#${pr.number}`, {
-          state: "merged", ciStatus: "none", reviewDecision: "none", mergeable: false,
-        }]]),
+        new Map([
+          [
+            `${pr.owner}/${pr.repo}#${pr.number}`,
+            {
+              state: "merged",
+              ciStatus: "none",
+              reviewDecision: "none",
+              mergeable: false,
+            },
+          ],
+        ]),
       );
 
       const mockSM: OpenCodeSessionManager = {
@@ -597,9 +619,17 @@ describe("plugin integration", () => {
       const scmPlugin = registry.get("scm", "github") as ReturnType<typeof scmGithub.create>;
       const originalBatch = scmPlugin.enrichSessionsPRBatch;
       scmPlugin.enrichSessionsPRBatch = vi.fn().mockResolvedValue(
-        new Map([[`${pr.owner}/${pr.repo}#${pr.number}`, {
-          state: "open", ciStatus: "passing", reviewDecision: "changes_requested", mergeable: false,
-        }]]),
+        new Map([
+          [
+            `${pr.owner}/${pr.repo}#${pr.number}`,
+            {
+              state: "open",
+              ciStatus: "passing",
+              reviewDecision: "changes_requested",
+              mergeable: false,
+            },
+          ],
+        ]),
       );
 
       const mockSM: OpenCodeSessionManager = {

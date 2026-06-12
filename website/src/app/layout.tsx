@@ -25,7 +25,14 @@ export const metadata: Metadata = {
   },
   description:
     "Open-source platform for running parallel AI coding agents. Spawn Claude Code, Codex, Aider, and more in isolated worktrees — all managed from one dashboard.",
-  keywords: ["AI agents", "coding agents", "Claude Code", "agent orchestration", "parallel agents", "open source"],
+  keywords: [
+    "AI agents",
+    "coding agents",
+    "Claude Code",
+    "agent orchestration",
+    "parallel agents",
+    "open source",
+  ],
   authors: [{ name: "ComposioHQ", url: "https://github.com/ComposioHQ" }],
   creator: "ComposioHQ",
   openGraph: {
@@ -64,8 +71,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
-      <body className="bg-[var(--color-bg-base)] text-[var(--color-text-primary)] antialiased">{children}</body>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="bg-[var(--color-bg-base)] text-[var(--color-text-primary)] antialiased">
+        {children}
+      </body>
     </html>
   );
 }

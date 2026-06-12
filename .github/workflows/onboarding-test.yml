@@ -3,10 +3,10 @@ name: Onboarding Integration Test
 on:
   pull_request:
     paths:
-      - 'packages/**'
-      - 'scripts/setup.sh'
-      - 'tests/integration/**'
-      - '.github/workflows/onboarding-test.yml'
+      - "packages/**"
+      - "scripts/setup.sh"
+      - "tests/integration/**"
+      - ".github/workflows/onboarding-test.yml"
   push:
     branches:
       - main

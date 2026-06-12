@@ -45,7 +45,9 @@ function Cell({ platform, status }: { platform: "macos" | "linux" | "windows"; s
     >
       <Logo name={logoName} size={18} />
       <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-fd-foreground)" }}>
+        <span
+          style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-fd-foreground)" }}
+        >
           {title}
         </span>
         <span

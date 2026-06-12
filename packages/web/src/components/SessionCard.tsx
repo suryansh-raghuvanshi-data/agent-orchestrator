@@ -18,8 +18,6 @@ import { StatusBadge } from "./StatusBadge";
 import { DoneSessionCard } from "./SessionCard.parts";
 import { projectSessionHashPath } from "@/lib/routes";
 
-
-
 /**
  * Tracks which session IDs have already played their entrance animation.
  * Prevents the kanban-card-enter animation from replaying when React
@@ -47,16 +45,13 @@ function getPRDotClass(p: DashboardPR): string {
 }
 
 function getPRChipColorClass(p: DashboardPR): string {
-  if (!p.enriched)
-    return "bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]";
+  if (!p.enriched) return "bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]";
   if (p.state === "merged")
     return "bg-[color-mix(in_srgb,var(--color-status-merge)_15%,transparent)] text-[var(--color-status-merge)]";
-  if (p.state === "closed")
-    return "bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]";
+  if (p.state === "closed") return "bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]";
   if (p.ciStatus === "failing" || p.reviewDecision === "changes_requested")
     return "bg-[color-mix(in_srgb,var(--color-status-error)_15%,transparent)] text-[var(--color-status-error)]";
-  if (p.isDraft)
-    return "bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]";
+  if (p.isDraft) return "bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]";
   if (p.ciStatus === "passing")
     return "bg-[color-mix(in_srgb,var(--color-status-merge)_15%,transparent)] text-[var(--color-status-merge)]";
   if (p.ciStatus === "pending")
@@ -117,7 +112,8 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
   const effectivePR = prs.length > 1 ? selectedPR : pr;
   const rateLimited = effectivePR ? isPRRateLimited(effectivePR) : false;
   const prUnenriched = effectivePR ? isPRUnenriched(effectivePR) : false;
-  const isReadyToMerge = !rateLimited && effectivePR?.mergeability.mergeable && effectivePR.state === "open";
+  const isReadyToMerge =
+    !rateLimited && effectivePR?.mergeability.mergeable && effectivePR.state === "open";
   const isTerminal = isDashboardSessionTerminal(session);
   const isRestorable = isDashboardSessionRestorable(session);
 
@@ -209,7 +205,9 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
           {session.metadata?.workerProvider && (
             <>
               {session.branch && (
-                <span className="card__meta-sep" aria-hidden="true">·</span>
+                <span className="card__meta-sep" aria-hidden="true">
+                  ·
+                </span>
               )}
               <span className="font-mono text-[9px] bg-[var(--color-bg-subtle)] border border-[color-mix(in_srgb,var(--color-text-muted)_25%,transparent)] px-1 py-0.5 rounded text-[var(--color-text-secondary)] font-medium uppercase tracking-[0.02em] leading-none">
                 {session.metadata.workerProvider}
@@ -219,7 +217,9 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
           {prs.length === 1 && (
             <>
               {session.branch && (
-                <span className="card__meta-sep" aria-hidden="true">·</span>
+                <span className="card__meta-sep" aria-hidden="true">
+                  ·
+                </span>
               )}
               <a
                 href={prs[0].url}
@@ -228,7 +228,12 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
                 onClick={(e) => e.stopPropagation()}
                 className="card__pr inline-flex items-center gap-1"
               >
-                <span className={cn("inline-block h-1.5 w-1.5 shrink-0 rounded-full", getPRDotClass(prs[0]))} />
+                <span
+                  className={cn(
+                    "inline-block h-1.5 w-1.5 shrink-0 rounded-full",
+                    getPRDotClass(prs[0]),
+                  )}
+                />
                 #{prs[0].number}
               </a>
             </>
@@ -253,8 +258,16 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
                       ? "bg-[var(--color-bg-subtle)] border-l-2 border-[var(--color-accent)] pl-[2px]"
                       : "hover:bg-[var(--color-bg-subtle)] border-l-2 border-transparent pl-[2px]",
                   )}
-                  onClick={(e) => { e.stopPropagation(); setSelectedPRIndex(i); }}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setSelectedPRIndex(i); } }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPRIndex(i);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.stopPropagation();
+                      setSelectedPRIndex(i);
+                    }
+                  }}
                 >
                   {isMultiRepo && (
                     <span className="shrink-0 font-[var(--font-mono)] text-[9px] text-[var(--color-text-tertiary)] bg-[var(--color-bg-subtle)] px-1 py-0.5 rounded leading-none">
@@ -265,7 +278,10 @@ function SessionCardView({ session, onKill, onMerge, onRestore }: SessionCardPro
                     href={p.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={(e) => { e.stopPropagation(); setSelectedPRIndex(i); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPRIndex(i);
+                    }}
                     className={cn(
                       "shrink-0 inline-flex items-center font-[var(--font-mono)] text-[10px] font-bold px-1.5 py-0.5 rounded leading-none no-underline",
                       getPRChipColorClass(p),

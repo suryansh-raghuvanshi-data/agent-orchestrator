@@ -61,9 +61,17 @@ export function useWebVitals(): void {
     async function importVitals() {
       try {
         const mod = await import("web-vitals");
-        const vital = "reportAllChanges" in opts.current
-          ? (mod as { reportAllChanges?: (callback: (metric: WebVitalPayload) => void, opts?: { reportAllChanges?: boolean }) => void }).reportAllChanges
-          : undefined;
+        const vital =
+          "reportAllChanges" in opts.current
+            ? (
+                mod as {
+                  reportAllChanges?: (
+                    callback: (metric: WebVitalPayload) => void,
+                    opts?: { reportAllChanges?: boolean },
+                  ) => void;
+                }
+              ).reportAllChanges
+            : undefined;
 
         const callback = (metric: WebVitalPayload) => {
           sendVital(metric);

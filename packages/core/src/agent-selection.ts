@@ -72,10 +72,7 @@ export function resolveAgentSelection(params: {
     : spawnAgentOverride
       ? spawnAgentOverride
       : role === "worker"
-        ? (roleProjectConfig?.agent ??
-          project.agent ??
-          roleDefaults?.agent ??
-          defaults.agent)
+        ? (roleProjectConfig?.agent ?? project.agent ?? roleDefaults?.agent ?? defaults.agent)
         : (roleProjectConfig?.agent ?? project.agent ?? roleDefaults?.agent ?? defaults.agent);
 
   const agentConfig: AgentSpecificConfig = {

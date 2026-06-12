@@ -315,10 +315,13 @@ const InstalledPluginConfigSchema = z
     }
   });
 
-const WorkerProviderConfigSchema = z.object({
-  enabled: z.boolean().default(true),
-  maxConcurrency: z.number().int().positive().optional(),
-}).passthrough().optional();
+const WorkerProviderConfigSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    maxConcurrency: z.number().int().positive().optional(),
+  })
+  .passthrough()
+  .optional();
 
 const PowerConfigSchema = z
   .object({
@@ -693,8 +696,7 @@ function applyDefaultReactions(config: OrchestratorConfig): OrchestratorConfig {
     "changes-requested": {
       auto: true,
       action: "send-to-agent",
-      message:
-        "There are new review comments on your PR requesting changes.",
+      message: "There are new review comments on your PR requesting changes.",
       escalateAfter: "30m",
     },
     "bugbot-comments": {

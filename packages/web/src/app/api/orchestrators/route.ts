@@ -51,7 +51,9 @@ export async function POST(request: NextRequest) {
   const clean = body.clean === true;
   const workerProvider = (body.workerProvider as string) ?? undefined;
   const agent = (body.agent as string) ?? undefined;
-  const workerAgents = Array.isArray(body.workerAgents) ? (body.workerAgents as string[]) : undefined;
+  const workerAgents = Array.isArray(body.workerAgents)
+    ? (body.workerAgents as string[])
+    : undefined;
 
   try {
     const { config, sessionManager } = await getServices();

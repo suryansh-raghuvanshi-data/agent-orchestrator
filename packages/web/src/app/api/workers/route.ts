@@ -12,7 +12,8 @@ export async function GET(_request: NextRequest) {
     providers.push({
       name: "local",
       displayName: "Local Agent",
-      description: "Runs agents directly on this machine using the configured runtime and agent plugins",
+      description:
+        "Runs agents directly on this machine using the configured runtime and agent plugins",
       isDefault: true,
       status: "healthy" as const,
     });
@@ -48,18 +49,16 @@ export async function GET(_request: NextRequest) {
 
     return Response.json({ providers });
   } catch {
-    return Response.json(
-      {
-        providers: [
-          {
-            name: "local",
-            displayName: "Local Agent",
-            description: "Default local agent",
-            isDefault: true,
-            status: "healthy" as const,
-          },
-        ],
-      },
-    );
+    return Response.json({
+      providers: [
+        {
+          name: "local",
+          displayName: "Local Agent",
+          description: "Default local agent",
+          isDefault: true,
+          status: "healthy" as const,
+        },
+      ],
+    });
   }
 }

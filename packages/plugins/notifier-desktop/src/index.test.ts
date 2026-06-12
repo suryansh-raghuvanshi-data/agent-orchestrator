@@ -320,10 +320,9 @@ describe("notifier-desktop", () => {
       const notifier = create();
       await notifier.notify(makeEvent({ sessionId: "<x>", message: 'a"&b' }));
       const args = mockExecFile.mock.calls[0][1] as string[];
-      const script = Buffer.from(
-        args[args.indexOf("-EncodedCommand") + 1],
-        "base64",
-      ).toString("utf16le");
+      const script = Buffer.from(args[args.indexOf("-EncodedCommand") + 1], "base64").toString(
+        "utf16le",
+      );
       expect(script).toContain("&lt;x&gt;");
       expect(script).toContain("a&quot;&amp;b");
       expect(script).not.toContain("<x>");

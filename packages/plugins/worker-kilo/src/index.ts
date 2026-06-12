@@ -77,7 +77,7 @@ export function create(config?: Record<string, unknown>): WorkerProvider {
     async health(): Promise<WorkerProviderHealth> {
       const tasks = loadTasks();
       const activeTasks = Object.values(tasks).filter(
-        (t) => t.state === "queued" || t.state === "running"
+        (t) => t.state === "queued" || t.state === "running",
       ).length;
 
       const offline = config?.status === "offline";
@@ -109,7 +109,7 @@ export function create(config?: Record<string, unknown>): WorkerProvider {
 
       const tasks = loadTasks();
       const taskId = `kilo-task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-      
+
       const newTask: StoredTask = {
         taskId,
         sessionId: taskConfig.sessionId,

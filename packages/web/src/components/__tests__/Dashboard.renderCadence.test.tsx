@@ -105,12 +105,14 @@ describe("Dashboard render cadence", () => {
     // The Dashboard mounts UpdateBanner which fetches /api/version once.
     // We assert that no OTHER endpoints were touched — that's what the
     // cadence test really cares about (no per-card refetch).
-    const otherCalls = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => {
-        const url = typeof input === "string" ? input : (input as URL).toString();
-        return !url.includes("/api/version") && !url.includes("/api/agents") && !url.includes("/api/workers");
-      });
+    const otherCalls = vi.mocked(fetch).mock.calls.filter(([input]) => {
+      const url = typeof input === "string" ? input : (input as URL).toString();
+      return (
+        !url.includes("/api/version") &&
+        !url.includes("/api/agents") &&
+        !url.includes("/api/workers")
+      );
+    });
     expect(otherCalls).toHaveLength(0);
   });
 

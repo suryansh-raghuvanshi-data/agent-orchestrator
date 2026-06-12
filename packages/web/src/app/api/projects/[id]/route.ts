@@ -24,7 +24,15 @@ import { stopStaleWindowsPtyHosts } from "@/lib/windows-pty-cleanup";
 export const dynamic = "force-dynamic";
 
 const IDENTITY_FIELDS = new Set(["projectId", "path", "repo", "defaultBranch"]);
-const EDITABLE_CONFIG_FIELDS = new Set(["agent", "runtime", "tracker", "scm", "reactions", "workerProvider", "fallbackWorkerProvider"]);
+const EDITABLE_CONFIG_FIELDS = new Set([
+  "agent",
+  "runtime",
+  "tracker",
+  "scm",
+  "reactions",
+  "workerProvider",
+  "fallbackWorkerProvider",
+]);
 
 function sanitizeString(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;

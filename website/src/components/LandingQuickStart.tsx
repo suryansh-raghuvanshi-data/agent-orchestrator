@@ -1,7 +1,22 @@
 const steps = [
-  { num: "STEP 01", title: "Install", desc: "One command. No dependencies beyond Node.js.", cmd: "npm i -g @aoagents/ao" },
-  { num: "STEP 02", title: "Configure", desc: "Create an agent-orchestrator.yaml. Pick your agents, tracker, and notifiers.", cmd: "ao start" },
-  { num: "STEP 03", title: "Launch", desc: "Assign issues and watch agents spawn.", cmd: "ao batch-spawn 1 2 3" },
+  {
+    num: "STEP 01",
+    title: "Install",
+    desc: "One command. No dependencies beyond Node.js.",
+    cmd: "npm i -g @aoagents/ao",
+  },
+  {
+    num: "STEP 02",
+    title: "Configure",
+    desc: "Create an agent-orchestrator.yaml. Pick your agents, tracker, and notifiers.",
+    cmd: "ao start",
+  },
+  {
+    num: "STEP 03",
+    title: "Launch",
+    desc: "Assign issues and watch agents spawn.",
+    cmd: "ao batch-spawn 1 2 3",
+  },
 ];
 
 export function LandingQuickStart() {
@@ -12,8 +27,7 @@ export function LandingQuickStart() {
           Get started in 60 seconds
         </div>
         <h2 className="font-sans font-[680] tracking-tight font-normal text-[clamp(1.375rem,3vw,2rem)] leading-[1.05] tracking-[-1.5px] mb-6">
-          Three commands to{" "}
-          <em className="italic text-[var(--landing-muted)]">launch</em>
+          Three commands to <em className="italic text-[var(--landing-muted)]">launch</em>
         </h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-12">
@@ -35,7 +49,10 @@ export function LandingQuickStart() {
         ))}
       </div>
       <div className="landing-reveal mt-8 text-center">
-        <a href="/docs/" className="landing-card inline-flex rounded-lg px-4 py-2 text-[0.8125rem] text-[var(--landing-muted)] no-underline hover:text-white transition-colors">
+        <a
+          href="/docs/"
+          className="landing-card inline-flex rounded-lg px-4 py-2 text-[0.8125rem] text-[var(--landing-muted)] no-underline hover:text-white transition-colors"
+        >
           Explore docs for setup and workflows
         </a>
       </div>

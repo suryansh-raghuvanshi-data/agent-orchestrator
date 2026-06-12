@@ -307,7 +307,6 @@ projects:
 
       expect(() => loadConfig(configPath)).toThrow(/Map keys must be unique|Duplicate project ID/);
     });
-
   });
 
   describe("defaults.model", () => {

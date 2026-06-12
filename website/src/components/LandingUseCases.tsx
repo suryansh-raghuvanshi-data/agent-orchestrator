@@ -32,21 +32,14 @@ export function LandingUseCases() {
       </div>
       <div className="flex flex-col gap-6">
         {cases.map((c) => (
-          <div
-            key={c.scenario}
-            className="landing-reveal landing-card rounded-2xl p-8"
-          >
-            <h3 className="font-sans font-[680] text-lg tracking-tight mb-4">
-              {c.scenario}
-            </h3>
+          <div key={c.scenario} className="landing-reveal landing-card rounded-2xl p-8">
+            <h3 className="font-sans font-[680] text-lg tracking-tight mb-4">{c.scenario}</h3>
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr] gap-4 md:gap-6 items-start">
               <div>
                 <div className="font-mono text-[0.5625rem] tracking-[0.1em] uppercase text-[var(--landing-muted-dim)] mb-1.5">
                   Before
                 </div>
-                <p className="text-[0.8125rem] text-[var(--landing-muted)]">
-                  {c.before}
-                </p>
+                <p className="text-[0.8125rem] text-[var(--landing-muted)]">{c.before}</p>
               </div>
               <div className="hidden md:flex items-center text-[var(--landing-muted-dim)] text-lg">
                 →
@@ -55,13 +48,10 @@ export function LandingUseCases() {
                 <div className="font-mono text-[0.5625rem] tracking-[0.1em] uppercase text-[rgba(134,239,172,0.7)] mb-1.5">
                   After
                 </div>
-                <p className="text-[0.8125rem] text-[var(--landing-fg)]">
-                  {c.after}
-                </p>
+                <p className="text-[0.8125rem] text-[var(--landing-fg)]">{c.after}</p>
               </div>
               <div className="font-mono text-[0.6875rem] text-[var(--landing-muted)] bg-black/30 px-3.5 py-2.5 rounded-lg self-center">
-                <span className="text-[var(--landing-muted-dim)]">$</span>{" "}
-                {c.command}
+                <span className="text-[var(--landing-muted-dim)]">$</span> {c.command}
               </div>
             </div>
           </div>

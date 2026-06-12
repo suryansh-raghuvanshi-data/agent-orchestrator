@@ -1,15 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  readFileSync,
-  utimesSync,
-} from "node:fs";
+import { readFileSync, utimesSync } from "node:fs";
 import { join } from "node:path";
 import { createSessionManager } from "../../session-manager.js";
-import {
-  writeMetadata,
-  readMetadataRaw,
-  updateMetadata,
-} from "../../metadata.js";
+import { writeMetadata, readMetadataRaw, updateMetadata } from "../../metadata.js";
 import { createInitialCanonicalLifecycle } from "../../lifecycle-state.js";
 import type {
   OrchestratorConfig,
@@ -20,7 +13,12 @@ import type {
   RuntimeHandle,
   Session,
 } from "../../types.js";
-import { setupTestContext, teardownTestContext, makeHandle, type TestContext } from "../test-utils.js";
+import {
+  setupTestContext,
+  teardownTestContext,
+  makeHandle,
+  type TestContext,
+} from "../test-utils.js";
 import { installMockOpencode, PATH_SEP } from "./opencode-helpers.js";
 
 let ctx: TestContext;
@@ -35,7 +33,16 @@ let originalPath: string | undefined;
 
 beforeEach(() => {
   ctx = setupTestContext();
-  ({ tmpDir, sessionsDir, mockRuntime, mockAgent, mockWorkspace, mockRegistry, config, originalPath } = ctx);
+  ({
+    tmpDir,
+    sessionsDir,
+    mockRuntime,
+    mockAgent,
+    mockWorkspace,
+    mockRegistry,
+    config,
+    originalPath,
+  } = ctx);
 });
 
 afterEach(() => {

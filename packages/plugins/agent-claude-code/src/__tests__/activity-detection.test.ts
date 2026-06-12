@@ -83,10 +83,7 @@ function writeActivityLog(
   mkdirSync(aoDir, { recursive: true });
   const entry: Record<string, unknown> = { ts, state, source };
   if (trigger !== undefined) entry.trigger = trigger;
-  writeFileSync(
-    join(aoDir, "activity.jsonl"),
-    JSON.stringify(entry) + "\n",
-  );
+  writeFileSync(join(aoDir, "activity.jsonl"), JSON.stringify(entry) + "\n");
 }
 
 // =============================================================================
@@ -174,7 +171,9 @@ describe("Claude Code Activity Detection", () => {
     });
 
     it("returns 'exited' when runtimeHandle is null", async () => {
-      expect((await agent.getActivityState(makeSession({ runtimeHandle: null })))?.state).toBe("exited");
+      expect((await agent.getActivityState(makeSession({ runtimeHandle: null })))?.state).toBe(
+        "exited",
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -527,10 +526,7 @@ describe("Claude Code Activity Detection", () => {
       });
 
       it("'system' api_error ignores staleness (always blocked)", async () => {
-        writeJsonl(
-          [{ type: "system", subtype: "api_error", level: "error" }],
-          400_000,
-        );
+        writeJsonl([{ type: "system", subtype: "api_error", level: "error" }], 400_000);
         expect((await agent.getActivityState(makeSession()))?.state).toBe("blocked");
       });
 

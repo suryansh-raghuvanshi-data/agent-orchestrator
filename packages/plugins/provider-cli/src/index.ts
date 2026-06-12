@@ -48,9 +48,7 @@ async function findCliBinary(): Promise<string> {
 
 export function create(config?: Record<string, unknown>): WorkerProvider {
   const configuredBinary =
-    typeof config?.cliBinary === "string" && config.cliBinary.length > 0
-      ? config.cliBinary
-      : null;
+    typeof config?.cliBinary === "string" && config.cliBinary.length > 0 ? config.cliBinary : null;
 
   return {
     name: "cli",

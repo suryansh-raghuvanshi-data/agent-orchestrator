@@ -64,15 +64,15 @@ You don't need to learn the CLI — the dashboard and the orchestrator agent dri
 
 Seven plugin slots; the lifecycle state machine stays in core:
 
-| Slot | Default | Alternatives |
-| --- | --- | --- |
-| Runtime | tmux (macOS/Linux) / process (Windows) | process, docker |
-| Agent | claude-code | codex, aider, cursor, opencode, kimicode |
-| Workspace | worktree | clone |
-| Tracker | github | linear, gitlab |
-| SCM | github | gitlab |
-| Notifier | desktop | slack, discord, composio, webhook, openclaw |
-| Terminal | iterm2 | web |
+| Slot      | Default                                | Alternatives                                |
+| --------- | -------------------------------------- | ------------------------------------------- |
+| Runtime   | tmux (macOS/Linux) / process (Windows) | process, docker                             |
+| Agent     | claude-code                            | codex, aider, cursor, opencode, kimicode    |
+| Workspace | worktree                               | clone                                       |
+| Tracker   | github                                 | linear, gitlab                              |
+| SCM       | github                                 | gitlab                                      |
+| Notifier  | desktop                                | slack, discord, composio, webhook, openclaw |
+| Terminal  | iterm2                                 | web                                         |
 
 ## Why Agent Orchestrator?
 

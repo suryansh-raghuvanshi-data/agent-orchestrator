@@ -3,6 +3,7 @@
 > Restart instructions: resume from [Appendix A: Future Enhancements — Orchestrator Personality & Memory Layer](#appendix-a-future-enhancements--orchestrator-personality--memory-layer).
 >
 > Status notes from last session:
+>
 > - Commit: `fcfb3e11` docs: add orchestrator personality/memory layer and inter-agent messaging experiment
 > - Branch: `feat/multi-worker`
 > - Core typecheck: passing
@@ -37,12 +38,12 @@ Three failure modes dominate production agent systems:
 
 Current production frameworks compose from four foundational multi-agent strategies:
 
-| Strategy | Definition | Production Example |
-|----------|-----------|-------------------|
-| **Delegation** | Central orchestrator assigns subtasks to specialist workers | AO's `worker-provider` plugin slot |
-| **Creator-Verifier** | Implementation and validation are executed by separate agents with separate context (never the same agent checking its own work) | Missions' adversarial validators |
-| **Broadcast** | Shared state is written once and read by all agents; agents subscribe to updates rather than polling conversation history | AO's flat-file metadata; Missions' shared state files |
-| **Negotiation** | Agents evaluate handoff summaries and decide whether to accept, reject, or escalate | AO's `determineStatus()` probe decisions |
+| Strategy             | Definition                                                                                                                       | Production Example                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **Delegation**       | Central orchestrator assigns subtasks to specialist workers                                                                      | AO's `worker-provider` plugin slot                    |
+| **Creator-Verifier** | Implementation and validation are executed by separate agents with separate context (never the same agent checking its own work) | Missions' adversarial validators                      |
+| **Broadcast**        | Shared state is written once and read by all agents; agents subscribe to updates rather than polling conversation history        | AO's flat-file metadata; Missions' shared state files |
+| **Negotiation**      | Agents evaluate handoff summaries and decide whether to accept, reject, or escalate                                              | AO's `determineStatus()` probe decisions              |
 
 No single strategy suffices. Production systems that ship for days (Factory.ai's longest recorded mission: 16 days) compose all four into a coherent loop.
 
@@ -52,6 +53,7 @@ The most significant innovation from Factory.ai's Missions is the validation con
 
 ```markdown
 ## Validation Contract (example)
+
 1. POST /api/sessions returns 201 with a session object containing id, status, and createdAt.
 2. Session status transitions from spawning → working within 30 seconds of creation.
 3. Killing a session returns 200 and the session transitions to killed within 5 seconds.
@@ -64,12 +66,14 @@ The contract is fixed before work begins. Every feature claims assertions it ful
 ### 2.4 Fresh Context Per Task
 
 Every worker in production-grade systems starts with a fresh context window. They receive:
+
 - The feature specification (bounded, single responsibility)
 - The validation contract assertions they must satisfy
 - Access to shared state files (not conversation history)
 - A skill library of reusable patterns for the domain
 
 They do NOT receive:
+
 - The orchestrator's planning conversation
 - Other workers' implementation decisions
 - The cumulative artifacts of previous features (except through the shared state interface)
@@ -82,18 +86,18 @@ This isolation prevents context contamination. When a worker finishes, it produc
 
 ### 3.1 Structural Comparison Matrix
 
-| Dimension | Factory.ai Missions | LangGraph | CrewAI | AutoGen (AG2) | AO (Current) |
-|-----------|---------------------|-----------|--------|---------------|--------------|
-| **Core Mental Model** | Mission DAG with validation contract | State graph with nodes/edges | Role-based crew (hierarchy) | Conversation threads | Plugin-based session |
-| **Task Decomposition** | Orchestrator decomposes goals into features → milestones | Declarative graph edges; conditional routing | Manager agent delegates via tasks | Agents negotiate via chat messages | User-initiated per session |
-| **State Model** | Shared filesystem artifacts (broadcast) + validation state JSON | Typed state with checkpointing (SQLite/Postgres) | Per-agent memory + crew shared memory | Conversation history (append-only) | Flat-file JSON per session |
-| **Agent Handoff** | Structured handoff summary (not chat) → fresh context | State passes through graph nodes | Crew manager assigns next task | Message-passing thread | User/kill/restart |
-| **Validation** | Adversarial validators at milestone boundaries | Optional HITL at nodes | No built-in verification | GroupChat self-critique | Event emission + SCM PR checks |
-| **Human-in-the-Loop** | Mission Control dashboard; pause/redirect per feature | First-class: interrupt node, modify state, resume | Basic task-level input | UserProxy agent relays input | `needs_input` state + dashboard |
-| **Serial vs Parallel** | Serial features; internal read-only parallelization | Explicit parallelism via graph edges | Sequential default; hierarchical adds manager overhead | Parallel by default (conversation rounds) | Per-session isolation |
-| **Error Recovery** | Fix features targeted at validation gaps | Checkpoint resume from failed node | Retry logic | Try/except; hard termination caps | Runtime probe → killed |
-| **Model per Role** | Orchestrator/worker/validator use different models | Single graph; node-level model config | Agents have fixed models | Agents have fixed models | Per-agent plugin config |
-| **Production Readiness** | 16-day missions; adversarial validation; serial execution reduces error rate | Best-in-class checkpointing, observability, HITL | Fastest prototype; limited complex branching | Free; conversational; API stability risk | Proven; lacks strategic decomposition |
+| Dimension                | Factory.ai Missions                                                          | LangGraph                                         | CrewAI                                                 | AutoGen (AG2)                             | AO (Current)                          |
+| ------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------- | ------------------------------------- |
+| **Core Mental Model**    | Mission DAG with validation contract                                         | State graph with nodes/edges                      | Role-based crew (hierarchy)                            | Conversation threads                      | Plugin-based session                  |
+| **Task Decomposition**   | Orchestrator decomposes goals into features → milestones                     | Declarative graph edges; conditional routing      | Manager agent delegates via tasks                      | Agents negotiate via chat messages        | User-initiated per session            |
+| **State Model**          | Shared filesystem artifacts (broadcast) + validation state JSON              | Typed state with checkpointing (SQLite/Postgres)  | Per-agent memory + crew shared memory                  | Conversation history (append-only)        | Flat-file JSON per session            |
+| **Agent Handoff**        | Structured handoff summary (not chat) → fresh context                        | State passes through graph nodes                  | Crew manager assigns next task                         | Message-passing thread                    | User/kill/restart                     |
+| **Validation**           | Adversarial validators at milestone boundaries                               | Optional HITL at nodes                            | No built-in verification                               | GroupChat self-critique                   | Event emission + SCM PR checks        |
+| **Human-in-the-Loop**    | Mission Control dashboard; pause/redirect per feature                        | First-class: interrupt node, modify state, resume | Basic task-level input                                 | UserProxy agent relays input              | `needs_input` state + dashboard       |
+| **Serial vs Parallel**   | Serial features; internal read-only parallelization                          | Explicit parallelism via graph edges              | Sequential default; hierarchical adds manager overhead | Parallel by default (conversation rounds) | Per-session isolation                 |
+| **Error Recovery**       | Fix features targeted at validation gaps                                     | Checkpoint resume from failed node                | Retry logic                                            | Try/except; hard termination caps         | Runtime probe → killed                |
+| **Model per Role**       | Orchestrator/worker/validator use different models                           | Single graph; node-level model config             | Agents have fixed models                               | Agents have fixed models                  | Per-agent plugin config               |
+| **Production Readiness** | 16-day missions; adversarial validation; serial execution reduces error rate | Best-in-class checkpointing, observability, HITL  | Fastest prototype; limited complex branching           | Free; conversational; API stability risk  | Proven; lacks strategic decomposition |
 
 ### 3.2 Deep-Dive: Factory.ai Missions Architecture
 
@@ -142,6 +146,7 @@ NEXT MILESTONE or MISSION COMPLETE
 ```
 
 **Key Design Decisions** (from Factory.ai public research):
+
 - **Serial feature execution**: Parallel execution causes coordination chaos (merge conflicts, duplicated work, inconsistent decisions). Serial execution with targeted internal parallelization (read-only operations inside a feature) reduces error rates dramatically.
 - **Model-agnostic routing**: Each role (orchestrator, worker, validator) can use different models. This is a structural advantage as models specialize — the system improves with model advances without code changes.
 - **Skill-based learning**: The orchestrator identifies repeatable patterns as reusable skills. Workers extend the skill library. Missions improve in specific domains over time.
@@ -152,6 +157,7 @@ NEXT MILESTONE or MISSION COMPLETE
 LangGraph models multi-agent systems as explicit state machines. Every node is an agent step; every edge is a transition. State is typed and persisted at every node transition (checkpointing). If the graph crashes at node 7 of 10, it resumes from node 7.
 
 **Differentiating features**:
+
 - **Cyclic graphs**: First-class support for loops (agents revise, retry, branch).
 - **Human-in-the-loop as primitive**: Any node can be interrupted, state modified, execution resumed. This is what production approval flows need.
 - **LangSmith observability**: Every LLM call, state transition, and tool invocation is traced and debuggable.
@@ -166,12 +172,14 @@ LangGraph models multi-agent systems as explicit state machines. Every node is a
 CrewAI models agents as organizational hierarchy: a manager agent delegates to role-based workers. Mental model: "agents with jobs."
 
 **Differentiating features**:
+
 - **30-60 lines to first working agent**: Fastest time-to-prototype.
 - **Role/goal/backstory**: Agents defined like job descriptions.
 - **Task delegation**: Manager assigns tasks based on role fit.
 - **Sequential and hierarchical flows**: Simple to reason about, but complex branching needs workarounds.
 
 **Limitations in production**:
+
 - Token overhead grows in hierarchical crews (manager-to-worker chatter).
 - No native cyclic graph support — loops require workarounds.
 - State persistence added in v1.0 but not as robust as LangGraph.
@@ -182,11 +190,13 @@ CrewAI models agents as organizational hierarchy: a manager agent delegates to r
 AutoGen uses conversational multi-agent patterns: agents exchange messages in structured rounds until they converge.
 
 **Differentiating features**:
+
 - **GroupChat pattern**: Multiple agents debate, critique, and reach consensus.
 - **UserProxyAgent**: Human input injected as conversation messages.
 - **Event-driven v0.4**: Async-first architecture with modular runtime.
 
 **Production concerns**:
+
 - Microsoft announced AutoGen is merging into Microsoft Agent Framework 1.0 (GA April 2026). AutoGen enters maintenance mode — security patches only, no new features.
 - Conversational model causes 31% token overhead.
 - No hard termination caps by default (can burn tokens in open-ended debates).
@@ -194,18 +204,18 @@ AutoGen uses conversational multi-agent patterns: agents exchange messages in st
 
 ### 3.6 Synthesis: What the Market Teaches Us
 
-| Pattern | Proven Effective At | Adopt Into AO? |
-|---------|-------------------|---------------|
-| Mission DAG (features → milestones → validation contract) | Factory.ai (16-day missions) | ✅ YES — additive layer on session |
-| Serial feature execution with internal parallelization | Factory.ai | ✅ YES — default execution mode |
-| Adversarial validation (scrutiny + user-testing) | Factory.ai | ✅ YES — new session role type |
-| Graph-based state machine with checkpointing | LangGraph | ✅ YES — extend lifecycle transitions |
-| HITL as first-class interrupt/resume | LangGraph | ✅ YES — extend needs_input with pause/resume |
-| Broadcast shared state files | Factory.ai, Dagent | ✅ YES — extend flat-file storage |
-| Model-agnostic role routing | Factory.ai | ✅ YES — extend agent plugin per-role config |
-| Conversational handoffs | AutoGen | ⚠️ PARTIAL — keep structured handoffs; discard unbounded chat |
-| Hierarchical manager delegation | CrewAI | ✅ YES — orchestrator as manager, sessions as workers |
-| Role-based agent definition | CrewAI | ✅ YES — extend plugin config with role metadata |
+| Pattern                                                   | Proven Effective At          | Adopt Into AO?                                                |
+| --------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------- |
+| Mission DAG (features → milestones → validation contract) | Factory.ai (16-day missions) | ✅ YES — additive layer on session                            |
+| Serial feature execution with internal parallelization    | Factory.ai                   | ✅ YES — default execution mode                               |
+| Adversarial validation (scrutiny + user-testing)          | Factory.ai                   | ✅ YES — new session role type                                |
+| Graph-based state machine with checkpointing              | LangGraph                    | ✅ YES — extend lifecycle transitions                         |
+| HITL as first-class interrupt/resume                      | LangGraph                    | ✅ YES — extend needs_input with pause/resume                 |
+| Broadcast shared state files                              | Factory.ai, Dagent           | ✅ YES — extend flat-file storage                             |
+| Model-agnostic role routing                               | Factory.ai                   | ✅ YES — extend agent plugin per-role config                  |
+| Conversational handoffs                                   | AutoGen                      | ⚠️ PARTIAL — keep structured handoffs; discard unbounded chat |
+| Hierarchical manager delegation                           | CrewAI                       | ✅ YES — orchestrator as manager, sessions as workers         |
+| Role-based agent definition                               | CrewAI                       | ✅ YES — extend plugin config with role metadata              |
 
 ---
 
@@ -253,14 +263,14 @@ Add `LifecycleMissionState` to the existing Canonical lifecycle (not as a replac
 ```typescript
 // packages/core/src/mission-types.ts  (NEW FILE — additive)
 export type LifecycleMissionState =
-  | "planning"           // User describes goal, orchestrator produces validation contract
-  | "plan_review"        // User reviews/approves plan
-  | "executing"          // Workers executing features sequentially
-  | "validating"         // Validators running at milestone boundary
-  | "needs_input"        // Human approval required (HITL checkpoint)
-  | "fixing"             // Fix features targeted at validation gaps
-  | "complete"           // All validation assertions pass
-  | "terminated";        // User aborts mission
+  | "planning" // User describes goal, orchestrator produces validation contract
+  | "plan_review" // User reviews/approves plan
+  | "executing" // Workers executing features sequentially
+  | "validating" // Validators running at milestone boundary
+  | "needs_input" // Human approval required (HITL checkpoint)
+  | "fixing" // Fix features targeted at validation gaps
+  | "complete" // All validation assertions pass
+  | "terminated"; // User aborts mission
 
 export type LifecycleMissionReason =
   | "mission_created"
@@ -300,13 +310,13 @@ export interface MissionLifecycle {
 }
 
 export interface MissionFeature {
-  id: string;                   // "feat-001"
+  id: string; // "feat-001"
   title: string;
   description: string;
-  fulfills: string[];            // Assertion IDs from contract
+  fulfills: string[]; // Assertion IDs from contract
   status: "pending" | "active" | "completed" | "failed";
   assignedSessionId?: SessionId; // Links to existing AO session
-  handoffSummary?: string;      // Structured artifact (not chat)
+  handoffSummary?: string; // Structured artifact (not chat)
 }
 
 export interface ValidationContract {
@@ -317,10 +327,10 @@ export interface ValidationContract {
 }
 
 export interface ValidationAssertion {
-  id: string;                   // "assert-001"
-  description: string;           // Testable behavior description
-  testHint?: string;             // How to verify (test approach, E2E path)
-  fulfilledBy: string[];         // Feature IDs that cover this assertion
+  id: string; // "assert-001"
+  description: string; // Testable behavior description
+  testHint?: string; // How to verify (test approach, E2E path)
+  fulfilledBy: string[]; // Feature IDs that cover this assertion
   status: "pending" | "passing" | "failing";
 }
 ```
@@ -386,23 +396,24 @@ AO already has `needs_input` state. The Mission Layer extends this with structur
 
 ```typescript
 export enum HITLCheckpointType {
-  PLAN_APPROVAL = "plan_approval",      // User approves mission plan before execution
+  PLAN_APPROVAL = "plan_approval", // User approves mission plan before execution
   MILESTONE_REVIEW = "milestone_review", // User reviews milestone results before next
   VALIDATION_FAILURE = "validation_failure", // Validation failed; user chooses fix path
-  ESCALATION = "escalation",             // Orchestrator cannot resolve; human decides
+  ESCALATION = "escalation", // Orchestrator cannot resolve; human decides
 }
 
 export interface HITLCheckpoint {
   type: HITLCheckpointType;
   missionId: string;
-  context: string;              // What the human is approving/reviewing
-  options?: string[];           // Structured choices (not free-text)
+  context: string; // What the human is approving/reviewing
+  options?: string[]; // Structured choices (not free-text)
   resolvedAt?: string;
   resolution?: string;
 }
 ```
 
 **UI Integration**: New Mission Control view in the dashboard (additive route `/missions/[id]/page.tsx`) that shows:
+
 - Feature progress (completed/active/pending)
 - Validation contract status (assertions passing/failing)
 - Validator findings (scrutiny + user-testing results)
@@ -420,14 +431,14 @@ Extend the existing `AgentSpecificConfig` to support per-mission-role model sele
 // Additive extension to existing config types
 export interface MissionRoleConfig {
   role: "orchestrator" | "worker" | "validator-scrutiny" | "validator-testing";
-  preferredModel?: string;        // Model override for this role
+  preferredModel?: string; // Model override for this role
   reasoningEffort?: "off" | "none" | "low" | "medium" | "high";
-  toolPreset?: string[];          // Role-specific tool allowlist
+  toolPreset?: string[]; // Role-specific tool allowlist
 }
 
 export interface ProjectConfig {
   // ... existing fields unchanged ...
-  missionRoles?: MissionRoleConfig[];  // Optional — defaults to project agent
+  missionRoles?: MissionRoleConfig[]; // Optional — defaults to project agent
 }
 ```
 
@@ -442,19 +453,20 @@ export interface FeatureHandoff {
   featureId: string;
   sessionId: SessionId;
   status: "completed" | "failed";
-  summary: string;                // What was done (max 500 chars)
+  summary: string; // What was done (max 500 chars)
   assertionsSatisfied: string[]; // Which contract assertions this feature passed
-  assertionsFailed: string[];    // Which assertions this feature could not satisfy
-  knowledgeUpdates: string[];    // Keys of knowledge entries this feature wrote
-  boundaryViolations: string[];  // Any boundaries this feature encountered
-  nextSteps?: string;            // Guidance for next worker / validator
-  gitCommitRef?: string;         // Commit hash if applicable
+  assertionsFailed: string[]; // Which assertions this feature could not satisfy
+  knowledgeUpdates: string[]; // Keys of knowledge entries this feature wrote
+  boundaryViolations: string[]; // Any boundaries this feature encountered
+  nextSteps?: string; // Guidance for next worker / validator
+  gitCommitRef?: string; // Commit hash if applicable
 }
 ```
 
 **Storage**: `~/.agent-orchestrator/.missions/{missionId}/handoffs/{featureId}.json`
 
-**Why this matters**: 
+**Why this matters**:
+
 - The next worker reads a 500-character summary instead of a 50K-token conversation history.
 - Validators review a structured checklist instead of a chat transcript.
 - The orchestrator makes routing decisions from assertion status grids, not from parsing agent monologues.
@@ -498,7 +510,7 @@ export function createMissionService(deps: MissionServiceDeps): MissionService {
   async function createMission(input: CreateMissionInput): Promise<Mission> {
     const missionId = `mission-${Date.now()}-${randomUUID().slice(0, 8)}`;
     const missionDir = join(getMissionDir(input.projectId), missionId);
-    
+
     // 1. Write mission directory structure
     mkdir(join(missionDir, "state"), { recursive: true });
     mkdir(join(missionDir, "handoffs"), { recursive: true });
@@ -526,8 +538,8 @@ export function createMissionService(deps: MissionServiceDeps): MissionService {
       state: "plan_review",
       currentFeatureIndex: null,
       contract,
-      features: [],    // populated after user approval
-      milestones: [],  // populated after decomposition
+      features: [], // populated after user approval
+      milestones: [], // populated after decomposition
       createdAt: new Date().toISOString(),
     };
 
@@ -545,11 +557,11 @@ export function createMissionService(deps: MissionServiceDeps): MissionService {
 
   async function executeMission(missionId: string): Promise<void> {
     const mission = await readMissionState(missionId);
-    
+
     // User has approved plan (transitioned from plan_review -> executing)
-    for (let i = (mission.currentFeatureIndex ?? 0); i < mission.features.length; i++) {
+    for (let i = mission.currentFeatureIndex ?? 0; i < mission.features.length; i++) {
       const feature = mission.features[i];
-      
+
       // HITL Checkpoint at milestone boundaries
       if (feature.isMilestoneBoundary) {
         await runMilestoneValidation(missionId, i);
@@ -578,7 +590,7 @@ export function createMissionService(deps: MissionServiceDeps): MissionService {
       feature.handoffSummary = handoff.summary;
       feature.status = handoff.status;
       mission.currentFeatureIndex = i + 1;
-      
+
       // Update shared state with knowledge from worker
       if (handoff.knowledgeUpdates.length > 0) {
         await mergeKnowledgeUpdates(missionId, handoff.knowledgeUpdates);
@@ -596,7 +608,7 @@ export function createMissionService(deps: MissionServiceDeps): MissionService {
     await runMilestoneValidation(missionId, mission.features.length);
   }
 
-  return { createMission, executeMission, /* ... */ };
+  return { createMission, executeMission /* ... */ };
 }
 ```
 
@@ -661,10 +673,13 @@ async function spawnFeatureWorker(opts: {
 Validators are sessions too — they just have `role: "validator-scrutiny"` and run existing agent plugins with validation-specific prompts:
 
 ```typescript
-async function runMilestoneValidation(missionId: string, featureIndex: number): Promise<ValidationResult> {
+async function runMilestoneValidation(
+  missionId: string,
+  featureIndex: number,
+): Promise<ValidationResult> {
   const mission = await readMissionState(missionId);
   const milestone = mission.milestones[milestoneIndex];
-  
+
   // Spawn scrutiny validator (reuses existing spawn)
   const scrutinySession = await sessionManager.spawn({
     projectId: mission.projectId,
@@ -680,21 +695,21 @@ async function runMilestoneValidation(missionId: string, featureIndex: number): 
 
   // Wait for completion (LifecycleManager handles this)
   await waitForSessionCompletion(scrutinySession.id);
-  
+
   // Read validator handoff (structured artifact from validator output)
   const scrutinyResult = await parseValidatorHandoff(scrutinySession.id);
-  
+
   if (scrutinyResult.status === "pass") {
     milestone.status = "validated";
     await writeMissionState(getMissionDir(mission.projectId), mission);
     return { passed: true };
   }
-  
+
   // Create fix features targeted at failed assertions
   const fixFeatures = await createFixFeatures(missionId, milestone, scrutinyResult.failures);
   mission.features.push(...fixFeatures);
   await writeMissionState(getMissionDir(mission.projectId), mission);
-  
+
   return { passed: false, fixFeatures };
 }
 ```
@@ -813,14 +828,15 @@ This section captures architecture ideas for later implementation. It is not a c
 
 The orchestrator agent should be configurable with distinct personality profiles that shape risk tolerance, retry behavior, reaction aggressiveness, and communication style.
 
-| Personality | Traits | Default Skill Emphasis | Behavior Changes |
-|-------------|--------|------------------------|------------------|
-| `conservative` | Low risk tolerance, high audit preference | review, audit, validation | Slower escalation, more human-in-the-loop checkpoints, stricter validation contracts |
-| `exploratory` | High experimentation, tolerant of failure | experiment, rollback, sandbox | Faster iteration, automatic rollback on failure, encourage trying multiple workers/providers |
-| `efficiency-first` | Optimize for throughput and cost | routing, load-balancing, cost-tracking | Aggressive worker reuse, minimal human escalation, cost-budget enforcement |
-| `quality-first` | Maximize correctness and test coverage | test, review, adversarial-validation | Mandatory verification steps, extended stuck-detection windows |
+| Personality        | Traits                                    | Default Skill Emphasis                 | Behavior Changes                                                                             |
+| ------------------ | ----------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `conservative`     | Low risk tolerance, high audit preference | review, audit, validation              | Slower escalation, more human-in-the-loop checkpoints, stricter validation contracts         |
+| `exploratory`      | High experimentation, tolerant of failure | experiment, rollback, sandbox          | Faster iteration, automatic rollback on failure, encourage trying multiple workers/providers |
+| `efficiency-first` | Optimize for throughput and cost          | routing, load-balancing, cost-tracking | Aggressive worker reuse, minimal human escalation, cost-budget enforcement                   |
+| `quality-first`    | Maximize correctness and test coverage    | test, review, adversarial-validation   | Mandatory verification steps, extended stuck-detection windows                               |
 
 Personality is stored in `OrchestratorConfig.personality` and influences:
+
 - Default worker provider selection
 - Retry budget and timeout multipliers
 - Reaction escalation thresholds
@@ -841,12 +857,14 @@ This separates stable preference (`OrchestratorConfig.personality`) from session
 Each personality loads a prioritized skill library. Skills are plugin-like modules registered in `packages/core/src/orchestrator-skills.ts`.
 
 Example skill registrations:
+
 - `conservative`: `audit-trail`, `validation-contract-enforcer`, `human-checkpoint-scheduler`
 - `exploratory`: `ab-test-runner`, `rollback-automation`, `branch-sandbox-manager`
 - `efficiency-first`: `worker-pool-balancer`, `cost-budget-enforcer`, `cache-optimizer`
 - `quality-first`: `adversarial-validator`, `test-coverage-analyzer`, `regression-detector`
 
 Skills expose a standard interface:
+
 ```ts
 interface OrchestratorSkill {
   name: string;
@@ -859,12 +877,14 @@ interface OrchestratorSkill {
 ### A.3 Long-Term Memory Store
 
 The orchestrator maintains an append-only memory log at `~/.agent-orchestrator/.orchestrator-meta/memory.jsonl`. Each record contains:
+
 - Timestamp, sessionId, projectId
 - Decision made (e.g., "selected worker provider X for issue Y")
 - Outcome observed (success, failure, override, escalation)
 - Feedback signal (user correction, validation failure, cost anomaly)
 
 Memory is never mutated; corrections append a new entry with `correctsPreviousId`. This enables:
+
 - Temporal reasoning: "What happened the last 3 times we used provider X?"
 - Pattern detection: "User overrides cluster around issue type Z"
 - Self-improvement proposals
@@ -885,11 +905,13 @@ This loop makes the orchestrator adaptive without human intervention, while pres
 ### A.5 Rollback and Audit Trail
 
 Every autonomous change creates:
+
 - `config-change.jsonl` entry with `proposal`, `simulationResult`, `appliedAt`, `appliedBy`
 - Memory entry linking to the config change
 - Automatic rollback trigger if validation metrics regress within observation window
 
 Human operators can:
+
 - `ao config history` — show recent autonomous changes
 - `ao config rollback <id>` — revert a specific autonomous change
 - Disable autonomy per-key in `agent-orchestrator.yaml` with `autonomy: { enabled: false }`
@@ -903,6 +925,7 @@ This section defines a future experiment layer where agents can directly communi
 ### B.1 Motivation
 
 Current AO architecture routes all coordination through the orchestrator's lifecycle manager and shared file state. For complex missions, this creates latency and context bottlenecks. Direct inter-agent messaging enables:
+
 - Rapid handoff refinement without orchestrator round-trips
 - Peer review between workers on the same feature branch
 - Negotiation protocols for resource conflicts
@@ -915,7 +938,14 @@ Agents exchange typed messages via a shared mailbox:
 type AgentMessage =
   | { kind: "handoff"; from: AgentId; to: AgentId; payload: HandoffSummary; requiresAck: boolean }
   | { kind: "review-request"; from: AgentId; to: AgentId; subject: SessionId; diff: string[] }
-  | { kind: "review-result"; from: AgentId; to: AgentId; subject: SessionId; verdict: "approve" | "request-changes" | "block"; comments: ReviewComment[] }
+  | {
+      kind: "review-result";
+      from: AgentId;
+      to: AgentId;
+      subject: SessionId;
+      verdict: "approve" | "request-changes" | "block";
+      comments: ReviewComment[];
+    }
   | { kind: "negotiate"; from: AgentId; to: AgentId; topic: string; positions: AgentPosition[] }
   | { kind: "status-update"; from: AgentId; broadcast: true; state: AgentState }
   | { kind: "delegate"; from: AgentId; to: AgentId; task: Subtask; constraints: TaskConstraint[] };
@@ -926,6 +956,7 @@ type AgentMessage =
 Mailbox is a flat file per project: `.ao/mailbox/{agentId}.jsonl`. Each line is one message. Agents poll or receive push notifications via the existing `recordActivityEvent` hook.
 
 Rules:
+
 - Messages are immutable once written
 - Receiving agent must ack within TTL or message expires
 - Orchestrator can inspect all mailboxes for audit but does not mediate delivery
@@ -934,6 +965,7 @@ Rules:
 ### B.4 Experiment Gates
 
 This feature is gated behind:
+
 - `agent-orchestrator.yaml` → `features.interAgentMessaging: true`
 - Per-agent opt-in: `agentConfig.allowDirectMessaging: boolean`
 - Sandbox mode for first 10 cycles: messages logged but not delivered, to validate protocol stability
@@ -941,6 +973,7 @@ This feature is gated behind:
 ### B.5 Observability
 
 All inter-agent messages generate structured events:
+
 - `agent.message.sent` / `agent.message.received` / `agent.message.expired` / `agent.message.acknowledged`
 - Dashboard surface: "Agent Activity" tab shows real-time message stream per session
 - Metrics: message latency, ack rate, negotiation win rate
@@ -952,6 +985,7 @@ This section documents the structure and reasoning behind the types decompositio
 ### C.1 Motivation for the Type Split
 
 Initially, `packages/core/src/types.ts` was a monolithic type file spanning over 2,200 lines. It combined:
+
 - Core configuration validation structures.
 - Pluggable extension slot contracts (Runtime, Agent, Workspace, etc.).
 - Active runtime lifecycle and session state machines.
@@ -973,12 +1007,14 @@ The structures were extracted into five domain-specific type files:
 ### C.3 Import Guidelines
 
 To maintain complete backward compatibility:
+
 - All new type modules are fully re-exported in `packages/core/src/types.ts`.
 - **Downstream consumers and plugins must always import types from `@aoagents/ao-core` (or `../types.js` internally) rather than referencing the domain-specific files directly.** This prevents visual coupling and keeps internal file movements transparent to the rest of the workspace.
 
 ### C.4 Probe Strategy Isolation
 
 The status detection logic in `lifecycle-manager.ts` relied on custom process probe parsing and transition telemetry assembly. These functions have been isolated into `packages/core/src/probe-strategy.ts`:
+
 - `processProbeResultToProbeResult`: Classifies process liveness signals into strict `alive`, `dead`, or `unknown` probe results.
 - `splitEvidenceSignals`: Tokenizes raw terminal/mtime signals for evidence matching.
 - `primaryLifecycleReason`: Selects the priority reason for state transitions.
@@ -988,5 +1024,4 @@ By isolating these helper routines, `determineStatus()` in the lifecycle engine 
 
 ---
 
-*End of architecture supplement.*
-
+_End of architecture supplement._

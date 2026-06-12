@@ -90,7 +90,8 @@ export function EmptyState({
             <>
               <p className="empty-state__headline">Ready to orchestrate</p>
               <p className="empty-state__hint">
-                Open the main orchestrator to start a session and fan out parallel agents across your codebase.
+                Open the main orchestrator to start a session and fan out parallel agents across
+                your codebase.
               </p>
               {orchestratorHref ? (
                 <a href={orchestratorHref} className="empty-state__cta">

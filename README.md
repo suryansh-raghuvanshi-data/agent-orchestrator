@@ -46,6 +46,7 @@ Agent Orchestrator manages fleets of AI coding agents working in parallel on you
 ## Quick Start
 
 > **Prerequisites:** [Node.js 20.18.3+](https://nodejs.org), [Git 2.25+](https://git-scm.com), [`gh` CLI](https://cli.github.com), and:
+>
 > - **macOS / Linux:** [tmux](https://github.com/tmux/tmux/wiki/Installing) — install via `brew install tmux` or `sudo apt install tmux`.
 > - **Windows:** PowerShell 7+ recommended. tmux is **not** required — AO uses native ConPTY via the `runtime-process` plugin (the default on Windows). Set `AO_SHELL=bash` if you have Git Bash and prefer it.
 
@@ -69,6 +70,7 @@ To install from source (for contributors):
 git clone https://github.com/ComposioHQ/agent-orchestrator.git
 cd agent-orchestrator && bash scripts/setup.sh
 ```
+
 </details>
 
 ### Zsh Completion
@@ -140,7 +142,7 @@ $schema: https://raw.githubusercontent.com/ComposioHQ/agent-orchestrator/main/sc
 port: 3000
 
 defaults:
-  runtime: tmux       # default on macOS / Linux; on Windows the default is `process` (ConPTY)
+  runtime: tmux # default on macOS / Linux; on Windows the default is `process` (ConPTY)
   agent: claude-code
   workspace: worktree
   notifiers: [desktop]
@@ -182,7 +184,7 @@ AO keeps your Mac awake while running, so you can access the dashboard remotely 
 # agent-orchestrator.yaml
 $schema: https://raw.githubusercontent.com/ComposioHQ/agent-orchestrator/main/schema/config.schema.json
 power:
-  preventIdleSleep: true  # Default on macOS; no-op on Linux and Windows
+  preventIdleSleep: true # Default on macOS; no-op on Linux and Windows
 ```
 
 Set to `false` if you want to allow idle sleep while AO runs.
@@ -195,15 +197,15 @@ Set to `false` if you want to allow idle sleep while AO runs.
 
 Seven plugin slots. Lifecycle stays in core.
 
-| Slot      | Default     | Alternatives             |
-| --------- | ----------- | ------------------------ |
-| Runtime   | tmux (macOS/Linux) / process (Windows) | process, docker |
-| Agent     | claude-code | codex, aider, cursor, opencode, kimicode |
-| Workspace | worktree    | clone                    |
-| Tracker   | github      | linear, gitlab           |
-| SCM       | github      | gitlab                   |
-| Notifier  | desktop     | slack, discord, composio, webhook, openclaw |
-| Terminal  | iterm2      | web                      |
+| Slot      | Default                                | Alternatives                                |
+| --------- | -------------------------------------- | ------------------------------------------- |
+| Runtime   | tmux (macOS/Linux) / process (Windows) | process, docker                             |
+| Agent     | claude-code                            | codex, aider, cursor, opencode, kimicode    |
+| Workspace | worktree                               | clone                                       |
+| Tracker   | github                                 | linear, gitlab                              |
+| SCM       | github                                 | gitlab                                      |
+| Notifier  | desktop                                | slack, discord, composio, webhook, openclaw |
+| Terminal  | iterm2                                 | web                                         |
 
 All interfaces defined in [`packages/core/src/types.ts`](packages/core/src/types.ts). A plugin implements one interface and exports a `PluginModule`. That's it.
 

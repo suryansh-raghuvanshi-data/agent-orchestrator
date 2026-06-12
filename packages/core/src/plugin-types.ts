@@ -6,11 +6,7 @@ import type {
   ActivityState,
   ActivityDetection,
 } from "./session-types.js";
-import type {
-  ProjectConfig,
-  PreflightContext,
-  AgentPermissionInput,
-} from "./config-types.js";
+import type { ProjectConfig, PreflightContext, AgentPermissionInput } from "./config-types.js";
 import type { ObservabilityLevel } from "./observability.js";
 
 // =============================================================================
@@ -123,10 +119,7 @@ export interface Agent {
    * This is the preferred method for activity detection.
    * @param readyThresholdMs - ms before "ready" becomes "idle" (default: DEFAULT_READY_THRESHOLD_MS)
    */
-  getActivityState(
-    session: Session,
-    readyThresholdMs?: number,
-  ): Promise<ActivityDetection | null>;
+  getActivityState(session: Session, readyThresholdMs?: number): Promise<ActivityDetection | null>;
 
   /**
    * Check if agent process is running (given runtime handle).
@@ -510,7 +503,11 @@ export interface SCM {
    * @param observer - Optional observer for batch operation metrics
    * @returns Map keyed by "${owner}/${repo}#${number}" containing enrichment data
    */
-  enrichSessionsPRBatch?(prs: PRInfo[], observer?: BatchObserver, repos?: string[]): Promise<Map<string, PREnrichmentData>>;
+  enrichSessionsPRBatch?(
+    prs: PRInfo[],
+    observer?: BatchObserver,
+    repos?: string[],
+  ): Promise<Map<string, PREnrichmentData>>;
 
   /**
    * Optional: validate that this SCM's prerequisites (auth, CLI tools) are

@@ -20,16 +20,16 @@ packages/
 
 Every abstraction is a swappable plugin. All interfaces are defined in [`packages/core/src/types.ts`](../packages/core/src/types.ts).
 
-| Slot      | Interface   | Default       | Alternatives                             |
-| --------- | ----------- | ------------- | ---------------------------------------- |
-| Runtime   | `Runtime`   | `tmux` (Unix) / `process` (Windows; ConPTY via node-pty) | `process`, `docker`, `k8s`, `ssh`, `e2b` |
-| Agent     | `Agent`     | `claude-code` | `codex`, `aider`, `cursor`, `kimicode`, `opencode` |
-| Workspace | `Workspace` | `worktree`    | `clone`                                  |
-| Tracker   | `Tracker`   | `github`      | `linear`                                 |
-| SCM       | `SCM`       | `github`      | —                                        |
-| Notifier  | `Notifier`  | `desktop`     | `slack`, `webhook`, `composio`           |
-| Terminal  | `Terminal`  | `iterm2`      | `web`                                    |
-| Lifecycle | —           | (core)        | Non-pluggable                            |
+| Slot      | Interface   | Default                                                  | Alternatives                                       |
+| --------- | ----------- | -------------------------------------------------------- | -------------------------------------------------- |
+| Runtime   | `Runtime`   | `tmux` (Unix) / `process` (Windows; ConPTY via node-pty) | `process`, `docker`, `k8s`, `ssh`, `e2b`           |
+| Agent     | `Agent`     | `claude-code`                                            | `codex`, `aider`, `cursor`, `kimicode`, `opencode` |
+| Workspace | `Workspace` | `worktree`                                               | `clone`                                            |
+| Tracker   | `Tracker`   | `github`                                                 | `linear`                                           |
+| SCM       | `SCM`       | `github`                                                 | —                                                  |
+| Notifier  | `Notifier`  | `desktop`                                                | `slack`, `webhook`, `composio`                     |
+| Terminal  | `Terminal`  | `iterm2`                                                 | `web`                                              |
+| Lifecycle | —           | (core)                                                   | Non-pluggable                                      |
 
 ### Hash-Based Namespacing
 
@@ -61,16 +61,16 @@ Activity states (orthogonal to lifecycle): `active`, `ready`, `idle`, `waiting_i
 
 ### Key Services
 
-| File                                     | Purpose                                         |
-| ---------------------------------------- | ----------------------------------------------- |
-| `packages/core/src/session-manager.ts`   | Session CRUD: spawn, list, kill, send, restore  |
-| `packages/core/src/lifecycle-manager.ts` | State machine, polling loop, reactions engine   |
-| `packages/core/src/prompt-builder.ts`    | Layered worker prompt assembly (system + task)  |
-| `packages/core/src/config.ts`            | Config loading and Zod validation               |
-| `packages/core/src/plugin-registry.ts`   | Plugin discovery, loading, resolution           |
-| `packages/core/src/agent-selection.ts`   | Resolves worker vs orchestrator agent roles     |
-| `packages/core/src/observability.ts`     | Correlation IDs, structured logging, metrics    |
-| `packages/core/src/paths.ts`             | Hash-based path and session name generation     |
+| File                                     | Purpose                                        |
+| ---------------------------------------- | ---------------------------------------------- |
+| `packages/core/src/session-manager.ts`   | Session CRUD: spawn, list, kill, send, restore |
+| `packages/core/src/lifecycle-manager.ts` | State machine, polling loop, reactions engine  |
+| `packages/core/src/prompt-builder.ts`    | Layered worker prompt assembly (system + task) |
+| `packages/core/src/config.ts`            | Config loading and Zod validation              |
+| `packages/core/src/plugin-registry.ts`   | Plugin discovery, loading, resolution          |
+| `packages/core/src/agent-selection.ts`   | Resolves worker vs orchestrator agent roles    |
+| `packages/core/src/observability.ts`     | Correlation IDs, structured logging, metrics   |
+| `packages/core/src/paths.ts`             | Hash-based path and session name generation    |
 
 ### Working Principles
 

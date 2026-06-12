@@ -44,7 +44,7 @@ export interface ObservabilityConfig {
 /** Top-level orchestrator configuration (from agent-orchestrator.yaml) */
 export interface OrchestratorConfig {
   /** Optional JSON Schema hint for editor autocomplete/validation. */
-  "$schema"?: string;
+  $schema?: string;
 
   /**
    * Path to the config file (set automatically during load).

@@ -31,7 +31,10 @@ export function LandingFeatures() {
         <h2 className="font-sans font-[680] text-[clamp(2rem,5vw,3.5rem)] leading-[1.1] tracking-[-1.5px] mb-5">
           What it does
         </h2>
-        <a href="/docs" className="text-[0.8125rem] text-[var(--landing-muted)] no-underline hover:text-white transition-colors">
+        <a
+          href="/docs"
+          className="text-[0.8125rem] text-[var(--landing-muted)] no-underline hover:text-white transition-colors"
+        >
           Explore full docs and plugin references
         </a>
       </div>
@@ -40,18 +43,14 @@ export function LandingFeatures() {
           <div
             key={f.label}
             className={`landing-reveal flex flex-col md:flex-row md:items-baseline gap-3 md:gap-12 py-8 ${
-              i < features.length - 1
-                ? "border-b border-[var(--landing-border-subtle)]"
-                : ""
+              i < features.length - 1 ? "border-b border-[var(--landing-border-subtle)]" : ""
             }`}
           >
             <div className="font-mono text-[0.625rem] tracking-[0.12em] text-[var(--landing-muted-dim)] w-20 shrink-0">
               {f.label}
             </div>
             <div className="flex-1">
-              <h3 className="font-sans font-[680] text-lg tracking-tight mb-1.5">
-                {f.title}
-              </h3>
+              <h3 className="font-sans font-[680] text-lg tracking-tight mb-1.5">{f.title}</h3>
               <p className="text-[var(--landing-muted)] text-[0.875rem] leading-[1.7] max-w-[36rem]">
                 {f.desc}
               </p>

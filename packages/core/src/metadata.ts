@@ -212,7 +212,9 @@ export function readMetadata(dataDir: string, sessionId: SessionId): SessionMeta
           : undefined,
     workerProvider: raw["workerProvider"] as string | undefined,
     workerTaskId: raw["workerTaskId"] as string | undefined,
-    workerAgents: Array.isArray(raw["workerAgents"]) ? raw["workerAgents"] as string[] : undefined,
+    workerAgents: Array.isArray(raw["workerAgents"])
+      ? (raw["workerAgents"] as string[])
+      : undefined,
   };
 }
 
@@ -727,7 +729,10 @@ export function repairSessionMetadataOnRead(
   const duplicatePRAttachments = new Map<string, ActiveSessionRecord[]>();
 
   for (const record of repaired) {
-    if (!record.raw["lifecycle"] && (!record.raw["statePayload"] || record.raw["stateVersion"] !== "2")) {
+    if (
+      !record.raw["lifecycle"] &&
+      (!record.raw["statePayload"] || record.raw["stateVersion"] !== "2")
+    ) {
       const lifecycle = cloneLifecycle(
         parseCanonicalLifecycle(record.raw, {
           sessionId: record.sessionName,
@@ -753,12 +758,28 @@ export function repairSessionMetadataOnRead(
     }
 
     if (isOrchestratorSessionRecord(record.sessionName, record.raw, project.sessionPrefix)) {
-      record.raw = repairSingleSessionMetadataOnRead(sessionsDir, record, project.sessionPrefix).raw;
-      record.raw = repairSessionAgentMetadataOnRead(sessionsDir, record, project, defaults, allSessionPrefixes).raw;
+      record.raw = repairSingleSessionMetadataOnRead(
+        sessionsDir,
+        record,
+        project.sessionPrefix,
+      ).raw;
+      record.raw = repairSessionAgentMetadataOnRead(
+        sessionsDir,
+        record,
+        project,
+        defaults,
+        allSessionPrefixes,
+      ).raw;
       continue;
     }
 
-    record.raw = repairSessionAgentMetadataOnRead(sessionsDir, record, project, defaults, allSessionPrefixes).raw;
+    record.raw = repairSessionAgentMetadataOnRead(
+      sessionsDir,
+      record,
+      project,
+      defaults,
+      allSessionPrefixes,
+    ).raw;
 
     const prUrl = record.raw["pr"];
     if (!prUrl) continue;
@@ -834,7 +855,10 @@ export function deduplicatePRStorageOnStartup(config: OrchestratorConfig): boole
       if (!raw) continue;
 
       const rawPrUrls = raw["prs"]
-        ? raw["prs"].split(",").map((url) => url.trim()).filter(Boolean)
+        ? raw["prs"]
+            .split(",")
+            .map((url) => url.trim())
+            .filter(Boolean)
         : [];
       const uniquePrUrls = dedupePrUrls(rawPrUrls);
       const updates: Partial<Record<string, string>> = {};

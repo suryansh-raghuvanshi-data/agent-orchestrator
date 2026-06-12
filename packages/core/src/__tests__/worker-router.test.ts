@@ -16,7 +16,10 @@ function makeProject(overrides?: Partial<ProjectConfig>): ProjectConfig {
 }
 
 function makeConfig(): OrchestratorConfig {
-  return { projects: {}, defaults: { agent: "codex", runtime: "tmux" } } as unknown as OrchestratorConfig;
+  return {
+    projects: {},
+    defaults: { agent: "codex", runtime: "tmux" },
+  } as unknown as OrchestratorConfig;
 }
 
 function makeFakeProvider(name: string): WorkerProvider {
@@ -24,7 +27,9 @@ function makeFakeProvider(name: string): WorkerProvider {
     name,
     displayName: `Provider ${name}`,
     capabilities: { maxConcurrency: 5, timeoutSupported: true, restartFromCheckpoint: false },
-    health: vi.fn().mockResolvedValue({ status: "healthy", activeTasks: 0, maxTasks: 5, lastHeartbeat: null }),
+    health: vi
+      .fn()
+      .mockResolvedValue({ status: "healthy", activeTasks: 0, maxTasks: 5, lastHeartbeat: null }),
     submitTask: vi.fn(),
     getTaskStatus: vi.fn(),
     cancelTask: vi.fn(),
@@ -34,12 +39,9 @@ function makeFakeProvider(name: string): WorkerProvider {
 
 describe("resolveWorkerProvider", () => {
   it("returns local when no workerProvider specified", () => {
-    const result = resolveWorkerProvider(
-      makeSpawnConfig(),
-      makeProject(),
-      makeConfig(),
-      { getProvider: () => null },
-    );
+    const result = resolveWorkerProvider(makeSpawnConfig(), makeProject(), makeConfig(), {
+      getProvider: () => null,
+    });
 
     expect(result.providerName).toBe("local");
     expect(result.isLocal).toBe(true);

@@ -10,7 +10,9 @@
   "type": "module",
   "main": "index.ts",
   "openclaw": {
-    "extensions": ["./index.ts"],
+    "extensions": [
+      "./index.ts"
+    ],
     "compat": {
       "pluginApi": "1"
     }
@@ -27,7 +29,15 @@
   },
   "homepage": "https://github.com/ComposioHQ/agent-orchestrator/tree/main/openclaw-plugin",
   "bugs": "https://github.com/ComposioHQ/agent-orchestrator/issues",
-  "keywords": ["openclaw", "openclaw-plugin", "plugin", "agent-orchestrator", "composio", "ai-agents", "coding-agents"],
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "plugin",
+    "agent-orchestrator",
+    "composio",
+    "ai-agents",
+    "coding-agents"
+  ],
   "publishConfig": {
     "access": "public"
   }

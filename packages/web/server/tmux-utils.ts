@@ -64,11 +64,7 @@ const defaultFs: FsAdapter = {
  * it finds a live tmux session — otherwise a stale metadata dir from
  * one project could shadow the live session of another.
  */
-function findStorageKeysForSession(
-  sessionId: string,
-  fs: FsAdapter,
-  projectId?: string,
-): string[] {
+function findStorageKeysForSession(sessionId: string, fs: FsAdapter, projectId?: string): string[] {
   const aoBase = join(fs.homedir(), ".agent-orchestrator");
   let entries: string[];
   try {
@@ -111,9 +107,7 @@ export function validateSessionId(sessionId: string): boolean {
  *
  * @param execFn - Injectable execFileSync for testing. Defaults to child_process.execFileSync.
  */
-export function findTmux(
-  execFn: typeof execFileSync = execFileSync,
-): string | null {
+export function findTmux(execFn: typeof execFileSync = execFileSync): string | null {
   if (isWindows()) return null;
   const candidates = [
     "/opt/homebrew/bin/tmux", // macOS ARM (Homebrew)

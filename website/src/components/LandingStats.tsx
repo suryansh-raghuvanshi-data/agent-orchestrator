@@ -16,16 +16,11 @@ export function LandingStats({ stats }: LandingStatsProps) {
     <section className="py-20 px-6 max-w-[72rem] mx-auto">
       <div className="landing-reveal grid grid-cols-2 md:grid-cols-4 gap-5">
         {cards.map((stat) => (
-          <div
-            key={stat.label}
-            className="landing-card rounded-2xl py-8 px-6 text-center"
-          >
+          <div key={stat.label} className="landing-card rounded-2xl py-8 px-6 text-center">
             <div className="font-sans font-[680] tracking-tight text-[clamp(2rem,4vw,3rem)] tracking-tight mb-1">
               {stat.number}
             </div>
-            <div className="text-xs text-[var(--landing-muted)] opacity-60">
-              {stat.label}
-            </div>
+            <div className="text-xs text-[var(--landing-muted)] opacity-60">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -37,7 +32,9 @@ export function LandingStats({ stats }: LandingStatsProps) {
           className="landing-card inline-flex items-center gap-2 rounded-lg px-4 py-2 text-[0.8125rem] text-[var(--landing-muted)] no-underline transition-all hover:text-white mb-3"
         >
           <span className="text-[rgba(251,191,36,0.7)] text-sm">★</span>
-          <span className="font-mono text-xs text-[var(--landing-fg)] opacity-80">{stats.stars.toLocaleString()}</span>
+          <span className="font-mono text-xs text-[var(--landing-fg)] opacity-80">
+            {stats.stars.toLocaleString()}
+          </span>
           <span>stars on GitHub</span>
         </a>
         <br />

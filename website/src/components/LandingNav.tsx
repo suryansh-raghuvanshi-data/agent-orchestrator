@@ -31,22 +31,38 @@ export function LandingNav() {
         href="#"
         className="inline-flex items-center gap-2 text-base font-semibold text-white no-underline font-sans font-[680] tracking-tight"
       >
-        <img src="/ao-logo.svg" alt="" aria-hidden="true" width={28} height={28} className="h-7 w-7" />
+        <img
+          src="/ao-logo.svg"
+          alt=""
+          aria-hidden="true"
+          width={28}
+          height={28}
+          className="h-7 w-7"
+        />
         Agent Orchestrator
       </a>
       <ul className="hidden md:flex items-center gap-8 list-none">
         <li>
-          <a href="/docs" className="text-sm text-[var(--landing-muted)] no-underline hover:text-white transition-colors">
+          <a
+            href="/docs"
+            className="text-sm text-[var(--landing-muted)] no-underline hover:text-white transition-colors"
+          >
             Docs
           </a>
         </li>
         <li>
-          <a href="#features" className="text-sm text-[var(--landing-muted)] no-underline hover:text-white transition-colors">
+          <a
+            href="#features"
+            className="text-sm text-[var(--landing-muted)] no-underline hover:text-white transition-colors"
+          >
             Features
           </a>
         </li>
         <li>
-          <a href="#how" className="text-sm text-[var(--landing-muted)] no-underline hover:text-white transition-colors">
+          <a
+            href="#how"
+            className="text-sm text-[var(--landing-muted)] no-underline hover:text-white transition-colors"
+          >
             How It Works
           </a>
         </li>

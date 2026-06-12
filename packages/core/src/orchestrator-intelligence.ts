@@ -56,10 +56,12 @@ export function createOrchestratorIntelligence(
     return {
       recommendedWorkerProvider: defaultWorkerProvider,
       recommendedAgent: defaultAgent,
-      recommendedRetryCount: Math.min(defaultRetryCount + Math.floor(input.issueReentryRate * 4), 6),
-      recommendedTimeoutMs: input.workerSuccessRate < 0.7
-        ? defaultTimeoutMs * 1.25
-        : defaultTimeoutMs,
+      recommendedRetryCount: Math.min(
+        defaultRetryCount + Math.floor(input.issueReentryRate * 4),
+        6,
+      ),
+      recommendedTimeoutMs:
+        input.workerSuccessRate < 0.7 ? defaultTimeoutMs * 1.25 : defaultTimeoutMs,
       overrideRationale,
     };
   }

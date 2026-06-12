@@ -11,6 +11,7 @@
 ## ✅ Audit Complete
 
 The audit has been conducted through systematic reading of:
+
 - `packages/core/src/types.ts` (2243 lines)
 - `packages/core/src/session-manager.ts` (3811 lines)
 - `packages/core/src/lifecycle-manager.ts` (3284 lines)
@@ -62,6 +63,7 @@ COMMUNICATION:
 ### Pattern 1: Plugin Slot System (8 slots)
 
 The extension surface is a registry of named plugins in 8 categories:
+
 1. **runtime** — where sessions execute (tmux on Unix, ConPTY/process on Windows)
 2. **agent** — AI coding tool (claude-code, codex, aider, opencode, cursor, grok, kimicode)
 3. **workspace** — code isolation (git worktree, clone)
@@ -88,18 +90,19 @@ Next.js dashboard on `:3000` and Mux WS server on `:14801` run as separate forke
 ### Pattern 5: Canonical-Legacy Dual State Model
 
 Deliberate two-layer state:
+
 - `CanonicalSessionLifecycle` (versioned) — source of truth
 - `SessionStatus` (legacy 19-value union) — computed on read for dashboard display and legacy API consumers
 
 ## 1.3 Major Module Boundaries
 
-| Package | Responsibility | Dependencies |
-|---------|---------------|-------------|
-| `@aoagents/ao-core` | Types, config loading, session CRUD, lifecycle state machine, plugin registry, platform helpers, flat-file storage, events logging | yaml, zod (optional: better-sqlite3) |
-| `@aoagents/ao-cli` | Commander CLI (`ao start/stop/spawn/etc`), daemon management, plugin scaffolding, environment detection, installer helpers | ao-core, ALL plugins, chalk, commander, ora, @clack/prompts |
-| `@aoagents/ao-web` | Next.js dashboard (SSR pages, REST API, xterm.js terminal, WebSocket mux server, real-time SSE/WS) | ao-core, 18 workspace plugins, next/react, xterm.js family, ws |
-| `@aoagents/ao-plugin-*` | One-function-per-plugin: implement a named slot interface | ao-core only |
-| `@aoagents/ao-notifier-macos` | Native Swift binary for macOS desktop notifications | none |
+| Package                       | Responsibility                                                                                                                     | Dependencies                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `@aoagents/ao-core`           | Types, config loading, session CRUD, lifecycle state machine, plugin registry, platform helpers, flat-file storage, events logging | yaml, zod (optional: better-sqlite3)                           |
+| `@aoagents/ao-cli`            | Commander CLI (`ao start/stop/spawn/etc`), daemon management, plugin scaffolding, environment detection, installer helpers         | ao-core, ALL plugins, chalk, commander, ora, @clack/prompts    |
+| `@aoagents/ao-web`            | Next.js dashboard (SSR pages, REST API, xterm.js terminal, WebSocket mux server, real-time SSE/WS)                                 | ao-core, 18 workspace plugins, next/react, xterm.js family, ws |
+| `@aoagents/ao-plugin-*`       | One-function-per-plugin: implement a named slot interface                                                                          | ao-core only                                                   |
+| `@aoagents/ao-notifier-macos` | Native Swift binary for macOS desktop notifications                                                                                | none                                                           |
 
 ## 1.4 Cross-Cutting Infrastructure
 
@@ -175,16 +178,16 @@ Browser xterm.js ↔ WS sub-channel "terminal" ↔ TerminalManager/pipe relay �
 
 ## 2.3 Data Flow Summary
 
-| Scenario | Protocol | Path |
-|----------|----------|------|
-| Load dashboard | HTTP GET | Browser → `:3000/` (SSR) |
-| List sessions | HTTP GET | Browser → `:3000/api/sessions` |
-| Spawn agent | HTTP POST | Browser → `:3000/api/spawn` |
-| Real-time status | WebSocket | Browser ↔ `:14801/mux` `sessions` (3s) |
-| Terminal I/O | WebSocket | Browser ↔ `:14801/mux` `terminal` |
-| WS → API | HTTP GET | `:14801` → `:3000/api/sessions/patches` |
-| GitHub webhook | HTTP POST | GitHub → `:3000/api/webhooks/**` |
-| Flat file I/O | Sync FS | Both → `~/.agent-orchestrator/projects/{id}/sessions/{id}.json` |
+| Scenario         | Protocol  | Path                                                            |
+| ---------------- | --------- | --------------------------------------------------------------- |
+| Load dashboard   | HTTP GET  | Browser → `:3000/` (SSR)                                        |
+| List sessions    | HTTP GET  | Browser → `:3000/api/sessions`                                  |
+| Spawn agent      | HTTP POST | Browser → `:3000/api/spawn`                                     |
+| Real-time status | WebSocket | Browser ↔ `:14801/mux` `sessions` (3s)                          |
+| Terminal I/O     | WebSocket | Browser ↔ `:14801/mux` `terminal`                               |
+| WS → API         | HTTP GET  | `:14801` → `:3000/api/sessions/patches`                         |
+| GitHub webhook   | HTTP POST | GitHub → `:3000/api/webhooks/**`                                |
+| Flat file I/O    | Sync FS   | Both → `~/.agent-orchestrator/projects/{id}/sessions/{id}.json` |
 
 ---
 
@@ -193,30 +196,39 @@ Browser xterm.js ↔ WS sub-channel "terminal" ↔ TerminalManager/pipe relay �
 ## 3.1 Core Library (68 source files)
 
 ### Central Types (`types.ts`, 2243 lines)
+
 Defines ALL interfaces: PluginSlot (8-way union), PluginModule<T>, Session, SessionStatus (19 values), ActivityState (6 values), CanonicalSessionLifecycle v2, and all plugin contracts (Runtime, Agent, Workspace, Tracker, SCM, Notifier, Terminal, WorkerProvider). Pure types — no side effects.
 
 ### Session Manager (`session-manager.ts`, 3811 lines)
+
 Factory: `createSessionManager(deps)`. Methods: `spawn()`, `list()` (35s TTL cache), `listCached()`, `get()`, `kill()`, `send()`, `restore()`, `cleanup()`. Internal: metadata repair on read, OpenCode session mapping, orchestrator ID reservation, worker routing, PR deduplication.
 
 ### Lifecycle Manager (`lifecycle-manager.ts`, 3284 lines)
+
 Factory: `createLifecycleManager(deps)`. Main loop: `pollAll()` → `determineStatus()` (350-line probe cascade) → `applyLifecycleDecision()` → `dispatchReaction()` → `emitEvent()` → `populatePREnrichmentCache()` (GraphQL batch + Guard 1).
 
 ### Lifecycle State (`lifecycle-state.ts`, 524 lines)
+
 Zod-validated schema for CanonicalSessionLifecycle. `createInitialCanonicalLifecycle()`, `parseCanonicalLifecycle()`, `deriveLegacyStatus()`, `buildLifecycleMetadataPatch()`.
 
 ### Lifecycle Transition Service (`lifecycle-transition.ts`, 305 lines)
+
 Single mutation boundary: `applyLifecycleDecision()` reads → clones → applies → persists. Returns before/after TransitionResult.
 
 ### Lifecycle Status Decisions (`lifecycle-status-decisions.ts`, 396 lines)
+
 Pure decision helpers (no side effects): `resolveProbeDecision()`, `resolveOpenPRDecision()`, `createDetectingDecision()` (attempt counting + time escalation).
 
 ### Plugin Registry (`plugin-registry.ts`, 628 lines)
+
 `createPluginRegistry()` — Map-based registry. `register()`, `get(slot, name)`, `list(slot)`, `loadBuiltins()`. Supports built-in, npm, and local resolution. Validates plugin module shape.
 
 ### Metadata (`metadata.ts`, 550 lines)
+
 Flat-file JSON CRUD with atomic writes and file locking. Handles V1/V2 schema migration on read. `reserveSessionId()` via O_CREAT|O_EXCL.
 
 ### Platform Adapter (`platform.ts`, 245 lines)
+
 Centralized cross-platform helpers: `isWindows()`, `getShell()` (cached, platform-aware), `killProcessTree()`, `findPidByPort()`, `getEnvDefaults()`.
 
 ## 3.2 CLI Package (77 source files)
@@ -252,33 +264,33 @@ packages/core                ──► yaml, zod  [NO plugin deps]
 
 ## 4.2 External Dependencies
 
-| Purpose | Package | Version | Used By |
-|---------|---------|---------|-------|
-| Config | `yaml` | ^2.7.0 | core, cli |
-| Validation | `zod` | ^3.24.0 (core), ^3.25.76 (cli, composio) | core, cli, notifier-composio |
-| CLI UX | `commander`, `@clack/prompts`, `chalk`, `ora` | various | cli |
-| PTY | `node-pty` | ^1.0.0 / ^1.1.0 | runtime-process, web |
-| Binary detect | `which` | ^6.0.1 | agent-grok |
-| Web | `next`, `react` | ^15.1.0, ^19.0.0 | web |
-| Terminal | `@xterm/xterm` + 4 addon betas | 6.1.0-beta.256 | web |
-| WS | `ws` | ^8.19.0 | web |
-| Integration | `@composio/core` | ^0.9.0 | cli, notifier-composio |
-| Storage | `better-sqlite3` | ^12.10.0 (optional) | core [UNUSED] |
-| Build | `typescript`, `vitest`, `rollup` | various | all |
+| Purpose       | Package                                       | Version                                  | Used By                      |
+| ------------- | --------------------------------------------- | ---------------------------------------- | ---------------------------- |
+| Config        | `yaml`                                        | ^2.7.0                                   | core, cli                    |
+| Validation    | `zod`                                         | ^3.24.0 (core), ^3.25.76 (cli, composio) | core, cli, notifier-composio |
+| CLI UX        | `commander`, `@clack/prompts`, `chalk`, `ora` | various                                  | cli                          |
+| PTY           | `node-pty`                                    | ^1.0.0 / ^1.1.0                          | runtime-process, web         |
+| Binary detect | `which`                                       | ^6.0.1                                   | agent-grok                   |
+| Web           | `next`, `react`                               | ^15.1.0, ^19.0.0                         | web                          |
+| Terminal      | `@xterm/xterm` + 4 addon betas                | 6.1.0-beta.256                           | web                          |
+| WS            | `ws`                                          | ^8.19.0                                  | web                          |
+| Integration   | `@composio/core`                              | ^0.9.0                                   | cli, notifier-composio       |
+| Storage       | `better-sqlite3`                              | ^12.10.0 (optional)                      | core [UNUSED]                |
+| Build         | `typescript`, `vitest`, `rollup`              | various                                  | all                          |
 
 ## 4.3 Issues
 
-| Issue | Severity | Detail |
-|--------|---------|-------|
-| Zod version split | LOW | core ^3.24.0 vs cli/composio ^3.25.76 |
-| tracker-gitlab → scm-gitlab | MEDIUM | Violates plugin isolation principle |
-| xterm.js all beta | MEDIUM | API instability + largest bundle driver |
-| vitest major split | LOW | core ^4.x vs others ^3.x |
-| node-pty version split | LOW | ^1.0.0 vs ^1.1.0 |
-| better-sqlite3 unused | LOW | Dead optional dependency |
-| No sideEffects annotations | MEDIUM | Prevents tree-shaking in web bundle |
-| agent-grok version 0.1.3 | INFO | Early development vs 0.9.1 baseline |
-| Web bundles 18 plugins | MEDIUM | Active + inactive plugins all bundled |
+| Issue                       | Severity | Detail                                  |
+| --------------------------- | -------- | --------------------------------------- |
+| Zod version split           | LOW      | core ^3.24.0 vs cli/composio ^3.25.76   |
+| tracker-gitlab → scm-gitlab | MEDIUM   | Violates plugin isolation principle     |
+| xterm.js all beta           | MEDIUM   | API instability + largest bundle driver |
+| vitest major split          | LOW      | core ^4.x vs others ^3.x                |
+| node-pty version split      | LOW      | ^1.0.0 vs ^1.1.0                        |
+| better-sqlite3 unused       | LOW      | Dead optional dependency                |
+| No sideEffects annotations  | MEDIUM   | Prevents tree-shaking in web bundle     |
+| agent-grok version 0.1.3    | INFO     | Early development vs 0.9.1 baseline     |
+| Web bundles 18 plugins      | MEDIUM   | Active + inactive plugins all bundled   |
 
 ---
 
@@ -287,14 +299,17 @@ packages/core                ──► yaml, zod  [NO plugin deps]
 ## 5.1 Technical Debt
 
 ### TD-1: types.ts as Monolithic God File (HIGH)
+
 2243 lines, single import point for all types. Any change requires recompiling all 30+ packages.
 
 **Recommendation**: Split into `session-types.ts`, `lifecycle-types.ts`, `plugin-types.ts`, `event-types.ts`, `pr-tracker-types.ts`.
 
 ### TD-2: session-manager.ts as God Object (HIGH)
+
 3811 lines handling spawn, list, get, kill, send, restore, cleanup, metadata repair, OpenCode mapping, worker routing.
 
 **Recommendation**: Extract into focused modules:
+
 - `session-spawn.ts` (spawn + restore)
 - `session-query.ts` (list + get + cache)
 - `session-lifecycle.ts` (kill + cleanup)
@@ -302,9 +317,11 @@ packages/core                ──► yaml, zod  [NO plugin deps]
 - `session-routing.ts` (worker provider resolution)
 
 ### TD-3: lifecycle-manager.ts as God Object (HIGH)
+
 3284 lines with polling, PR enrichment, 350-line `determineStatus()`, reaction dispatch, event emission.
 
 **Recommendation**: Extract into:
+
 - `lifecycle-poll.ts` (poll loop, per-session iteration)
 - `probe-cascade.ts` (determineStatus extracted as ProbeCascade class with strategy pattern)
 - `pr-enrichment.ts` (populatePREnrichmentCache)
@@ -312,74 +329,85 @@ packages/core                ──► yaml, zod  [NO plugin deps]
 - `event-bus.ts` (event creation + delivery)
 
 ### TD-4: Metadata Repair-on-Read Pattern (MEDIUM)
+
 Every read triggers hidden mutation writes. Write amplification at scale. Repair logic is scattered across multiple nested functions.
 
 **Recommendation**: Introduce explicit migration service run once at startup, not per-read. Replace lazy repair with versioned migrations.
 
 ### TD-5: Legacy Status Derivation (MEDIUM)
+
 Dual-layer state model requires `deriveLegacyStatus()` on every read and `buildLifecycleMetadataPatch()` on every write. Status is not persisted, making debugging harder.
 
 **Recommendation**: Deprecate `SessionStatus` gradually. Migrate all consumers to `CanonicalSessionLifecycle` directly. Persist status as derived cache if needed for performance.
 
 ### TD-6: Cross-Platform Branching Scattered (LOW-MEDIUM)
+
 `process.platform === "win32"` inline in `session-manager.ts` (lines 114-115, 405). Windows pipe relay is entirely in `packages/web/server/mux-websocket.ts`.
 
 **Recommendation**: Funnel all through `isWindows()` from `platform.ts`. Move Windows-specific WS handling into a `windows-pty-relay.ts` module in core.
 
 ## 5.2 Code Smells
 
-| Smell | Location | Detail |
-|--------|----------|--------|
-| Long parameter lists | `applyLifecycleDecision()`, `buildTransitionMetadataPatch()` | Use context object |
-| Magic numbers | Scattered constants (DETECTING_MAX_ATTEMPTS, thresholds, TTLs) | Centralized config constants object |
-| Duplicate evidence formatting | `formatActivitySignalEvidence()` called in multiple places | Extract to shared pipeline |
-| Repeated plugin.get() calls | Multiple `registry.get<Runtime>()` per session per poll | Resolve once per session at top of determineStatus |
-| Dual caching | SessionManager 35s cache + web package cache | Clear invalidation contract needed |
-| Inline error classes | `CliFailureEventRecordedError` in commands/start.ts | Move to core error types |
-| JSON round-trips | Lifecycle serialized to string, stored, parsed back | Inherent with flat files; consider binary or partial persistence |
+| Smell                         | Location                                                       | Detail                                                           |
+| ----------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Long parameter lists          | `applyLifecycleDecision()`, `buildTransitionMetadataPatch()`   | Use context object                                               |
+| Magic numbers                 | Scattered constants (DETECTING_MAX_ATTEMPTS, thresholds, TTLs) | Centralized config constants object                              |
+| Duplicate evidence formatting | `formatActivitySignalEvidence()` called in multiple places     | Extract to shared pipeline                                       |
+| Repeated plugin.get() calls   | Multiple `registry.get<Runtime>()` per session per poll        | Resolve once per session at top of determineStatus               |
+| Dual caching                  | SessionManager 35s cache + web package cache                   | Clear invalidation contract needed                               |
+| Inline error classes          | `CliFailureEventRecordedError` in commands/start.ts            | Move to core error types                                         |
+| JSON round-trips              | Lifecycle serialized to string, stored, parsed back            | Inherent with flat files; consider binary or partial persistence |
 
 ## 5.3 Cyclomatic Complexity Hotspots
 
-| Function | Complexity | Reason |
-|-----------|------------|--------|
-| `determineStatus()` | ~25 | 15+ branches with nested try/catch |
-| `populatePREnrichmentCache()` | ~18 | Plugin loop + session loop + error handling |
-| `repairSessionMetadataOnRead()` | ~15 | Multiple repair strategies interleaved |
-| `_spawnInner()` | ~20 | Worker routing + external path + workspace + runtime + agent |
-| `loadBuiltins()` | ~12 | Dynamic import + per-plugin registration |
-| `resolveProject()` | ~12 | Multi-project resolution + interactive prompt |
+| Function                        | Complexity | Reason                                                       |
+| ------------------------------- | ---------- | ------------------------------------------------------------ |
+| `determineStatus()`             | ~25        | 15+ branches with nested try/catch                           |
+| `populatePREnrichmentCache()`   | ~18        | Plugin loop + session loop + error handling                  |
+| `repairSessionMetadataOnRead()` | ~15        | Multiple repair strategies interleaved                       |
+| `_spawnInner()`                 | ~20        | Worker routing + external path + workspace + runtime + agent |
+| `loadBuiltins()`                | ~12        | Dynamic import + per-plugin registration                     |
+| `resolveProject()`              | ~12        | Multi-project resolution + interactive prompt                |
 
 ## 5.4 Refactoring Recommendations
 
 ### REC-1: Extract Probe Strategy Pattern (HIGH PRIORITY)
+
 **Problem**: `determineStatus()` is a 350-line function with 15+ branches.
 **Solution**: Define `ProbeStrategy` interface with `probe(session) → ActivitySignal | null`. Implement `NativeJsonlProbe`, `GitActivityProbe`, `AgentReportProbe`, `ActivityLogProbe`, `TerminalOutputProbe`. Compose in `ProbeCascade` class. Reduces `determineStatus()` to orchestration only.
 
 ### REC-2: Consolidate Metadata Repair (HIGH PRIORITY)
+
 **Problem**: Lazy repair on every read causes write amplification.
 **Solution**: Run `MetadataMigrator` at `SessionManager` construction time. Iterate all sessions once, apply all repairs, then serve reads as pure reads. Add version field to metadata to skip future repairs.
 
 ### REC-3: Split types.ts (HIGH PRIORITY)
+
 **Problem**: 2243-line god file blocks incremental refactoring.
 **Solution**: Split into 4-5 focused type modules. Use barrel exports from `types/index.ts` to preserve backward compatibility during transition.
 
 ### REC-4: Introduce Session Aggregate Root (MEDIUM PRIORITY)
+
 **Problem**: Session state is scattered across metadata fields, lifecycle sub-records, and derived status.
 **Solution**: Create `SessionAggregate` class that encapsulates all session state, validation, and transition logic. Replace raw Record<string, string> metadata with typed accessors.
 
 ### REC-5: Extract Reaction Engine (MEDIUM PRIORITY)
+
 **Problem**: Reaction dispatch logic is embedded in `lifecycle-manager.ts` with in-memory tracking.
 **Solution**: Extract `ReactionEngine` class with `dispatch(session, eventType)`, `track(sessionId, reactionKey)`, `clear(sessionId)`. Persist reaction state to metadata for crash recovery.
 
 ### REC-6: Bundle Optimization for Web (MEDIUM PRIORITY)
+
 **Problem**: 18 plugins bundled without tree-shaking; xterm.js betas are largest contributor.
 **Solution**: Add `sideEffects: false` to all plugin package.json files. Replace xterm.js betas with stable versions or lazy-load terminal addons. Consider dynamic `import()` for plugin code in web bundle.
 
 ### REC-7: Unify Process/PTY Abstraction (LOW PRIORITY)
+
 **Problem**: Unix (tmux + node-pty) vs Windows (ConPTY + pty-host + named pipe) have diverged in implementation despite shared interfaces.
 **Solution**: Define `PTYTransport` interface. Implement `TmuxTransport` and `WindowsPipeTransport`. Move platform selection into core rather than scattered in web server.
 
 ### REC-8: Remove Unused Dependencies (LOW PRIORITY)
+
 **Problem**: `better-sqlite3` is declared but unused.
 **Solution**: Remove optionalDependency. If SQLite events DB is kept, document why `better-sqlite3` is needed despite "no database" policy. If not, remove it.
 
@@ -388,24 +416,28 @@ Dual-layer state model requires `deriveLegacyStatus()` on every read and `buildL
 # Refactoring Roadmap
 
 ## Phase 1: Foundation (Safest, Highest Value)
+
 1. **Split types.ts** into focused modules with barrel exports
 2. **Extract Probe Strategies** from determineStatus()
 3. **Consolidate metadata repair** into startup migration
 4. **Add sideEffects: false** to all plugin package.json
 
 ## Phase 2: Structure (Reduce God Objects)
+
 5. **Split session-manager.ts** into focused sub-modules
 6. **Extract ReactionEngine** from lifecycle-manager.ts
 7. **Extract PREnrichmentCache** into its own service
 8. **Unify cross-platform branching** through platform.ts
 
 ## Phase 3: Behavior (Cleaner Semantics)
+
 9. **Deprecate SessionStatus** in favor of CanonicalSessionLifecycle
 10. **Introduce SessionAggregate** root entity
 11. **Persist reaction state** to metadata for crash recovery
 12. **Replace xterm.js betas** with stable versions
 
 ## Phase 4: Polish (Performance & Cleanup)
+
 13. **Remove unused dependencies** (better-sqlite3 if truly unused)
 14. **Unify node-pty versions**
 15. **Align zod versions** (core vs cli)
@@ -416,6 +448,7 @@ Dual-layer state model requires `deriveLegacyStatus()` on every read and `buildL
 # Validation Plan
 
 For each refactoring step:
+
 1. Run `pnpm typecheck` across all packages
 2. Run `pnpm test` (unit + integration)
 3. Run `pnpm --filter @aoagents/ao-web test` (web-specific)
@@ -443,16 +476,17 @@ For each refactoring step:
 
 The dashboard must evolve from functional to seamless. Target outcomes:
 
-| Goal | Measurable Target | Current Gap |
-|------|-------------------|-------------|
-| **Zero-lag real-time updates** | Session status latency < 500ms end-to-end (state change → UI render) | Dual polling (WS 3s + SSE 5s) + React re-render chain creates visible lag |
-| **Fluid terminal interaction** | xterm.js input latency < 100ms; scrollback instant on attach | WS mux adds serialization hop; no pre-warming of terminal context |
-| **Perceived performance** | Time-to-interactive (TTI) for dashboard < 2s on 3G; skeleton screens everywhere | SSR + client hydration is heavy; no resource hints or streaming |
-| **Error resilience** | All API failures surface as actionable toasts/skeletons — no raw error states | Errors propagate to nearest error boundary; no global error orchestration |
-| **Accessibility** | WCAG 2.1 AA compliance | No audit evidence found; likely gaps in ARIA labels, focus management |
-| **Mobile parity** | Full feature parity on < 768px widths | MobileBottomNav exists but inspector/terminal behavior is reduced |
+| Goal                           | Measurable Target                                                               | Current Gap                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Zero-lag real-time updates** | Session status latency < 500ms end-to-end (state change → UI render)            | Dual polling (WS 3s + SSE 5s) + React re-render chain creates visible lag |
+| **Fluid terminal interaction** | xterm.js input latency < 100ms; scrollback instant on attach                    | WS mux adds serialization hop; no pre-warming of terminal context         |
+| **Perceived performance**      | Time-to-interactive (TTI) for dashboard < 2s on 3G; skeleton screens everywhere | SSR + client hydration is heavy; no resource hints or streaming           |
+| **Error resilience**           | All API failures surface as actionable toasts/skeletons — no raw error states   | Errors propagate to nearest error boundary; no global error orchestration |
+| **Accessibility**              | WCAG 2.1 AA compliance                                                          | No audit evidence found; likely gaps in ARIA labels, focus management     |
+| **Mobile parity**              | Full feature parity on < 768px widths                                           | MobileBottomNav exists but inspector/terminal behavior is reduced         |
 
 **Recommendations:**
+
 1. **Streaming SSR**: Use `loading.tsx` + Suspense boundaries for progressive dashboard hydration.
 2. **WS health indicators**: Show connection quality (latency, reconnect state) in ConnectionBar; degrade gracefully to SSE without full UI reset.
 3. **Optimistic mutations**: Kill/restore/send should update UI immediately, roll back on failure.
@@ -465,6 +499,7 @@ The dashboard must evolve from functional to seamless. Target outcomes:
 Current behavior: errors bubble up to Commander (CLI) or error.tsx (web). There is no centralized process execution contract.
 
 **Required protocol:**
+
 1. **Structured error taxonomy**: Define `AoError` base class with `code`, `retryable`, `userMessage`, `technicalDetails`. Map every thrown error to a code.
 2. **Retry契约**: All external calls (GitHub API, tmux exec, file I/O) wrapped in `retry()` with exponential backoff + jitter, max attempts configurable per operation class.
 3. **Circuit breakers**: SCM plugin calls (GraphQL batch, PR detection) need circuit breakers to prevent cascading failures when upstream is degraded.
@@ -478,19 +513,19 @@ The orchestrator agent itself must become a learning system that observes orches
 
 ### 6.3.1 Metrics to Collect
 
-| Metric | Source | Frequency |
-|--------|--------|-----------|
-| **Spawn success rate** | session-manager spawn outcomes | Per spawn |
-| **Spawn latency** | reserve ID → agent launch ready | Per spawn |
-| **Lifecycle poll duration** | pollAll() wall time | Per poll cycle |
-| **Probe accuracy** | `determineStatus()` final state vs agent-reported state | Per poll |
-| **Reaction success rate** | reaction outcome (success/failure/escalated) | Per transition |
-| **PR detection latency** | branch created → PR detected | Per PR |
-| **Terminal reattach latency** | WS open → first PTY byte | Per attach |
-| **User action latency** | kill/restore/send → API response → UI update | Per action |
-| **Error frequency by plugin** | recordActivityEvent failures, probe failures | Continuous |
-| **Cache hit rate** | SessionManager 35s cache vs fresh list | Per list() call |
-| **Notification delivery success** | notifier plugin outcomes | Per notification |
+| Metric                            | Source                                                  | Frequency        |
+| --------------------------------- | ------------------------------------------------------- | ---------------- |
+| **Spawn success rate**            | session-manager spawn outcomes                          | Per spawn        |
+| **Spawn latency**                 | reserve ID → agent launch ready                         | Per spawn        |
+| **Lifecycle poll duration**       | pollAll() wall time                                     | Per poll cycle   |
+| **Probe accuracy**                | `determineStatus()` final state vs agent-reported state | Per poll         |
+| **Reaction success rate**         | reaction outcome (success/failure/escalated)            | Per transition   |
+| **PR detection latency**          | branch created → PR detected                            | Per PR           |
+| **Terminal reattach latency**     | WS open → first PTY byte                                | Per attach       |
+| **User action latency**           | kill/restore/send → API response → UI update            | Per action       |
+| **Error frequency by plugin**     | recordActivityEvent failures, probe failures            | Continuous       |
+| **Cache hit rate**                | SessionManager 35s cache vs fresh list                  | Per list() call  |
+| **Notification delivery success** | notifier plugin outcomes                                | Per notification |
 
 ### 6.3.2 Internal Suggestion Log
 
@@ -499,6 +534,7 @@ The orchestrator agent must write optimization insights to a dedicated internal 
 **File**: `~/.agent-orchestrator/.orchestrator-meta/suggestions.jsonl`
 
 **Schema**:
+
 ```jsonl
 {"ts":"...","category":"performance|reliability|ux|cost","metric":"spawn_latency","observed_ms":4200,"threshold_ms":5000,"severity":"warn","suggestion":"Consider pre-warming workspace for projects with >10 sessions","confidence":0.8}
 {"ts":"...","category":"error","metric":"probe_failure_rate","observed_pct":12,"threshold_pct":5,"severity":"error","suggestion":"runtime.isAlive() fails 12% of the time for codex sessions — investigate node-pty stability","confidence":0.9}
@@ -507,6 +543,7 @@ The orchestrator agent must write optimization insights to a dedicated internal 
 ```
 
 **Implementation**:
+
 1. New module: `packages/core/src/orchestrator-intelligence.ts` — `ObservabilityCollector` class
 2. Collects metrics from existing observability hooks (`observer.recordOperation`, `recordActivityEvent`)
 3. Applies threshold rules defined in `orchestrator-intelligence-config.ts`
@@ -527,6 +564,7 @@ Collect (metrics) → Analyze (threshold rules + anomaly detection) → Suggest 
 # Updated Refactoring Roadmap
 
 ## Phase 1: Foundation (Safest, Highest Value)
+
 1. **Split types.ts** into focused modules with barrel exports
 2. **Extract Probe Strategies** from determineStatus()
 3. **Consolidate metadata repair** into startup migration
@@ -534,6 +572,7 @@ Collect (metrics) → Analyze (threshold rules + anomaly detection) → Suggest 
 5. **Structured error taxonomy** — introduce `AoError` base class + error codes
 
 ## Phase 2: Structure (Reduce God Objects)
+
 6. **Split session-manager.ts** into focused sub-modules
 7. **Extract ReactionEngine** from lifecycle-manager.ts
 8. **Extract PREnrichmentCache** into its own service
@@ -541,6 +580,7 @@ Collect (metrics) → Analyze (threshold rules + anomaly detection) → Suggest 
 10. **Retry protocol** — exponential backoff wrapper for all external calls
 
 ## Phase 3: Behavior (Cleaner Semantics)
+
 11. **Deprecate SessionStatus** in favor of CanonicalSessionLifecycle
 12. **Introduce SessionAggregate** root entity
 13. **Persist reaction state** to metadata for crash recovery
@@ -548,6 +588,7 @@ Collect (metrics) → Analyze (threshold rules + anomaly detection) → Suggest 
 15. **Circuit breakers** for SCM plugin external calls
 
 ## Phase 4: UX & Intelligence (New)
+
 16. **Streaming SSR + Suspense** for dashboard
 17. **Optimistic mutations** for kill/restore/send
 18. **Terminal addon lazy-loading**
@@ -559,6 +600,7 @@ Collect (metrics) → Analyze (threshold rules + anomaly detection) → Suggest 
 24. **Process supervision** — lifecycle worker watchdog
 
 ## Phase 5: Polish (Performance & Cleanup)
+
 25. **Remove unused dependencies** (better-sqlite3 if truly unused)
 26. **Unify node-pty versions**
 27. **Align zod versions** (core vs cli)
@@ -570,6 +612,7 @@ Collect (metrics) → Analyze (threshold rules + anomaly detection) → Suggest 
 # Validation Plan (Enhanced)
 
 For each refactoring step:
+
 1. Run `pnpm typecheck` across all packages
 2. Run `pnpm test` (unit + integration)
 3. Run `pnpm --filter @aoagents/ao-web test` (web-specific)

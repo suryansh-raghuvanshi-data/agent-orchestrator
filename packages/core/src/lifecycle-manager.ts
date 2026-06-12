@@ -126,7 +126,6 @@ const PERSISTENT_REACTION_KEYS = new Set(["ci-failed"]);
  *  next real CI failure incident. */
 const CI_PASSING_STABLE_THRESHOLD = 2;
 
-
 type WorkspaceBranchProbe =
   | { kind: "branch"; branch: string }
   | { kind: "detached" }
@@ -393,7 +392,6 @@ function transitionLogLevel(status: SessionStatus): "info" | "warn" | "error" {
   }
   return "info";
 }
-
 
 export interface LifecycleManagerDeps {
   config: OrchestratorConfig;
@@ -676,7 +674,7 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
             (p) =>
               p.owner === detectedPR.owner &&
               p.repo === detectedPR.repo &&
-              p.number === detectedPR.number
+              p.number === detectedPR.number,
           );
           if (!alreadyTracked) {
             // Remove any closed PRs on the same repo before adding the new one.
@@ -689,7 +687,7 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
                     p.repo === detectedPR.repo &&
                     p.number !== detectedPR.number &&
                     prEnrichmentCache.get(`${p.owner}/${p.repo}#${p.number}`)?.state === "closed"
-                  )
+                  ),
               )
               .concat(detectedPR);
           }
@@ -1295,9 +1293,7 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
                   : allEnrichments.every((e) => e.ciStatus === "passing" || e.ciStatus === "none")
                     ? "passing"
                     : "pending",
-                reviewDecision: allEnrichments.some(
-                  (e) => e.reviewDecision === "changes_requested",
-                )
+                reviewDecision: allEnrichments.some((e) => e.reviewDecision === "changes_requested")
                   ? "changes_requested"
                   : allEnrichments.every((e) => e.reviewDecision === "approved")
                     ? "approved"

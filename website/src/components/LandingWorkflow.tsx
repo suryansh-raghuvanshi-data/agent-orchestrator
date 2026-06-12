@@ -74,7 +74,14 @@ export function LandingWorkflow() {
                       ? "landing-card border-[var(--landing-border-default)]"
                       : "border border-[var(--landing-border-subtle)] bg-transparent"
                   }`}
-                  style={isActive ? { borderColor: step.color, boxShadow: `0 0 12px ${step.color.replace(/[\d.]+\)$/, "0.15)") }` } : undefined}
+                  style={
+                    isActive
+                      ? {
+                          borderColor: step.color,
+                          boxShadow: `0 0 12px ${step.color.replace(/[\d.]+\)$/, "0.15)")}`,
+                        }
+                      : undefined
+                  }
                 >
                   <span
                     className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
@@ -94,7 +101,9 @@ export function LandingWorkflow() {
                 </div>
                 <div
                   className={`font-mono text-[0.5625rem] transition-all duration-500 ${
-                    isActive ? "text-[var(--landing-muted)]" : "text-[var(--landing-muted-dim)] opacity-50"
+                    isActive
+                      ? "text-[var(--landing-muted)]"
+                      : "text-[var(--landing-muted-dim)] opacity-50"
                   }`}
                 >
                   {step.mono}
