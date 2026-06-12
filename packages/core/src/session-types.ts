@@ -385,6 +385,8 @@ export interface OrchestratorSpawnConfig {
   agent?: string;
   /** Override the worker provider for sessions spawned by this orchestrator */
   workerProvider?: string;
+  /** Explicit pool of allowed worker providers and agents from the UI checklist */
+  workerAgents?: string[];
 }
 
 export const PROCESS_PROBE_INDETERMINATE = "indeterminate" as const;
@@ -462,6 +464,8 @@ export interface SessionMetadata {
   workerProvider?: string;
   /** Task ID returned by the external worker provider */
   workerTaskId?: string;
+  /** Allowed worker agents/providers pool for this orchestrator */
+  workerAgents?: string[];
 }
 
 // =============================================================================

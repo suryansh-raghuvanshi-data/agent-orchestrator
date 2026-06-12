@@ -1869,6 +1869,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         ...(reusableOpenCodeSessionId ? { opencodeSessionId: reusableOpenCodeSessionId } : {}),
         ...(displayName ? { displayName } : {}),
         ...(orchestratorConfig.workerProvider ? { workerProvider: orchestratorConfig.workerProvider } : {}),
+        ...(orchestratorConfig.workerAgents && orchestratorConfig.workerAgents.length > 0 ? { workerAgents: JSON.stringify(orchestratorConfig.workerAgents) } : {}),
       },
     };
 
@@ -1890,6 +1891,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         opencodeSessionId: reusableOpenCodeSessionId,
         displayName,
         workerProvider: orchestratorConfig.workerProvider,
+        workerAgents: orchestratorConfig.workerAgents,
       });
 
       if (plugins.agent.postLaunchSetup) {

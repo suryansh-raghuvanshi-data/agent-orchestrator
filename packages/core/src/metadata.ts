@@ -212,6 +212,7 @@ export function readMetadata(dataDir: string, sessionId: SessionId): SessionMeta
           : undefined,
     workerProvider: raw["workerProvider"] as string | undefined,
     workerTaskId: raw["workerTaskId"] as string | undefined,
+    workerAgents: Array.isArray(raw["workerAgents"]) ? raw["workerAgents"] as string[] : undefined,
   };
 }
 
@@ -254,6 +255,7 @@ const jsonFields = new Set([
   "dashboard",
   "agentReport",
   "reportWatcher",
+  "workerAgents",
 ]);
 
 /** Unflatten a Record<string, string> to proper types for JSON storage. */
@@ -332,6 +334,7 @@ export function writeMetadata(
     data["displayNameUserSet"] = metadata.displayNameUserSet;
   if (metadata.workerProvider) data["workerProvider"] = metadata.workerProvider;
   if (metadata.workerTaskId) data["workerTaskId"] = metadata.workerTaskId;
+  if (metadata.workerAgents) data["workerAgents"] = metadata.workerAgents;
 
   atomicWriteFileSync(path, serializeMetadata(data));
 }
