@@ -49,6 +49,7 @@ import {
   type WorkerProvider,
   type Issue,
   type CanonicalSessionLifecycle,
+  type ListOptions,
   PR_STATE,
 } from "./types.js";
 import {
@@ -2169,7 +2170,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     return promise;
   }
 
-  async function list(projectId?: string): Promise<Session[]> {
+  async function list(projectId?: string, options?: ListOptions): Promise<Session[]> {
     const allSessions = Object.entries(config.projects).flatMap(([entryProjectId, project]) => {
       if (projectId && entryProjectId !== projectId) return [];
       return loadActiveSessionRecords(entryProjectId, project).map((record) => ({
@@ -2237,9 +2238,10 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       // on next poll. We only persist the runtime signal and detecting state —
       // the lifecycle manager's resolveProbeDecision pipeline is the single
       // authority on terminal decisions (terminated/done). See #1735.
-      // Check the on-disk state (raw) to avoid re-writing when already
-      // detecting — enrichment sets detecting in-memory, but we only need
-      // to persist the transition once to avoid resetting lastTransitionAt.
+      // This block is only active when options.persistRuntimeProbe is true.
+      // Dashboard/API reads use read-only listing (default) to avoid
+      // unexpected metadata writes.
+      if (options?.persistRuntimeProbe) {
       const onDiskLifecycle = parseCanonicalLifecycle(raw, {
         sessionId: sessionName,
         status: validateStatus(raw["status"]),
@@ -2292,6 +2294,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
           });
         }
       }
+      }
 
       return session;
     });
@@ -2300,14 +2303,14 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
     return resolved.filter((session): session is Session => session !== null);
   }
 
-  async function listCached(projectId?: string): Promise<Session[]> {
+  async function listCached(projectId?: string, options?: ListOptions): Promise<Session[]> {
     if (sessionCache && Date.now() < sessionCache.expiresAt) {
       return projectId
         ? sessionCache.sessions.filter((session) => session.projectId === projectId)
         : sessionCache.sessions;
     }
 
-    const sessions = await list();
+    const sessions = await list(undefined, options);
     sessionCache = {
       sessions,
       expiresAt: Date.now() + SESSION_CACHE_TTL_MS,

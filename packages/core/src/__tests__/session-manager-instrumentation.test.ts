@@ -359,7 +359,7 @@ describe("runtime.lost_detected (MUST)", () => {
     vi.mocked(ctx.mockAgent.isProcessRunning).mockResolvedValue(false);
 
     const sm = createSessionManager({ config, registry: mockRegistry });
-    await sm.list();
+    await sm.list(undefined, { persistRuntimeProbe: true });
 
     const event = findEvent("runtime.lost_detected");
     expect(event).toBeDefined();

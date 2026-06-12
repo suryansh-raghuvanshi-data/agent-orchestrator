@@ -3028,7 +3028,7 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     polling = true;
 
     try {
-      const sessions = await sessionManager.list(scopedProjectId);
+      const sessions = await sessionManager.list(scopedProjectId, { persistRuntimeProbe: true });
 
       // Include sessions that are active OR whose status changed from what we last saw
       // (e.g., list() detected a dead runtime and marked it "killed" — we need to
