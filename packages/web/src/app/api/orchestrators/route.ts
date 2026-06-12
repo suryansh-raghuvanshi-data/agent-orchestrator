@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const spawnConfig = { projectId, systemPrompt, workerProvider, agent, workerAgents };
     const session = clean
       ? await sessionManager.relaunchOrchestrator(spawnConfig)
-      : await sessionManager.spawnOrchestrator(spawnConfig);
+      : await sessionManager.ensureOrchestrator(spawnConfig);
 
     recordActivityEvent({
       projectId,
