@@ -41,7 +41,13 @@ describe("Dashboard debug bundle visibility", () => {
       OPEN: 1,
       CLOSED: 2,
     }) as unknown as typeof EventSource;
-    global.fetch = vi.fn();
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ agents: [], providers: [] }),
+        text: () => Promise.resolve(""),
+      } as Response),
+    );
   });
 
   it("hides debug bundle button by default", () => {

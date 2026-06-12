@@ -1039,7 +1039,7 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
       allowedAgents = [];
       for (const item of orchestratorMeta.workerAgents) {
         if (item.startsWith("worker-")) {
-          allowedProviders.push(item);
+          allowedProviders.push(item.replace(/^worker-/, ""));
         } else if (item.startsWith("agent-")) {
           allowedAgents.push(item.replace(/^agent-/, ""));
         } else {
@@ -1560,6 +1560,11 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
         isFixedOrchestratorReservationError(err, sessionId);
       if (!shouldSuppressRecoverableConflict) {
         recordOrchestratorSpawnFailed(orchestratorConfig, err, sessionId);
+      } else {
+        const session = await get(sessionId);
+        if (session) {
+          return session;
+        }
       }
       throw err;
     }

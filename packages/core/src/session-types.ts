@@ -245,7 +245,10 @@ export function isTerminalSession(session: {
       session.lifecycle.session.state === "terminated" ||
       session.lifecycle.pr.state === "merged" ||
       session.lifecycle.runtime.state === "missing" ||
-      session.lifecycle.runtime.state === "exited"
+      session.lifecycle.runtime.state === "exited" ||
+      session.lifecycle.runtime.state === "probe_failed" ||
+      (session.lifecycle.runtime.state === "unknown" &&
+        session.lifecycle.session.state !== "not_started")
     );
   }
   return (

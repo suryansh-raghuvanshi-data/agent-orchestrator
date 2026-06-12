@@ -69,6 +69,8 @@ export default async function ProjectSettingsPage(props: {
           projectId={projectId}
           initialValues={{
             agent: project.agent ?? "",
+            orchestratorAgent: project.orchestrator?.agent ?? "",
+            workerAgent: project.worker?.agent ?? "",
             runtime: project.runtime ?? "",
             trackerPlugin: project.tracker?.plugin ?? "",
             scmPlugin: project.scm?.plugin ?? "",

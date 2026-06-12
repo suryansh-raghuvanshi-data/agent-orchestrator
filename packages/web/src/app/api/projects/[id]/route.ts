@@ -32,6 +32,8 @@ const EDITABLE_CONFIG_FIELDS = new Set([
   "reactions",
   "workerProvider",
   "fallbackWorkerProvider",
+  "orchestrator",
+  "worker",
 ]);
 
 function sanitizeString(value: unknown): string | undefined {
@@ -172,6 +174,8 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
           reactions: state.project?.reactions,
           workerProvider: state.project?.workerProvider,
           fallbackWorkerProvider: state.project?.fallbackWorkerProvider,
+          orchestrator: state.project?.orchestrator,
+          worker: state.project?.worker,
         },
       },
       { status: 200 },
@@ -267,6 +271,28 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     }
     if (hasOwn("fallbackWorkerProvider")) {
       nextConfig.fallbackWorkerProvider = sanitizeString(body["fallbackWorkerProvider"]);
+    }
+    if (hasOwn("orchestrator")) {
+      const orchestratorObj = body["orchestrator"];
+      if (orchestratorObj && typeof orchestratorObj === "object") {
+        nextConfig.orchestrator = {
+          ...((currentConfig.orchestrator as Record<string, unknown> | undefined) ?? {}),
+          agent: sanitizeString((orchestratorObj as Record<string, unknown>)["agent"]),
+        };
+      } else if (orchestratorObj === null) {
+        nextConfig.orchestrator = undefined;
+      }
+    }
+    if (hasOwn("worker")) {
+      const workerObj = body["worker"];
+      if (workerObj && typeof workerObj === "object") {
+        nextConfig.worker = {
+          ...((currentConfig.worker as Record<string, unknown> | undefined) ?? {}),
+          agent: sanitizeString((workerObj as Record<string, unknown>)["agent"]),
+        };
+      } else if (workerObj === null) {
+        nextConfig.worker = undefined;
+      }
     }
 
     const validated = LocalProjectConfigSchema.parse(nextConfig);

@@ -25,11 +25,15 @@ describe("ProjectSettingsForm", () => {
         projectId="docs"
         initialValues={{
           agent: "codex",
+          orchestratorAgent: "opencode",
+          workerAgent: "kilo",
           runtime: "tmux",
           trackerPlugin: "github",
           scmPlugin: "github",
           reactions:
             '{\n  "ci-failed": {\n    "auto": true,\n    "action": "send-to-agent"\n  }\n}',
+          workerProvider: "",
+          fallbackWorkerProvider: "",
           identity: {
             projectId: "docs",
             path: "/tmp/docs",
@@ -52,6 +56,8 @@ describe("ProjectSettingsForm", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agent: "claude-code",
+          orchestrator: { agent: "opencode" },
+          worker: { agent: "kilo" },
           runtime: "tmux",
           tracker: { plugin: "github" },
           scm: { plugin: "github" },
@@ -85,10 +91,14 @@ describe("ProjectSettingsForm", () => {
         projectId="docs"
         initialValues={{
           agent: "codex",
+          orchestratorAgent: "",
+          workerAgent: "",
           runtime: "tmux",
           trackerPlugin: "github",
           scmPlugin: "github",
           reactions: "{}",
+          workerProvider: "",
+          fallbackWorkerProvider: "",
           identity: {
             projectId: "docs",
             path: "/tmp/docs",
