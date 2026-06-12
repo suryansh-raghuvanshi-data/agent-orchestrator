@@ -971,3 +971,11 @@ PHASE 10  ←  Can be done in parallel with Phase 9
 - No component feels like it came from a template
 - A power user can work entirely via slash commands and keyboard
 - A first-time user can complete a task without reading documentation
+
+---
+
+## OUTSTANDING CODEBASE TODOS (Pre-existing)
+
+- [ ] `packages/cli/src/lib/plugin-scaffold.ts`: Replace placeholder with a real plugin slot implementation.
+- [ ] `packages/web/src/lib/types.ts`: When wiring to real data, add a serialization layer that converts values.
+- [ ] `website/content/docs/plugins/authoring.mdx`: Update placeholder with a real notifier implementation in the docs.
