@@ -13,7 +13,7 @@ export async function GET(_request: NextRequest) {
 
       send(JSON.stringify({ type: "connected", timestamp: Date.now() }));
 
-      setInterval(() => {
+      const updateInterval = setInterval(() => {
         send(
           JSON.stringify({
             type: "sessions.updated",
@@ -22,12 +22,19 @@ export async function GET(_request: NextRequest) {
         );
       }, 5000);
 
-      setInterval(() => {
+      const keepaliveInterval = setInterval(() => {
         controller.enqueue(encoder.encode(":\n\n"));
       }, 15000);
+
+      // Store intervals for cleanup
+      (stream as any)._intervals = [updateInterval, keepaliveInterval];
     },
     cancel() {
-      // Timers fire until the stream is aborted by the client/runtime.
+      // Clear intervals to prevent memory leak
+      const intervals = (stream as any)._intervals;
+      if (intervals) {
+        intervals.forEach((interval: ReturnType<typeof setInterval>) => clearInterval(interval));
+      }
     },
   });
 
