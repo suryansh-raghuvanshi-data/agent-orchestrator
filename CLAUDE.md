@@ -375,6 +375,13 @@ All importable from `@aoagents/ao-core` unless noted:
 | `packages/cli/src/commands/start.ts`             | ao start/stop commands + Ctrl+C graceful shutdown                                                                                       |
 | `packages/cli/src/lib/running-state.ts`          | RunningState + LastStopState management (register/unregister, last-stop read/write)                                                     |
 | `packages/web/src/components/ProjectSidebar.tsx` | Sidebar — always shows all projects' sessions                                                                                           |
+| `packages/web/src/components/KanbanBoard.tsx`   | Kanban board grouped by attention level with search, density toggle, collapsible done section                                          |
+| `packages/web/src/components/LogsView.tsx`      | Two-panel log stream with level filters, search, detail panel, auto-scroll                                                             |
+| `packages/web/src/components/StatusBar.tsx`     | 32px bottom monitoring bar with agent counts, elapsed timer, stop button                                                               |
+| `packages/web/src/components/AgentDrawer.tsx`   | Right-side agent configuration drawer (380px, slide-in, overlay, config fields, capabilities, current task)                            |
+| `packages/web/src/components/AgentDrawerContext.tsx` | Context provider for opening the AgentDrawer from any client component via `useAgentDrawer()`                                     |
+| `packages/web/src/app/history/page.tsx`         | Session history view with date filters, search, and session list                                                                       |
+| `packages/web/src/app/settings/page.tsx`        | Settings view with Agents, API Keys, Notifications, Appearance, Danger zone sections                                                   |
 
 ## Skills
 

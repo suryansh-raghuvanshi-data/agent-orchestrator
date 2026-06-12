@@ -3,6 +3,18 @@
 
 ## COMPLETED WORK
 
+### Phase 1.2 — Atomic UI Component Library ✅
+- `Badge`, `Chip`, `Tooltip`, `Button`, `Input`, `Textarea`, `Separator`, `Spinner`, `Avatar`, `EmptyState`, `Skeleton`, `AppShell` built in `packages/web/src/components/ui/`
+- All barrel-exported from `index.ts`
+- `AppShell` composable layout: sidebar slot + collapse state, topbar left/center/right slots, fluid main viewport, mobile overlay
+
+### Phase 2.3 — Agent Configuration Drawer ✅
+- `AgentDrawer` component: 380px right-drawer slides in from right (220ms ease-out) with overlay backdrop
+- Agent avatar (48px) + name + type badge (Orchestrator/Worker)
+- Description paragraph, config fields (model, temperature, max tokens, system prompt), capabilities list, current task section
+- "Remove from session" destructive button
+- `AgentDrawerContext` + `AgentDrawerProvider` wired into root layout — available via `useAgentDrawer()` from any client component
+
 ### Phase 3.1 — Chat Panel Component ✅
 - `ChatThread` component built with Markdown rendering (`react-markdown` + `remark-gfm`)
 - Slash command autocomplete (`/help`, `/status`, `/summary`, `/review`, `/fix`, `/retry`, `/kill`)
@@ -20,6 +32,19 @@
 - Responsive: stacks vertically on mobile, side-by-side on desktop
 - All styles use existing Mission Control design tokens (`--color-bg-*`, `--color-border-*`, `--color-text-*`)
 - CSS added to `packages/web/src/app/mc-session.css`
+
+### Phase 4 — Kanban Board ✅
+- `KanbanBoard` groups sessions by attention level into columns with column count chips, search filtering, density toggle, done/terminated collapsible section
+- `KanbanBoardHeader`: title, counts, search, filter, density toggle
+- Reuses existing `AttentionZone`/`SessionCard`/`TaskCard` components
+
+### Phase 5 — Execution Logs and Monitoring ✅
+- `LogsView`: two-panel layout (stream + detail panel), level filters, search, auto-scroll, metadata/stack trace display
+- `StatusBar`: 32px bottom bar, running/completed/needs-input counts, live elapsed timer, stop button with confirmation cooldown
+
+### Phase 8 — History and Settings ✅
+- Session History view at `/history`: server-side fetch via `sessionManager.list()`, client with search, date filter tabs (today/week/month), session list with avatar/ID/timestamp/StatusBadge pill, empty states
+- Settings view at `/settings`: sections for Agents, API Keys, Notifications, Appearance, Danger zone with toggle switches, Configure buttons, destructive action
 
 ### Dependencies Added
 - `react-markdown` ^10.1.0
@@ -928,29 +953,29 @@ Empty state icon style: 40px Lucide icon in `--color-text-muted`, centered, abov
 ## BUILD ORDER (For Orchestrator Agent to Schedule)
 
 ```
-PHASE 1  ←  Must complete before anything else
-  1.1  Project scaffold and design tokens
-  1.2  Atomic component library
-  1.3  AppShell layout
+PHASE 1  ✅
+  1.1  Project scaffold and design tokens — done
+  1.2  Atomic component library — done
+  1.3  AppShell layout — done
 
-PHASE 2  ←  Depends on 1.x
-  2.1  OrchestratorAgentPicker
-  2.2  WorkerAgentsCheckboxPicker
-  2.3  Agent configuration drawer
+PHASE 2  ✅
+  2.1  OrchestratorAgentPicker — done
+  2.2  WorkerAgentsCheckboxPicker — done
+  2.3  Agent configuration drawer — done
 
-PHASE 3  ←  Depends on 1.x and 2.x
-  3.1  Chat panel
-  3.2  Strategy / Orchestration map panel
+PHASE 3  ✅
+  3.1  Chat panel — done
+  3.2  Strategy / Orchestration map panel — done
 
-PHASE 4  ←  Depends on 1.x (can parallelize with Phase 3)
-  4.1  Board structure and columns
-  4.2  Task card component
-  4.3  AI-generated subtask appearance
-  4.4  Board header and controls
+PHASE 4  ✅
+  4.1  Board structure and columns — done
+  4.2  Task card component — done
+  4.3  AI-generated subtask appearance — done
+  4.4  Board header and controls — done
 
-PHASE 5  ←  Depends on 1.x (can parallelize with Phase 3 and 4)
-  5.1  Logs view
-  5.2  Status monitoring widget
+PHASE 5  ✅
+  5.1  Logs view — done
+  5.2  Status monitoring widget — done
 
 PHASE 6  ←  Depends on 2.x and 3.x
   6.1  New task setup screen
@@ -961,9 +986,9 @@ PHASE 7  ←  Depends on 3.x and 4.x
   7.2  Failure states and error handling
   7.3  Completion state
 
-PHASE 8  ←  Depends on 1.x (can be built later)
-  8.1  Session history
-  8.2  Settings
+PHASE 8  ✅
+  8.1  Session history — done
+  8.2  Settings — done
 
 PHASE 9  ←  Final pass, depends on all phases
   9.1  Motion system audit
