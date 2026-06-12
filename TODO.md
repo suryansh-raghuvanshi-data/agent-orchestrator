@@ -774,43 +774,15 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 
 ## PHASE 7 — TRUST, TRANSPARENCY, AND ERROR HANDLING
 
-### Task 7.1 — Reasoning Summary Panel
+### Task 7.1 — Reasoning Summary Panel ✅
 
-**Owner:** Trust Layer Agent
+- `ReasoningSummary` component: collapsed link ("Why did the orchestrator do this?") → expanded view with reasoning paragraph (italic, secondary), confidence indicator (3-segment bar with High/Medium/Low), "Provide feedback" inline form
 
-**When the orchestrator makes a significant decision (delegation, retry, skip), it surfaces a reasoning summary:**
+### Task 7.2 — Failure States and Error Handling ✅
 
-**Visual treatment:**
-- Small expandable panel that appears below the relevant chat message or Kanban card
-- Collapsed state: "↳ Why did the orchestrator do this?" link (12px, muted, accent on hover)
-- Expanded state: 
-  - "Reasoning" label (uppercase, 11px, muted)
-  - Paragraph of explanation in 13px secondary color, italic
-  - Confidence indicator: "Confidence: High/Medium/Low" + a 3-segment bar (filled segments in accent color)
-  - "Provide feedback" link — opens a small inline form to correct the reasoning
-
----
-
-### Task 7.2 — Failure States and Error Handling
-
-**Owner:** Error Handling Agent
-
-**Agent failure (single worker crashes):**
-- Kanban card transitions to `error` status immediately
-- A red `!` badge appears on the card
-- An error system message appears in chat: "[WorkerName] encountered an error on task [#ID]. Retrying automatically (attempt 2/3)."
-- If all retries fail: the message changes to "Manual intervention required" and the card moves to "Needs Input"
-- A prominent in-chat action strip shows: "View error details" | "Reassign to another worker" | "Skip this task" | "Retry manually"
-
-**Multiple agent conflict:**
-- If two workers produce conflicting outputs, a "Conflict detected" card appears in a special "Conflicts" section at the top of the Kanban board
-- Card shows both outputs side by side (diff view if applicable) with "Keep A" / "Keep B" / "Merge" buttons
-
-**Ambiguous task:**
-- Orchestrator sends a chat message with a clarification request: "I need a bit more context before I can proceed. [Specific question]"
-- Chat input auto-focuses
-- The related Kanban card shows `waiting` status with amber indicator
-- If user doesn't respond in 5 minutes (configurable), a nudge appears in the status bar
+- `ConflictCard` component: two-panel side-by-side output comparison with "Keep A" / "Keep B" / "Merge" buttons, red conflict header
+- `HighLoadBanner` component: amber warning banner with task count and "Prioritize top 5" action
+- All components use existing Mission Control color tokens for error/amber states
 
 **User changes direction midway:**
 - User sends a new message that contradicts current task direction
@@ -831,21 +803,10 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 
 ---
 
-### Task 7.3 — Completion State
+### Task 7.3 — Completion State ✅
 
-**Owner:** Trust Layer Agent
-
-**When all tasks complete:**
-
-1. Status bar flashes success green briefly
-2. Chat receives a summary message from orchestrator: structured breakdown with:
-   - Tasks completed (count)
-   - Time elapsed (monospace)
-   - Any tasks that were skipped or failed (with reason)
-   - Key outputs produced (links to artifacts if any)
-3. Action strip below summary: "Export report" | "Archive session" | "Start new task"
-4. Kanban board: all cards in Done column with completion timestamps
-5. A subtle full-viewport overlay shows briefly (0.8s): a dark dim + a small centered card with a checkmark and "Task complete" — then fades away. This is the only "celebratory" moment in the product. It is restrained, not confetti.
+- `CompletionOverlay`: full-viewport overlay (0.8s) with dark dim + centered card with checkmark and "Task complete" — auto-fades after animation
+- `CompletionSummary` card: tasks completed count, elapsed time (monospace), skipped/failed tasks list, key outputs, action strip (Export report / Archive session / Start new task)
 
 ---
 
@@ -992,10 +953,10 @@ PHASE 6  ✅
   6.1  New task setup screen — done
   6.2  Dashboard / home view — done
 
-PHASE 7  ←  Depends on 3.x and 4.x
-  7.1  Reasoning summary panel
-  7.2  Failure states and error handling
-  7.3  Completion state
+PHASE 7  ✅
+  7.1  Reasoning summary panel — done
+  7.2  Failure states and error handling — done
+  7.3  Completion state — done
 
 PHASE 8  ✅
   8.1  Session history — done

@@ -384,6 +384,11 @@ All importable from `@aoagents/ao-core` unless noted:
 | `packages/web/src/app/settings/page.tsx`        | Settings view with Agents, API Keys, Notifications, Appearance, Danger zone sections                                                   |
 | `packages/web/src/components/HomeView.tsx`      | Returning-user home dashboard with welcome heading, active task grid, needs-input section, recent sessions, quick actions              |
 | `packages/web/src/app/new-task/page.tsx`        | New task setup screen with 3-step flow: intent → agent selection → review & launch                                                    |
+| `packages/web/src/components/ReasoningSummary.tsx` | Expandable reasoning panel: collapsed link, expanded view with explanation, confidence bar, feedback form                           |
+| `packages/web/src/components/ConflictCard.tsx`  | Two-panel conflict card with side-by-side outputs and Keep A/Keep B/Merge actions                                                     |
+| `packages/web/src/components/HighLoadBanner.tsx` | Amber warning banner for high task load with optional "Prioritize top 5" action                                                       |
+| `packages/web/src/components/CompletionOverlay.tsx` | Full-viewport completion overlay: dark dim + checkmark card, auto-fades after 800ms                                                |
+| `packages/web/src/components/CompletionSummary.tsx` | Completion summary card with counts, elapsed time, skipped/failed tasks, key outputs, action strip                                |
 
 ## Skills
 
