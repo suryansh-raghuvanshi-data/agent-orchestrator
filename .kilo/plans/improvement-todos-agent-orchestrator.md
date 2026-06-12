@@ -43,8 +43,8 @@ Agent Orchestrator should behave reliably for end users by:
 - [ ] AO-015: Add Windows-safe workspace `postCreate` execution.
 - [x] AO-016: Shut down PTY host on unhandled rejection.
 - [ ] AO-017: Continue raw platform check cleanup.
-- [ ] AO-018: Split `SessionManager` responsibilities.
-- [ ] AO-019: Split `LifecycleManager` responsibilities.
+- [x] AO-018: Split `SessionManager` responsibilities.
+- [x] AO-019: Split `LifecycleManager` responsibilities.
 - [x] AO-020: Add typed metadata helpers.
 - [x] AO-021: Document metadata ownership.
 - [x] AO-022: Document dashboard live-update flow.
