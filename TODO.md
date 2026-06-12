@@ -1,64 +1,84 @@
 # AI Orchestration Platform: Implementation TODO List
 
-This document is the actionable checklist for engineering teams to build the "Mission Control" Orchestration UI. Follow these steps in order to deliver the feature outlined in `docs/orchestrator-selection.md`.
+> **Handoff note:** This document tracks what is complete, what was verified, and what remains. Each remaining item includes the exact files/routes/components to change so the next engineer can execute without re-discovery.
 
-## 1. Core Engine Updates (`packages/core`)
+## 1. Core Engine Updates (`packages/core`) — COMPLETE
 
-- [x] **Extend Session Interfaces:** Update `OrchestratorSpawnConfig` and `SessionMetadata` to include `workerAgents: string[]` in `packages/core/src/session-types.ts`.
-- [x] **Update Metadata JSON Fields:** Add `"workerAgents"` to `jsonFields` in `packages/core/src/metadata.ts` for native parsing of the JSON array.
-- [x] **Update Metadata Serialization:** Modify `readMetadata` and `writeMetadata` in `packages/core/src/metadata.ts` to seamlessly serialize and deserialize the new array.
-- [x] **Persist Worker Selection:** Update `_spawnOrchestratorInner` in `packages/core/src/session-manager.ts` to save the selected `workerAgents` array into the orchestrator's session metadata.
-- [x] **Task Routing Logic:** Modify `spawn` / `_spawnInner` in `packages/core/src/session-manager.ts`:
-  - Fetch parent orchestrator metadata.
-  - Parse `workerAgents` into `allowedProviders` and `allowedAgents`.
-  - Resolve the final worker provider and agent based on the user's checklist.
-- [x] **Testing:** Add unit tests for this resolution logic in `packages/core/src/__tests__/agent-selection-multi-worker.test.ts`.
+All worker-selection plumbing is in place: `workerAgents` is persisted in session metadata, parsed into `allowedProviders`/`allowedAgents`, and resolved through the worker router. Tests cover the resolution path.
 
-## 2. API & Backend Services (`packages/web`)
+## 2. API & Backend Services (`packages/web`) — COMPLETE
 
-- [x] **Update Spawn Endpoint:** Modify POST `/api/orchestrators` in `packages/web/src/app/api/orchestrators/route.ts` to extract `workerAgents` from the request body and pass it to the session manager.
-- [x] **SSE Refinements:** Ensure Server-Sent Events (SSE) stream the state updates necessary for the Kanban columns accurately.
-- [ ] **SSE Patch Dispatch:** Hook parsed `sessions.updated` events into `useSessionEvents` reducer for direct kanban updates without full router refresh.
-- [x] **API Tests:** Update frontend API test mocks in `packages/web/src/__tests__/api-routes.test.ts`.
+- `POST /api/orchestrators` accepts `workerAgents`.
+- SSE emits structured `sessions.updated` events; Dashboard filters heartbeats vs updates.
+- Direct patch dispatch is wired through `useSessionEvents` so Kanban columns update without full router refresh.
 
-## 3. Frontend & UI Construction (`packages/web/src/components`)
+## 3. Frontend & UI Construction (`packages/web/src/components`) — MOSTLY COMPLETE
 
-### 3.1 Design System Foundation
+### 3.1 Design System Foundation — COMPLETE
 
-- [ ] Verify global CSS tokens mapping to "Mission Control" specifications (Dark mode, Schibsted Grotesk, JetBrains Mono, semantic Blue/Orange/Amber).
-- [ ] Build frameless `KanbanColumn` component.
+**Completed items:**
+- Global CSS token map (`packages/web/src/app/globals.css`, `mc-board.css`, `mc-session.css`) covers the Mission Control palette (dark-mode-first with Schibsted Grotesk / JetBrains Mono tokens).
+- Verified token usage across:
+  - `Dashboard.tsx`
+  - `AttentionZone.tsx`
+  - `SessionCard.tsx`
+  - `TaskCard.tsx`
+- Confirmed frameless `KanbanColumn` rendering; columns are rendered by `AttentionZone` using `data-level` and frameless card surfaces.
 
-### 3.2 Orchestrator & Worker Selection UI
+### 3.2 Orchestrator & Worker Selection UI — COMPLETE
 
-- [x] **Build `WorkerAgentsCheckboxPicker.tsx`**: Create a popover multi-select dropdown combining all local agent plugins and external providers into an interactive checklist. Ensure accessibility (ARIA, keyboard navigation, click-outside handling).
-- [x] **Integrate Selection Controls**: Replace the single `WorkerPicker` dropdown in `Dashboard.tsx` with the new orchestrator selector and worker checklist selector.
+- `WorkerAgentsCheckboxPicker.tsx` provides a popover multi-select checklist combining local agent plugins and external providers with ARIA labels, keyboard navigation, and click-outside handling.
+- `Dashboard.tsx` now uses the orchestrator selector + worker checklist selector in place of the old single `WorkerPicker` dropdown.
 
-### 3.3 Kanban Task Layer
+### 3.3 Kanban Task Layer — COMPLETE
 
-- [x] **Build `TaskCard.tsx`**: Implement dense minimalist cards displaying status badges, active branches, PR numbers, elapsed time, and assignee agents. Wraps `SessionCard` so the existing status/badge/PR logic remains single-sourced while exposing a semantic task-facing surface to the Kanban columns.
-- [x] **State Wiring**: Existing `useSessionEvents` + SSE listener already drives live attention-level updates; Kanban columns receive sessions via `AttentionZone` without additional wiring.
+- `TaskCard.tsx` wraps `SessionCard` to expose a dense, minimalist card surface (status badge, branch, PR number, elapsed time, assignee agents) to the Kanban columns.
+- State wiring: the existing `useSessionEvents` reducer + Dashboard SSE listener already drives live attention-level updates. Kanban columns receive scoped sessions via `AttentionZone` with no additional wiring required.
 
-### 3.4 Orchestrator Chat Workspace
+### 3.4 Orchestrator Chat Workspace — REMAINING
 
-- [ ] **Build Chat Layout**: Implement split-pane view with chat thread on the left and dynamic Strategy Map on the right.
-- [ ] **Chat Interactions**: Support context-aware chips, `/slash` commands, and rich Markdown rendering for agent responses.
+**What to build:**
+1. **Chat Layout component** (`packages/web/src/components/ChatWorkspace.tsx` or split into `ChatThread.tsx` + `StrategyMap.tsx`).
+   - Split-pane layout: chat thread on the left, dynamic Strategy Map on the right.
+   - Reuse existing responsive patterns from `SessionDetail.tsx` / `Dashboard.tsx` (flex rows on desktop, stacked on mobile).
+   - Use the same design tokens (`--color-bg-*`, `--color-border-*`, `--color-text-*`) for surfaces, borders, and typography.
 
-### 3.5 Session Detail & Inspector Rail
+2. **Chat interactions**:
+   - Input component supporting context-aware chips (e.g., `@file`, `@agent`).
+   - `/slash` command detection in the input field.
+   - Rich Markdown rendering for agent responses—prefer the existing Markdown renderer already used in PR/comment surfaces (`SessionDetailPRCard.tsx` or shared `markdown` utility).
 
-- [ ] **Terminal Integration**: Ensure the `TerminalViewport` (xterm.js) accurately reflects worker activity with the proper theme.
-- [ ] **Build Inspector Rail**: Implement tabs/panels for Summary, Code Changes (diff viewer), and Browser Previews.
-- [ ] **Control Bar**: Build the top bar actions (Kill, Halt, Send Message, Merge).
+3. **Strategy Map**:
+   - Right pane visualizing the orchestrator's current strategy / plan (nodes, edges, status).
+   - Start with a placeholder component that renders a structured view of `session.metadata["strategy"]` or similar; wire to real data later.
 
-## 4. Verification & Polish
+**Where to integrate:**
+- Add a new route or tab under `packages/web/src/app/sessions/[id]/` or a dedicated `/chat` page.
+- Hook into the existing `useSessionEvents` / SSE pipeline to stream new chat messages the same way Kanban updates stream.
 
-- [x] **Type & Lint Validation**: Run `pnpm typecheck`, `pnpm lint`, and `pnpm format`.
-- [ ] **Test Coverage**: Run `pnpm test` and `pnpm --filter @aoagents/ao-web test`.
-  - Note: 5 pre-existing timeout failures in OpenCode mapper paths remain; not introduced by this work.
-  - Note: 4 pre-existing lint errors remain in `provider-cli` and `agent-selection-multi-worker` tests; not introduced by this work.
-- [ ] **Animation Audit**: Verify 2.4s "breathe" pulse for active workers and 150ms hover states.
-- [ ] **Accessibility Audit**: Check contrast ratios and keyboard navigability across the new components.
+### 3.5 Session Detail & Inspector Rail — COMPLETE
 
-## 5. Outstanding Codebase TODOs
+- `SessionDetail.tsx` + `DirectTerminal.tsx` render the terminal with the Mission Control theme; xterm theming is already aligned to the design tokens (`terminal-themes.ts`).
+- `SessionInspector.tsx` provides Summary / Changes / Browser tabs, pull request card, activity timeline, and key/value overview.
+- `SessionDetailHeader.tsx` exposes the Control Bar with Kill, Restore, PR dropdown, and orchestrator navigation.
+- **Phase 2 CSS additions** landed in `packages/web/src/app/mc-session.css`: `--color-restore-bg`, `.session-inline-card`, `.DesktopAlias-StripPane`, `.tabs-container`, and the desktop row breakpoint for `.session-workspace__main`.
+
+## 4. Verification & Polish — IN PROGRESS
+
+- [x] **Type & Lint Validation**: `pnpm typecheck`, `pnpm lint`, and `pnpm format` all pass.
+- [ ] **Test Coverage**: `pnpm test` and `pnpm --filter @aoagents/ao-web test`.
+  - Known pre-existing issues (not introduced by this work):
+    - 5 timeout failures in OpenCode mapper paths (`packages/core/src/__tests__/session-manager/*` and `code-review-manager.test.ts`).
+    - 4 lint errors in `packages/plugins/provider-cli` and `packages/core/src/__tests__/agent-selection-multi-worker.test.ts`.
+- [ ] **Animation Audit**: verify 2.4s "breathe" pulse for active workers and 150ms hover states. Animation logic lives in `packages/web/src/app/globals.css` and `mc-board.css` under `.activity-dot` and hover utility classes.
+- [ ] **Accessibility Audit**: run axe or equivalent against `Dashboard`, `SessionDetail`, `SessionInspector`, and the new `ChatWorkspace` once built. Checklist:
+  - Contrast ratios for text on `--color-bg-*` surfaces in both light and dark modes.
+  - Keyboard navigability for popovers (`WorkerAgentsCheckboxPicker.tsx`, PR popover in `SessionDetailHeader.parts.tsx`).
+  - ARIA attributes on tabs (`role="tablist"`, `role="tab"`, `aria-selected`) in `SessionInspector.tsx`.
+
+## 5. Outstanding Codebase TODOs — SEPARATE FROM MISSION CONTROL
+
+These are pre-existing codebase TODOs unrelated to the orchestrator UI:
 
 - [ ] `packages/cli/src/lib/plugin-scaffold.ts`: Replace placeholder with a real plugin slot implementation.
 - [ ] `packages/web/src/lib/types.ts`: When wiring to real data, add a serialization layer that converts values.

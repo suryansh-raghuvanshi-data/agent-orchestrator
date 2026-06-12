@@ -331,3 +331,31 @@
   font-family: var(--font-mono);
   margin-top: 2px;
 }
+
+/* ── Phase 2 layout adjustments ─────────────────────────────────────
+   Main stack: restore-bg color var, inline card wrapper, tabs container,
+   and desktop alias for the strip pane. */
+:root {
+  --color-restore-bg: rgba(92, 100, 181, 0.06);
+}
+
+.session-workspace__main > .session-workspace__terminal.tabs-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.session-workspace__main > .session-inline-card {
+  background: var(--color-bg-surface);
+  border-left: 1px solid var(--color-border-default);
+}
+
+.DesktopAlias-StripPane {
+  background: var(--color-bg-base);
+}
+
+@media (min-width: 1024px) {
+  .session-workspace__main {
+    flex-direction: row;
+  }
+}
