@@ -98,14 +98,14 @@ To ensure consistent routing and prevent invalid worker sessions, the system res
 ### Phase 2: API & UI Updates (`packages/web`)
 
 - [x] Update POST `/api/orchestrators` in `packages/web/src/app/api/orchestrators/route.ts` to parse `workerAgents` from the body and pass it to the session manager.
-- [ ] Create `WorkerAgentsCheckboxPicker.tsx` in `packages/web/src/components/` with popover state, checklist, and accessibility features.
-- [ ] Integrate the checklist state in `packages/web/src/components/Dashboard.tsx` and replace the single `WorkerPicker` dropdown.
+- [x] Create `WorkerAgentsCheckboxPicker.tsx` in `packages/web/src/components/` with popover state, checklist, and accessibility features.
+- [x] Integrate the checklist state in `packages/web/src/components/Dashboard.tsx` and replace the single `WorkerPicker` dropdown.
 - [x] Update frontend and API test mocks in `packages/web/src/__tests__/api-routes.test.ts`.
 
 ### Phase 3: Verification
 
-- [ ] Run `pnpm typecheck` and `pnpm build` to ensure project builds cleanly.
-- [ ] Run the complete test suite (`pnpm test` and `pnpm --filter @aoagents/ao-web test`).
+- [x] Run `pnpm typecheck` and `pnpm build` to ensure project builds cleanly.
+- [x] Run the complete test suite (`pnpm test` and `pnpm --filter @aoagents/ao-web test`).
 
 ---
 

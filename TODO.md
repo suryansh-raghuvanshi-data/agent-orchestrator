@@ -29,8 +29,8 @@ This document is the actionable checklist for engineering teams to build the "Mi
 
 ### 3.2 Orchestrator & Worker Selection UI
 
-- [ ] **Build `WorkerAgentsCheckboxPicker.tsx`**: Create a popover multi-select dropdown combining all local agent plugins and external providers into an interactive checklist. Ensure accessibility (ARIA, keyboard navigation, click-outside handling).
-- [ ] **Integrate Selection Controls**: Replace the single `WorkerPicker` dropdown in `Dashboard.tsx` with the new orchestrator selector and worker checklist selector.
+- [x] **Build `WorkerAgentsCheckboxPicker.tsx`**: Create a popover multi-select dropdown combining all local agent plugins and external providers into an interactive checklist. Ensure accessibility (ARIA, keyboard navigation, click-outside handling).
+- [x] **Integrate Selection Controls**: Replace the single `WorkerPicker` dropdown in `Dashboard.tsx` with the new orchestrator selector and worker checklist selector.
 
 ### 3.3 Kanban Task Layer
 
