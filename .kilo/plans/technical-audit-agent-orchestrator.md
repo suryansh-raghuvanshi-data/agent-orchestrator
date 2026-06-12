@@ -654,15 +654,16 @@ The scan confirmed that the codebase is structurally solid, but the highest-risk
 3. External worker spawn can leave a remote task running if local metadata write fails.
 4. `sendWithConfirmation()` treats unconfirmed delivery as success.
 5. Restore readiness can accept stale terminal output.
-6. Dashboard kill/restore/merge/spawn actions lack strong pending-state guards.
-7. SSE closes permanently after errors instead of reconnecting.
-8. Backlog claim state is only in memory and can duplicate work after restart.
-9. Missing explicit `AO_CONFIG_PATH` is silently ignored.
-10. Port availability checks only test IPv4 `127.0.0.1`.
-11. PTY host logs unhandled rejections but does not shut down cleanly.
-12. Workspace `postCreate` commands lack timeout and Windows-safe options.
-13. Client fetch abort listeners are not removed after merge.
-14. Several empty `catch {}` blocks hide useful diagnostic evidence.
+6. Dashboard kill/restore/merge/spawn actions lacked strong pending-state guards.
+7. SSE closed permanently after errors instead of reconnecting.
+8. Dashboard API calls were duplicated across components instead of using a central helper.
+9. Backlog claim state is only in memory and can duplicate work after restart.
+10. Missing explicit `AO_CONFIG_PATH` is silently ignored.
+11. Port availability checks only test IPv4 `127.0.0.1`.
+12. PTY host logs unhandled rejections but does not shut down cleanly.
+13. Workspace `postCreate` commands lack timeout and Windows-safe options.
+14. Client fetch abort listeners are not removed after merge.
+15. Several empty `catch {}` blocks hide useful diagnostic evidence.
 
 ### Updated Immediate Next Steps
 
@@ -674,12 +675,13 @@ The scan confirmed that the codebase is structurally solid, but the highest-risk
 6. **Tighten restore readiness** — do not treat stale output as proof that a restored session is ready.
 7. **Add dashboard pending-state guards** — prevent duplicate kill/restore/merge/spawn requests.
 8. **Reconnect SSE with backoff** — keep the live dashboard path resilient after transient errors.
-9. **Persist backlog claim state** — avoid duplicate backlog sessions after web restart.
-10. **Fail loudly when `AO_CONFIG_PATH` is missing** — avoid silently loading the wrong config.
-11. **Replace empty catches with structured warnings** — keep graceful degradation while preserving evidence.
-12. **Harden cross-platform behavior** — IPv4/IPv6 port detection, Windows-safe postCreate, PTY host cleanup.
-13. **Add regression tests for each quick-win fix** before larger refactors.
-14. **Proceed to structural refactors** only after quick-win behavior is covered by tests.
+9. **Add a central dashboard API helper** — consolidate mutation calls and response parsing.
+10. **Persist backlog claim state** — avoid duplicate backlog sessions after web restart.
+11. **Fail loudly when `AO_CONFIG_PATH` is missing** — avoid silently loading the wrong config.
+12. **Replace empty catches with structured warnings** — keep graceful degradation while preserving evidence.
+13. **Harden cross-platform behavior** — IPv4/IPv6 port detection, Windows-safe postCreate, PTY host cleanup.
+14. **Add regression tests for each quick-win fix** before larger refactors.
+15. **Proceed to structural refactors** only after quick-win behavior is covered by tests.
 
 ---
 

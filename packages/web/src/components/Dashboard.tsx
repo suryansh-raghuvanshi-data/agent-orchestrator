@@ -29,6 +29,7 @@ import { DashboardNotificationButton } from "./DashboardNotificationButton";
 import { SidebarContext, useSidebarContext } from "./workspace/SidebarContext";
 import { ProjectSidebar } from "./ProjectSidebar";
 import { isOrchestratorSession } from "@aoagents/ao-core/types";
+import { postDashboardAction, postSpawnOrchestrator } from "@/lib/client-api";
 import { projectDashboardPath, projectReviewPath, projectSessionPath } from "@/lib/routes";
 import { BottomSheet } from "./BottomSheet";
 import { WorkerAgentsCheckboxPicker } from "./WorkerAgentsCheckboxPicker";
@@ -444,19 +445,15 @@ function DashboardInner({
       if (pendingActions[key]) return;
       setPendingActions((prev) => ({ ...prev, [key]: true }));
       try {
-        const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/kill`, {
+        await postDashboardAction(`/api/sessions/${encodeURIComponent(sessionId)}/kill`, {
           method: "POST",
         });
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Failed to kill ${sessionId}:`, text);
-          showToast(`Terminate failed: ${text}`, "error");
-        } else {
-          showToast("Session terminated", "success");
-        }
+        showToast("Session terminated", "success");
       } catch (error) {
         console.error(`Network error killing ${sessionId}:`, error);
-        showToast("Network error while terminating session", "error");
+        const message =
+          error instanceof Error ? error.message : "Network error while terminating session";
+        showToast(message, "error");
       } finally {
         setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
@@ -498,22 +495,15 @@ function DashboardInner({
       if (pendingActions[key]) return;
       setPendingActions((prev) => ({ ...prev, [key]: true }));
       try {
-        const params = new URLSearchParams();
-        if (owner) params.set("owner", owner);
-        if (repo) params.set("repo", repo);
-        const qs = params.size > 0 ? `?${params.toString()}` : "";
-        const res = await fetch(`/api/prs/${prNumber}/merge${qs}`, { method: "POST" });
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Failed to merge PR #${prNumber}:`, text);
-          showToast(`Merge failed: ${text}`, "error");
-          return;
-        } else {
-          showToast(`PR #${prNumber} merged`, "success");
-        }
+        await postDashboardAction(`/api/prs/${prNumber}/merge`, {
+          method: "POST",
+          query: { owner, repo },
+        });
+        showToast(`PR #${prNumber} merged`, "success");
       } catch (error) {
         console.error(`Network error merging PR #${prNumber}:`, error);
-        showToast("Network error while merging PR", "error");
+        const message = error instanceof Error ? error.message : "Network error while merging PR";
+        showToast(message, "error");
       } finally {
         setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
@@ -527,20 +517,16 @@ function DashboardInner({
       if (pendingActions[key]) return;
       setPendingActions((prev) => ({ ...prev, [key]: true }));
       try {
-        const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/restore`, {
+        await postDashboardAction(`/api/sessions/${encodeURIComponent(sessionId)}/restore`, {
           method: "POST",
         });
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Failed to restore ${sessionId}:`, text);
-          showToast(`Restore failed: ${text}`, "error");
-        } else {
-          showToast("Session restored", "success");
-          routerRef.current.refresh();
-        }
+        showToast("Session restored", "success");
+        routerRef.current.refresh();
       } catch (error) {
         console.error(`Network error restoring ${sessionId}:`, error);
-        showToast("Network error while restoring session", "error");
+        const message =
+          error instanceof Error ? error.message : "Network error while restoring session";
+        showToast(message, "error");
       } finally {
         setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
@@ -555,23 +541,14 @@ function DashboardInner({
     setSpawnErrors(({ [project.id]: _ignored, ...current }) => current);
 
     try {
-      const res = await fetch("/api/orchestrators", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: project.id,
-          workerAgents: selectedWorkerAgents,
-          agent: selectedAgent,
-        }),
+      const data = await postSpawnOrchestrator({
+        projectId: project.id,
+        workerAgents: selectedWorkerAgents,
+        agent: selectedAgent,
       });
 
-      const data = (await res.json().catch(() => null)) as {
-        orchestrator?: DashboardOrchestratorLink;
-        error?: string;
-      } | null;
-
-      if (!res.ok || !data?.orchestrator) {
-        throw new Error(data?.error ?? `Failed to spawn orchestrator for ${project.name}`);
+      if (!data.orchestrator) {
+        throw new Error(data.error ?? `Failed to spawn orchestrator for ${project.name}`);
       }
 
       const orchestrator = data.orchestrator;

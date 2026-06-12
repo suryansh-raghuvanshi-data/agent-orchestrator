@@ -257,10 +257,11 @@ These are small, high-value fixes with low structural risk.
 - `packages/web/src/components/Dashboard.tsx`
 
 **Tasks:**
-- [ ] Centralize kill, restore, merge, spawn, verify, and backlog calls.
-- [ ] Add consistent response parsing.
-- [ ] Add consistent error formatting.
-- [ ] Keep existing fetch behavior compatible during migration.
+- [x] Centralize kill, restore, merge, and spawn orchestrator calls.
+- [ ] Centralize verify and backlog calls.
+- [x] Add consistent response parsing.
+- [x] Add consistent error formatting.
+- [x] Keep existing fetch behavior compatible during migration.
 
 **Acceptance criteria:**
 - Dashboard actions use one API helper.
@@ -487,7 +488,7 @@ Run after each meaningful phase:
 9. Tighten restore readiness.
 10. Persist backlog claim state.
 11. Fail loudly when `AO_CONFIG_PATH` is missing.
-12. Add central client API helper and optimistic rollback.
+12. Add central client API helper; optimistic rollback remains next.
 13. Clean up client fetch abort listeners.
 14. Harden port detection, postCreate, and PTY host cleanup.
 15. Continue structural refactors after regression tests pass.

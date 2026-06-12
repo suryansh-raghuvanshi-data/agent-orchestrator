@@ -30,11 +30,11 @@ Agent Orchestrator should behave reliably for end users by:
 - [x] AO-002: `SessionManager.list()` uses bounded concurrency (`mapLimit`, limit `8`).
 - [x] AO-003: External worker rollback added with `provider.cancelTask(taskHandle)`.
 - [x] AO-004: Send confirmation is explicit (`"confirmed"` vs `"attempted_unconfirmed"`).
-- [ ] AO-005: Tighten restore readiness.
-- [ ] AO-006: Fail loudly when explicit `AO_CONFIG_PATH` is missing.
+- [x] AO-005: Restore readiness rejects stale terminal output.
+- [x] AO-006: Missing explicit `AO_CONFIG_PATH` throws `ConfigNotFoundError`.
 - [x] AO-007: Dashboard kill/restore/merge pending-state guards added and tested.
 - [x] AO-008: SSE reconnects after transient errors with backoff and cleanup.
-- [ ] AO-009: Add central client API helper.
+- [x] AO-009: Central client API helper added for Dashboard actions and tested.
 - [ ] AO-010: Add optimistic UI with rollback.
 - [ ] AO-011: Clean up client fetch abort listeners.
 - [ ] AO-012: Persist backlog claim state.

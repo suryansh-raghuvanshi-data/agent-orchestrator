@@ -1,4 +1,4 @@
-# AO-001, AO-002, AO-003, AO-004, AO-005, AO-006, AO-007, and AO-008 Implementation Summary
+# AO-001, AO-002, AO-003, AO-004, AO-005, AO-006, AO-007, AO-008, and AO-009 Implementation Summary
 
 ## AO-001: Make `SessionManager.list()` Side Effects Explicit
 
@@ -269,3 +269,46 @@ All in `packages/web/src/components/__tests__/Dashboard.ssePatches.test.tsx`:
 - `pnpm --filter @aoagents/ao-web typecheck` — passed.
 - `pnpm exec eslint packages/web/src/components/Dashboard.tsx packages/web/src/components/__tests__/Dashboard.ssePatches.test.tsx` — passed with only the repo-level `.eslintignore` warning.
 - `pnpm exec prettier --check packages/web/src/components/Dashboard.tsx packages/web/src/components/__tests__/Dashboard.ssePatches.test.tsx` — passed.
+
+---
+
+## AO-009: Add Central Client API Helper
+
+**Goal:** Standardize Dashboard API mutation calls and response parsing.
+
+### Changes
+
+#### `packages/web/src/lib/client-api.ts`
+
+- Added `DashboardActionOptions` with optional `timeoutMs` and `query`.
+- Added `SpawnOrchestratorResponse`.
+- Added centralized helpers:
+  - `postDashboardAction()` for POST requests with empty or ignored response bodies.
+  - `postDashboardJson<T>()` for JSON POST requests with typed response parsing.
+  - `postSpawnOrchestrator()` for `/api/orchestrators`.
+- Added shared JSON parsing and error formatting for `error`, `message`, `statusText`, and `HTTP <status>` fallbacks.
+- Added optional query-string serialization for API mutation URLs.
+
+#### `packages/web/src/components/Dashboard.tsx`
+
+- Replaced direct `fetch()` calls for kill, merge, restore, and spawn orchestrator with `client-api` helpers.
+- Kill/merge/restore handlers now receive formatted error messages from the helper.
+- Spawn orchestrator now uses `postSpawnOrchestrator()` and keeps the existing success/failure behavior.
+
+### Tests
+
+All in `packages/web/src/lib/__tests__/client-api.test.ts`:
+
+- **`"posts dashboard actions and accepts successful empty responses"`**.
+- **`"throws formatted errors from JSON error responses"`**.
+- **`"posts JSON payloads and parses successful JSON responses"`**.
+- **`"posts spawn orchestrator requests with JSON parsing"`**.
+
+### Validation
+
+- `pnpm --filter @aoagents/ao-web test -- client-api Dashboard.emptyState Dashboard.mobile Dashboard.projectOverview Dashboard.ssePatches SessionCard.coverage` — passed.
+- `pnpm --filter @aoagents/ao-web test` — passed.
+- `pnpm --filter @aoagents/ao-web typecheck` — passed.
+- `pnpm exec eslint packages/web/src/lib/client-api.ts packages/web/src/lib/__tests__/client-api.test.ts packages/web/src/components/Dashboard.tsx` — passed with only the repo-level `.eslintignore` warning.
+- `pnpm exec prettier --check packages/web/src/lib/client-api.ts packages/web/src/lib/__tests__/client-api.test.ts packages/web/src/components/Dashboard.tsx` — passed.
+
