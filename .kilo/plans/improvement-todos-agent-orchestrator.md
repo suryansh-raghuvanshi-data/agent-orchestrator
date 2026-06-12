@@ -36,16 +36,16 @@ Agent Orchestrator should behave reliably for end users by:
 - [x] AO-008: SSE reconnects after transient errors with backoff and cleanup.
 - [x] AO-009: Central client API helper added for Dashboard actions and tested.
 - [x] AO-010: Add optimistic UI with rollback.
-- [ ] AO-011: Clean up client fetch abort listeners.
+- [x] AO-011: Clean up client fetch abort listeners.
 - [x] AO-012: Persist backlog claim state.
 - [ ] AO-013: Replace empty catches with structured warnings.
-- [ ] AO-014: Detect IPv4 and IPv6 port listeners.
+- [x] AO-014: Detect IPv4 and IPv6 port listeners.
 - [ ] AO-015: Add Windows-safe workspace `postCreate` execution.
-- [ ] AO-016: Shut down PTY host on unhandled rejection.
+- [x] AO-016: Shut down PTY host on unhandled rejection.
 - [ ] AO-017: Continue raw platform check cleanup.
 - [ ] AO-018: Split `SessionManager` responsibilities.
 - [ ] AO-019: Split `LifecycleManager` responsibilities.
-- [ ] AO-020: Add typed metadata helpers.
+- [x] AO-020: Add typed metadata helpers.
 - [x] AO-021: Document metadata ownership.
 - [x] AO-022: Document dashboard live-update flow.
 - [ ] AO-023: Full regression suite.
