@@ -2383,6 +2383,54 @@ describe("spawn", () => {
       expect(readMetadataRaw(sessionsDir, "app-orchestrator")?.["agent"]).toBe("codex");
     });
 
+    it("uses defaults orchestrator agent even when project.agent is set to opencode", async () => {
+      // This tests the bug: orchestrator should NOT fall back to project.agent
+      const mockCodexAgent: Agent = {
+        ...mockAgent,
+        name: "codex",
+        processName: "codex",
+        getLaunchCommand: vi.fn().mockReturnValue("codex --start"),
+        getEnvironment: vi.fn().mockReturnValue({ CODEX_VAR: "1" }),
+      };
+      const registryWithMultipleAgents: PluginRegistry = {
+        ...mockRegistry,
+        get: vi.fn().mockImplementation((slot: string, name: string) => {
+          if (slot === "runtime") return mockRuntime;
+          if (slot === "workspace") return mockWorkspace;
+          if (slot === "agent") {
+            if (name === "codex") return mockCodexAgent;
+            if (name === "mock-agent") return mockAgent;
+          }
+          return null;
+        }),
+      };
+      const configWithSharedAgent: OrchestratorConfig = {
+        ...config,
+        defaults: {
+          ...config.defaults,
+          orchestrator: {
+            agent: "codex",
+          },
+        },
+        projects: {
+          ...config.projects,
+          "my-app": {
+            ...config.projects["my-app"],
+            agent: "opencode", // Shared agent set - should NOT be used for orchestrator
+          },
+        },
+      };
+
+      const sm = createSessionManager({
+        config: configWithSharedAgent,
+        registry: registryWithMultipleAgents,
+      });
+      await sm.spawnOrchestrator({ projectId: "my-app" });
+
+      expect(mockCodexAgent.getLaunchCommand).toHaveBeenCalled();
+      expect(readMetadataRaw(sessionsDir, "app-orchestrator")?.["agent"]).toBe("codex");
+    });
+
     it("keeps shared worker permissions when role-specific config only overrides model", async () => {
       const configWithSharedPermissions: OrchestratorConfig = {
         ...config,

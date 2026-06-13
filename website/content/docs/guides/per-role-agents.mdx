@@ -46,6 +46,14 @@ projects:
 
 Per-project values take precedence over `defaults`. Any project that does not define `orchestrator` or `worker` inherits from `defaults`.
 
+<Callout type="warning">
+  **Agent inheritance is role-specific.** The top-level `agent` field in a project config is a **shared default for workers only**. Setting `agent: opencode` does **not** make the orchestrator use opencode — you must explicitly configure `orchestrator.agent` if you want a different agent for the orchestrator role.
+
+  Priority order for each role:
+  - **Worker:** `project.worker.agent` → `project.agent` → `defaults.worker.agent` → `defaults.agent`
+  - **Orchestrator:** `project.orchestrator.agent` → `defaults.orchestrator.agent` → `defaults.agent` (no shared fallback)
+</Callout>
+
 ## Recipe 1: Opus orchestrator, Sonnet workers
 
 Use a large reasoning model to supervise and a fast model for execution:
@@ -134,7 +142,7 @@ AO records a `role` field in each session's metadata file with the value `orches
 ## Gotchas
 
 - **Missing agent binary.** If you set `defaults.worker.agent: codex` but Codex is not installed, `ao spawn` will fail when a worker session starts. Run `ao doctor` to verify all configured agents are available before starting a run.
-- **Inheritance order.** Workers inherit the top-level `defaults` unless overridden at the project level. A project-level `worker` block fully replaces the default — it is not merged field-by-field, so specify every field you need.
+- **Inheritance order.** Workers inherit from `project.agent` (shared), then `defaults.worker.agent`, then `defaults.agent`. Orchestrator sessions only inherit from `defaults.orchestrator.agent` and `defaults.agent` — they **never** fall back to the shared `project.agent` field. A project-level `worker` block fully replaces the default — it is not merged field-by-field, so specify every field you need.
 - **Separate rule sets.** `orchestratorRules` and `agentRules` in the project config apply independently to orchestrator and worker sessions respectively. See the [Projects configuration reference](/docs/configuration/projects) for details.
 
 ## Next steps

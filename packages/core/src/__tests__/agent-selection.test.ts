@@ -74,4 +74,40 @@ describe("resolveAgentSelection", () => {
 
     expect(selection.agentName).toBe("kimicode");
   });
+
+  it("orchestrator does not fall back to project.agent when orchestrator.agent is not set", () => {
+    // This tests the bug: orchestrator should use defaults.orchestrator.agent
+    // instead of falling back to project.agent (shared setting)
+    const selection = resolveAgentSelection({
+      role: "orchestrator",
+      project: makeProject({ agent: "opencode" }), // Shared agent set
+      defaults: makeDefaults({ orchestrator: { agent: "codex" } }), // Orchestrator default set
+    });
+
+    // Orchestrator should use defaults.orchestrator.agent (codex), NOT project.agent (opencode)
+    expect(selection.agentName).toBe("codex");
+  });
+
+  it("orchestrator falls back to defaults.agent when no role-specific defaults", () => {
+    const selection = resolveAgentSelection({
+      role: "orchestrator",
+      project: makeProject({ agent: "opencode" }),
+      defaults: makeDefaults(), // No orchestrator.default, defaults to claude-code
+    });
+
+    // Orchestrator should use defaults.agent (claude-code), NOT project.agent (opencode)
+    expect(selection.agentName).toBe("claude-code");
+  });
+
+  it("worker falls back to project.agent when worker.agent is not set", () => {
+    // Worker should fall back to project.agent (shared setting)
+    const selection = resolveAgentSelection({
+      role: "worker",
+      project: makeProject({ agent: "opencode" }),
+      defaults: makeDefaults({ orchestrator: { agent: "codex" } }),
+    });
+
+    // Worker should use project.agent (opencode)
+    expect(selection.agentName).toBe("opencode");
+  });
 });
