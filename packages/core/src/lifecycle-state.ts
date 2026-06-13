@@ -303,6 +303,29 @@ function synthesizeRuntimeState(
   };
 }
 
+/**
+ * P3-17: Synthesize a full `CanonicalSessionLifecycle` from the flat
+ * metadata record stored on disk. This function is the ONLY place where
+ * defaults for new lifecycle fields are chosen for pre-lifecycle sessions
+ * (sessions written before the canonical lifecycle format shipped).
+ *
+ * IMPORTANT: When adding a new field to `CanonicalSessionLifecycle`, you
+ * MUST update ALL of the following, in lockstep:
+ *   1. The `CanonicalSessionLifecycle` type in `session-types.ts`
+ *   2. The Zod schema in this file (e.g. `LifecycleSchema`) so reads of
+ *      written JSON validate
+ *   3. This synthesizer — every field must have a default expression
+ *      here, otherwise pre-lifecycle sessions will deserialize with
+ *      `undefined` values that downstream code must guard against
+ *   4. The `buildLifecycleMetadataPatch` function — when writing a
+ *      lifecycle back to the flat metadata format, the patch must
+ *      include the new field
+ *   5. A migration entry in `lifecycle-migrations.ts` if existing
+ *      on-disk records need to be backfilled
+ *
+ * The test `lifecycle-state.test.ts > round-trips synthesized lifecycle`
+ * guards the synthesizer ↔ schema ↔ patch invariants.
+ */
 function synthesizeCanonicalLifecycle(
   meta: Record<string, string>,
   options: ParseCanonicalLifecycleOptions = {},
