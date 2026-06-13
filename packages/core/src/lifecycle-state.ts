@@ -28,6 +28,14 @@ interface ParseCanonicalLifecycleOptions {
    * through as orchestrators via the `endsWith("-orchestrator")` fallback.
    */
   sessionKind?: SessionKind;
+  /**
+   * P3-14: Result of probing the runtime (tmux session / OS process).
+   * When `true`, synthesize a `state: "alive"` runtime; when `false`,
+   * synthesize `state: "exited"` (if a handle/tmux was recorded) or
+   * `state: "missing"`. When `undefined` (default), the synthesizer
+   * returns `state: "unknown"` to signal that no probe was performed.
+   */
+  runtimeAlive?: boolean;
 }
 
 const TimestampSchema = z.string().nullable();
@@ -253,6 +261,7 @@ function synthesizePRState(
 function synthesizeRuntimeState(
   meta: Record<string, string>,
   runtimeHandle: RuntimeHandle | null,
+  isAlive?: boolean,
 ): {
   state: CanonicalRuntimeState;
   reason: CanonicalRuntimeReason;
@@ -263,6 +272,21 @@ function synthesizeRuntimeState(
   const handle =
     runtimeHandle ??
     (meta["runtimeHandle"] ? safeJsonParse<RuntimeHandle>(meta["runtimeHandle"]) : null);
+
+  // P3-14: if a probe result is available, use it. Without a probe
+  // we can only infer "we don't know" — returning "unknown" is the
+  // safe default that signals to callers they need to probe.
+  if (isAlive === true) {
+    return { state: "alive", reason: "process_running", handle: handle ?? null, tmuxName };
+  }
+  if (isAlive === false) {
+    if (handle || tmuxName) {
+      // We have a recorded handle/tmux name but the probe says it's gone.
+      return { state: "exited", reason: "process_missing", handle: handle ?? null, tmuxName };
+    }
+    return { state: "missing", reason: "process_missing", handle: null, tmuxName: null };
+  }
+
   if (handle || tmuxName) {
     return {
       state: "unknown",
@@ -295,7 +319,7 @@ function synthesizeCanonicalLifecycle(
     new Date().toISOString();
   const sessionState = synthesizeSessionState(status);
   const pr = synthesizePRState(meta, status);
-  const runtime = synthesizeRuntimeState(meta, options.runtimeHandle ?? null);
+  const runtime = synthesizeRuntimeState(meta, options.runtimeHandle ?? null, options.runtimeAlive);
 
   return {
     version: 2,
