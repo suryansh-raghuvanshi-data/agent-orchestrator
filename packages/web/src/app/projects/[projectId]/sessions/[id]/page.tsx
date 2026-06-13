@@ -54,7 +54,7 @@ interface ProjectSessionsBody {
 let cachedProjects: ProjectInfo[] | null = null;
 
 const SESSION_PAGE_REFRESH_INTERVAL_MS = 500;
-const SESSION_FETCH_TIMEOUT_MS = 8000;
+const SESSION_FETCH_TIMEOUT_MS = 15000;
 const PROJECT_SESSIONS_FETCH_TIMEOUT_MS = 8000;
 const PROJECTS_FETCH_TIMEOUT_MS = 5000;
 function areProjectsEqual(previous: ProjectInfo[] | null, next: ProjectInfo[]): boolean {

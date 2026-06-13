@@ -286,7 +286,7 @@ export async function fetchJsonWithTimeout<T>(
   input: RequestInfo | URL,
   options: FetchJsonOptions = {},
 ): Promise<T> {
-  const { timeoutMs = 8_000, timeoutMessage, signal, ...init } = options;
+  const { timeoutMs = 10_000, timeoutMessage, signal, ...init } = options;
   const timeoutController = new AbortController();
   let timer: ReturnType<typeof setTimeout> | null = null;
   let removeAbortListener: () => void = () => {};

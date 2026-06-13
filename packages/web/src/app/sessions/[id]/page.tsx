@@ -80,11 +80,11 @@ interface ProjectSessionsBody {
 let cachedProjects: ProjectInfo[] | null = null;
 let cachedSidebarSessions: DashboardSession[] | null = null;
 const SESSION_PAGE_REFRESH_INTERVAL_MS = 500;
-const SESSION_FETCH_TIMEOUT_MS = 8000;
+const SESSION_FETCH_TIMEOUT_MS = 15000;
 const SESSION_LOAD_MAX_CONSECUTIVE_FAILURES = 4;
 const SESSION_LOAD_MAX_RETRY_ELAPSED_MS = 30_000;
 const SESSION_LOAD_RETRY_BACKOFF_MS = [1_000, 2_000, 4_000] as const;
-const PROJECT_SIDEBAR_FETCH_TIMEOUT_MS = 8000;
+const PROJECT_SIDEBAR_FETCH_TIMEOUT_MS = 15000;
 const PROJECTS_FETCH_TIMEOUT_MS = 5000;
 const validSessionStatuses = new Set<string>(Object.values(SESSION_STATUS));
 const validActivityStates = new Set<string>(Object.values(ACTIVITY_STATE));
