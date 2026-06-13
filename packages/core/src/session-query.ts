@@ -19,10 +19,7 @@ import {
   type ActiveSessionRecord,
 } from "./metadata.js";
 import { getProjectSessionsDir } from "./paths.js";
-import {
-  type SessionContext,
-  type LocatedSession,
-} from "./session-context.js";
+import { type SessionContext, type LocatedSession } from "./session-context.js";
 import { asValidOpenCodeSessionId } from "./opencode-session-id.js";
 import { discoverOpenCodeSessionIdByTitle, fetchOpenCodeSessionList } from "./session-opencode.js";
 import { classifyActivitySignal, createActivitySignal } from "./activity-signal.js";
@@ -122,7 +119,10 @@ export function loadActiveSessionRecords(
   return repairSessionMetadataOnRead(sessionsDir, records, project, ctx);
 }
 
-export function findSessionRecord(sessionId: SessionId, ctx: SessionContext): LocatedSession | null {
+export function findSessionRecord(
+  sessionId: SessionId,
+  ctx: SessionContext,
+): LocatedSession | null {
   for (const [projectId, project] of Object.entries(ctx.config.projects)) {
     const sessionsDir = getProjectSessionsDir(projectId);
     const raw = readMetadataRaw(sessionsDir, sessionId);
@@ -192,8 +192,7 @@ function hasPersistedNativeRestoreMetadata(session: Session, agent: Agent): bool
       );
     case "codex":
       return (
-        typeof metadata["codexThreadId"] === "string" &&
-        metadata["codexThreadId"].trim().length > 0
+        typeof metadata["codexThreadId"] === "string" && metadata["codexThreadId"].trim().length > 0
       );
     case "opencode":
       return asValidOpenCodeSessionId(metadata["opencodeSessionId"]) !== null;
@@ -288,8 +287,9 @@ export async function enrichSessionWithRuntimeState(
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const isTransient =
-        err instanceof DOMException && err.name === "AbortError" ||
-        typeof message === "string" && /timed out|fetch failed|network|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(message);
+        (err instanceof DOMException && err.name === "AbortError") ||
+        (typeof message === "string" &&
+          /timed out|fetch failed|network|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(message));
       if (!isTransient) {
         session.lifecycle.runtime.state = "probe_failed";
         session.lifecycle.runtime.reason = "probe_error";
@@ -393,115 +393,119 @@ export async function list(
   });
   let openCodeSessionListPromise: Promise<OpenCodeSessionListEntry[]> | undefined;
 
-  const resolved = await mapLimit(allSessions, LIST_CONCURRENCY_LIMIT, async ({ sessionName, projectId: sessionProjectId, raw }) => {
-    const project = ctx.config.projects[sessionProjectId];
-    if (!project) return null;
+  const resolved = await mapLimit(
+    allSessions,
+    LIST_CONCURRENCY_LIMIT,
+    async ({ sessionName, projectId: sessionProjectId, raw }) => {
+      const project = ctx.config.projects[sessionProjectId];
+      if (!project) return null;
 
-    const sessionsDir = getProjectSessionsDir(sessionProjectId);
+      const sessionsDir = getProjectSessionsDir(sessionProjectId);
 
-    let createdAt: Date | undefined;
-    let modifiedAt: Date | undefined;
-    try {
-      const metaPath = join(sessionsDir, `${sessionName}.json`);
-      const stats = statSync(metaPath);
-      createdAt = stats.birthtime;
-      modifiedAt = stats.mtime;
-    } catch {
-      // ignore
-    }
-
-    const session = metadataToSession(sessionName, raw, {
-      projectId: sessionProjectId,
-      sessionPrefix: project.sessionPrefix,
-      createdAt,
-      modifiedAt,
-      workspacePathFallback: project.path,
-    });
-    const selection = ctx.resolveSelectionForSession(project, sessionName, raw);
-    const effectiveAgentName = selection.agentName;
-    const plugins = ctx.resolvePlugins(project, effectiveAgentName);
-    const sessionListPromise =
-      effectiveAgentName === "opencode"
-        ? (openCodeSessionListPromise ??= fetchOpenCodeSessionList())
-        : undefined;
-
-    let enrichTimeoutId: ReturnType<typeof setTimeout> | null = null;
-    const enrichTimeout = new Promise<void>((resolve) => {
-      enrichTimeoutId = setTimeout(resolve, OPENCODE_DISCOVERY_TIMEOUT_MS + 2_000);
-    });
-    const enrichPromise = ensureHandleAndEnrich(
-      session,
-      sessionName,
-      sessionsDir,
-      project,
-      effectiveAgentName,
-      plugins,
-      ctx,
-      sessionListPromise,
-    ).catch(() => {});
-    try {
-      await Promise.race([enrichPromise, enrichTimeout]);
-    } finally {
-      if (enrichTimeoutId) {
-        clearTimeout(enrichTimeoutId);
+      let createdAt: Date | undefined;
+      let modifiedAt: Date | undefined;
+      try {
+        const metaPath = join(sessionsDir, `${sessionName}.json`);
+        const stats = statSync(metaPath);
+        createdAt = stats.birthtime;
+        modifiedAt = stats.mtime;
+      } catch {
+        // ignore
       }
-    }
 
-    if (options?.persistRuntimeProbe) {
-      const onDiskLifecycle = parseCanonicalLifecycle(raw, {
-        sessionId: sessionName,
-        status: validateStatus(raw["status"]),
+      const session = metadataToSession(sessionName, raw, {
+        projectId: sessionProjectId,
+        sessionPrefix: project.sessionPrefix,
+        createdAt,
+        modifiedAt,
+        workspacePathFallback: project.path,
       });
-      if (
-        session.lifecycle &&
-        (session.lifecycle.runtime.state === "missing" ||
-          session.lifecycle.runtime.state === "exited") &&
-        onDiskLifecycle.session.state !== "terminated" &&
-        onDiskLifecycle.session.state !== "done" &&
-        onDiskLifecycle.session.state !== "detecting"
-      ) {
-        const runtimeStateBefore = session.lifecycle.runtime.state;
-        const runtimeReasonBefore = session.lifecycle.runtime.reason;
-        try {
-          const persisted = ctx.buildUpdatedLifecycle(sessionName, raw, (next) => {
-            next.session.state = "detecting";
-            next.session.reason = "runtime_lost";
-            next.session.lastTransitionAt = new Date().toISOString();
-            next.runtime.state = runtimeStateBefore;
-            next.runtime.reason = runtimeReasonBefore;
-            next.runtime.lastObservedAt = new Date().toISOString();
-          });
-          updateMetadata(sessionsDir, sessionName, ctx.lifecycleMetadataUpdates(raw, persisted));
-          session.lifecycle = persisted;
-          session.status = deriveLegacyStatus(persisted);
-          recordActivityEvent({
-            projectId: sessionProjectId,
-            sessionId: sessionName,
-            source: "session-manager",
-            kind: "runtime.lost_detected",
-            level: "warn",
-            summary: `runtime lost reconciled: ${sessionName}`,
-            data: {
-              runtimeState: runtimeStateBefore,
-              runtimeReason: runtimeReasonBefore,
-            },
-          });
-        } catch (err) {
-          recordActivityEvent({
-            projectId: sessionProjectId,
-            sessionId: sessionName,
-            source: "session-manager",
-            kind: "runtime.lost_persist_failed",
-            level: "error",
-            summary: `runtime_lost persist failed: ${sessionName}`,
-            data: { reason: err instanceof Error ? err.message : String(err) },
-          });
+      const selection = ctx.resolveSelectionForSession(project, sessionName, raw);
+      const effectiveAgentName = selection.agentName;
+      const plugins = ctx.resolvePlugins(project, effectiveAgentName);
+      const sessionListPromise =
+        effectiveAgentName === "opencode"
+          ? (openCodeSessionListPromise ??= fetchOpenCodeSessionList())
+          : undefined;
+
+      let enrichTimeoutId: ReturnType<typeof setTimeout> | null = null;
+      const enrichTimeout = new Promise<void>((resolve) => {
+        enrichTimeoutId = setTimeout(resolve, OPENCODE_DISCOVERY_TIMEOUT_MS + 2_000);
+      });
+      const enrichPromise = ensureHandleAndEnrich(
+        session,
+        sessionName,
+        sessionsDir,
+        project,
+        effectiveAgentName,
+        plugins,
+        ctx,
+        sessionListPromise,
+      ).catch(() => {});
+      try {
+        await Promise.race([enrichPromise, enrichTimeout]);
+      } finally {
+        if (enrichTimeoutId) {
+          clearTimeout(enrichTimeoutId);
         }
       }
-    }
 
-    return session;
-  });
+      if (options?.persistRuntimeProbe) {
+        const onDiskLifecycle = parseCanonicalLifecycle(raw, {
+          sessionId: sessionName,
+          status: validateStatus(raw["status"]),
+        });
+        if (
+          session.lifecycle &&
+          (session.lifecycle.runtime.state === "missing" ||
+            session.lifecycle.runtime.state === "exited") &&
+          onDiskLifecycle.session.state !== "terminated" &&
+          onDiskLifecycle.session.state !== "done" &&
+          onDiskLifecycle.session.state !== "detecting"
+        ) {
+          const runtimeStateBefore = session.lifecycle.runtime.state;
+          const runtimeReasonBefore = session.lifecycle.runtime.reason;
+          try {
+            const persisted = ctx.buildUpdatedLifecycle(sessionName, raw, (next) => {
+              next.session.state = "detecting";
+              next.session.reason = "runtime_lost";
+              next.session.lastTransitionAt = new Date().toISOString();
+              next.runtime.state = runtimeStateBefore;
+              next.runtime.reason = runtimeReasonBefore;
+              next.runtime.lastObservedAt = new Date().toISOString();
+            });
+            updateMetadata(sessionsDir, sessionName, ctx.lifecycleMetadataUpdates(raw, persisted));
+            session.lifecycle = persisted;
+            session.status = deriveLegacyStatus(persisted);
+            recordActivityEvent({
+              projectId: sessionProjectId,
+              sessionId: sessionName,
+              source: "session-manager",
+              kind: "runtime.lost_detected",
+              level: "warn",
+              summary: `runtime lost reconciled: ${sessionName}`,
+              data: {
+                runtimeState: runtimeStateBefore,
+                runtimeReason: runtimeReasonBefore,
+              },
+            });
+          } catch (err) {
+            recordActivityEvent({
+              projectId: sessionProjectId,
+              sessionId: sessionName,
+              source: "session-manager",
+              kind: "runtime.lost_persist_failed",
+              level: "error",
+              summary: `runtime_lost persist failed: ${sessionName}`,
+              data: { reason: err instanceof Error ? err.message : String(err) },
+            });
+          }
+        }
+      }
+
+      return session;
+    },
+  );
   return resolved.filter((session): session is Session => session !== null);
 }
 

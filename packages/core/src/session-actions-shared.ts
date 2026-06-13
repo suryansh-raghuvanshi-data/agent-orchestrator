@@ -32,7 +32,9 @@ import { safeJsonParse, validateStatus } from "./utils/validation.js";
 
 export const OPENCODE_INTERACTIVE_DISCOVERY_TIMEOUT_MS = 10_000;
 
-function parseLifecycleFromRaw(raw: Record<string, string>): ReturnType<typeof parseCanonicalLifecycle> | undefined {
+function parseLifecycleFromRaw(
+  raw: Record<string, string>,
+): ReturnType<typeof parseCanonicalLifecycle> | undefined {
   const source = raw["lifecycle"] ?? raw["statePayload"];
   if (!source) return undefined;
   try {

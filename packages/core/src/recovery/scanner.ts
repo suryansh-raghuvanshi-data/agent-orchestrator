@@ -22,11 +22,7 @@ const CONTENT_SAMPLE_MAX_FILE_SIZE = 16_384;
  * be parsed. Without this, corrupt files were silently skipped and the
  * operator had no signal that anything was wrong.
  */
-function recordCorruptMetadata(
-  sessionsDir: string,
-  file: string,
-  projectKey: string,
-): void {
+function recordCorruptMetadata(sessionsDir: string, file: string, projectKey: string): void {
   const filePath = join(sessionsDir, file);
   const inferredProjectId = basename(sessionsDir) === "sessions" ? projectKey : undefined;
   let contentSample = "";
