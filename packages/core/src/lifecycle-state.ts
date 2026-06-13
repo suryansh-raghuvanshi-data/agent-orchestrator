@@ -13,6 +13,7 @@ import type {
 import { z } from "zod";
 import { parsePrFromUrl } from "./utils/pr.js";
 import { safeJsonParse, validateStatus } from "./utils/validation.js";
+import { recordActivityEvent } from "./activity-events.js";
 
 interface ParseCanonicalLifecycleOptions {
   sessionId?: string;
@@ -502,21 +503,78 @@ export function deriveLegacyStatus(lifecycle: CanonicalSessionLifecycle): Sessio
 }
 
 /**
+ * Safely stringify a value, falling back to a structured-error marker if the
+ * value contains circular references, BigInts, Buffers, or other non-JSON
+ * payloads. Used by buildLifecycleMetadataPatch() so a single bad handle.data
+ * cannot crash the entire poll cycle.
+ */
+function safeJsonStringify(value: unknown): string | undefined {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Build a minimal metadata patch for persisting lifecycle state outside the polling loop.
  * Used by writeCanonicalLifecycle() and agent-report writes. Does NOT include detecting
  * or evidence metadata — use buildTransitionMetadataPatch() for lifecycle poll transitions.
+ *
+ * P2-10 / P3-15: `JSON.stringify(lifecycle)` can throw on non-serializable
+ * `handle.data` (functions, circular refs, Buffers). Callers in session-spawn.ts
+ * and session-actions.ts used to need their own try/catch around the call;
+ * any new caller that forgot would crash the poll cycle. The fix makes the
+ * stringify failure non-fatal: the patch is returned without the offending
+ * field, and a `metadata.serialization_failed` activity event is emitted so
+ * the issue surfaces in RCA instead of silently disappearing.
  */
 export function buildLifecycleMetadataPatch(
   lifecycle: CanonicalSessionLifecycle,
+  sessionId?: string,
 ): Partial<Record<string, string>> {
-  return {
-    lifecycle: JSON.stringify(lifecycle),
-    // status is NOT persisted — computed on read via deriveLegacyStatus()
+  const lifecycleJson = safeJsonStringify(lifecycle);
+  if (lifecycleJson === undefined) {
+    recordLifecycleSerializationFailure("lifecycle", sessionId, lifecycle);
+    // Drop the unstringifiable field rather than crashing the caller.
+    return { pr: lifecycle.pr.url ?? "", tmuxName: lifecycle.runtime.tmuxName ?? "" };
+  }
+
+  const patch: Partial<Record<string, string>> = {
+    lifecycle: lifecycleJson,
     pr: lifecycle.pr.url ?? "",
-    runtimeHandle: lifecycle.runtime.handle ? JSON.stringify(lifecycle.runtime.handle) : "",
     tmuxName: lifecycle.runtime.tmuxName ?? "",
     role: lifecycle.session.kind === "orchestrator" ? "orchestrator" : "",
   };
+
+  if (lifecycle.runtime.handle) {
+    const handleJson = safeJsonStringify(lifecycle.runtime.handle);
+    if (handleJson === undefined) {
+      recordLifecycleSerializationFailure("runtimeHandle", sessionId, lifecycle);
+    } else {
+      patch["runtimeHandle"] = handleJson;
+    }
+  }
+  return patch;
+}
+
+function recordLifecycleSerializationFailure(
+  field: string,
+  sessionId: string | undefined,
+  lifecycle: CanonicalSessionLifecycle,
+): void {
+  try {
+    recordActivityEvent({
+      ...(sessionId ? { sessionId } : {}),
+      source: "lifecycle",
+      kind: "lifecycle.serialization_failed",
+      level: "error",
+      summary: `Failed to serialize lifecycle field "${field}" for metadata write`,
+      data: { field, sessionState: lifecycle.session.state },
+    });
+  } catch {
+    // best effort — don't crash the caller
+  }
 }
 
 export function cloneLifecycle(lifecycle: CanonicalSessionLifecycle): CanonicalSessionLifecycle {

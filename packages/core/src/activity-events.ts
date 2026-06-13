@@ -90,6 +90,7 @@ export type ActivityEventKind =
   | "session.auto_cleanup_completed"
   | "session.auto_cleanup_failed"
   | "lifecycle.poll_failed"
+  | "lifecycle.serialization_failed"
   | "detecting.escalated"
   // Notification delivery
   | "notification.delivery_failed"
