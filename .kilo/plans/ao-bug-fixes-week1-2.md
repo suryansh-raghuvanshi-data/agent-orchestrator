@@ -121,6 +121,8 @@ Do not touch external packages and do not refactor anything that is already corr
 | B5 | `ed4113c4` | 2026-06-13 | Added `warnOnUnknownPluginConfigKeys` that emits a `config.project_malformed` warn event for unknown keys in Tracker/SCM/Notifier blocks. Scope-limited per plan to avoid noise from internal ProjectConfig fields. Regression tests in `config-validation.test.ts`. |
 | B6 | `8a7129af` | 2026-06-13 | `kill` moved to new `session-actions-shared.ts`; rollup circular-dependency warning gone. `session-actions.ts` re-exports `kill` for backward compat. Regression test added in `session-context.test.ts`. |
 | B7 | `9fa66734` | 2026-06-13 | Added `mutateMetadataSafe` returning a discriminated union `{ok:true,value} \| {ok:false,reason:"missing"} \| {ok:false,reason:"corrupt_metadata",path}`. Existing `mutateMetadata` contract preserved. Regression tests in `metadata.test.ts`. |
+| P2-10 | `0a4db495` | 2026-06-13 | `buildLifecycleMetadataPatch` now wraps each `JSON.stringify` in `safeJsonStringify`. On throw (circular refs, BigInts, Buffers in `handle.data`), the offending field is omitted and a `lifecycle.serialization_failed` activity event fires so the issue surfaces in RCA. New event kind added to `ActivityEventKind`. Regression tests in `lifecycle-state.test.ts`. |
+| P5-23 | `131c0840` | 2026-06-13 | Web build fix: removed `(stream as any)._intervals` pattern in `app/api/events/route.ts` (replaced with closure-scoped array) and the `fontsFace!` non-null assertion in `useXtermTerminal.ts`. `pnpm build` now completes `packages/web`. |
 
 ## Remaining (not implemented in this pass)
 
