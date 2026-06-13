@@ -285,10 +285,16 @@ export async function enrichSessionWithRuntimeState(
         }
         return;
       }
-    } catch {
-      session.lifecycle.runtime.state = "probe_failed";
-      session.lifecycle.runtime.reason = "probe_error";
-      session.lifecycle.runtime.lastObservedAt = new Date().toISOString();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const isTransient =
+        err instanceof DOMException && err.name === "AbortError" ||
+        typeof message === "string" && /timed out|fetch failed|network|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(message);
+      if (!isTransient) {
+        session.lifecycle.runtime.state = "probe_failed";
+        session.lifecycle.runtime.reason = "probe_error";
+        session.lifecycle.runtime.lastObservedAt = new Date().toISOString();
+      }
     }
   }
 
