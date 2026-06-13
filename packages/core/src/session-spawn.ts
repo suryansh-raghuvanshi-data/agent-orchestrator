@@ -65,7 +65,7 @@ import {
 } from "./session-context.js";
 import { resolveOpenCodeSessionReuse, discoverOpenCodeSessionIdByTitle } from "./session-opencode.js";
 import { get, metadataToSession, findSessionRecord, enrichSessionWithRuntimeState } from "./session-query.js";
-import { kill } from "./session-actions.js";
+import { kill } from "./session-actions-shared.js";
 import { recordActivityEvent } from "./activity-events.js";
 import { isGitBranchNameSafe } from "./utils.js";
 
