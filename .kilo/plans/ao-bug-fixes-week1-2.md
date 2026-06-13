@@ -112,3 +112,10 @@ Do not touch external packages and do not refactor anything that is already corr
 - Migration off pnpm or Node version bumps.
 - Bash-wrapper hardening (kept as later follow-up; wrappers are correct in their security boundary, only Node hand-off needs scrutiny, which is part of B2).
 - CLI/server refactoring or UI changes.
+
+## Execution Log
+
+| Bug | Commit | Date | Notes |
+|---|---|---|---|
+| B4 | `13b6b8c9` | 2026-06-13 | `normalizeSessionPRs` is now immutable; session objects are not mutated as a side effect. Regression test added in `pr-enrichment.test.ts`. |
+| B6 | `8a7129af` | 2026-06-13 | `kill` moved to new `session-actions-shared.ts`; rollup circular-dependency warning gone. `session-actions.ts` re-exports `kill` for backward compat. Regression test added in `session-context.test.ts`. |
