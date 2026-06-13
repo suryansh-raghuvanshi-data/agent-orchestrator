@@ -200,6 +200,37 @@ describe("executeTaskWithRetry", () => {
     expect(result.status.state).toBe("failed");
     expect(result.retriesAttempted).toBe(2);
   });
+
+  // P2-8: regression test verifying the documented "never throws" contract.
+  // Even when the provider's submitTask throws an unexpected exception
+  // (which should never happen in well-behaved providers but could in
+  // the wild), the caller should receive a result, not an unhandled
+  // rejection. This guards against future refactors that might
+  // accidentally let an exception escape the retry loop.
+  it("never throws even if provider submitTask rejects unexpectedly", async () => {
+    const { executeTaskWithRetry } = await import("../worker-failure-handler.js");
+
+    const provider = makeProvider({
+      submitTask: vi.fn().mockRejectedValue(new Error("unexpected provider crash")),
+    });
+
+    let result;
+    let didThrow = false;
+    try {
+      result = await executeTaskWithRetry(
+        provider as never,
+        { sessionId: "s1", projectId: "p1", prompt: "test" },
+        { maxRetries: 0, baseDelayMs: 50, maxDelayMs: 500, backoffFactor: 2 },
+        { taskTimeoutMs: 5000, pollIntervalMs: 50 },
+      );
+    } catch {
+      didThrow = true;
+    }
+    expect(didThrow).toBe(false);
+    expect(result).toBeDefined();
+    // Contract: state must be a terminal state, not undefined.
+    expect(["completed", "cancelled", "timed_out", "failed"]).toContain(result!.status.state);
+  });
 });
 
 describe("reassignTask", () => {
