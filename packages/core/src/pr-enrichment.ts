@@ -23,12 +23,9 @@ export interface ReactionSessionContext {
 }
 
 export function normalizeSessionPRs(session: Session): PRInfo[] {
-  const candidatePRs = session.prs.length > 0 ? session.prs : session.pr ? [session.pr] : [];
-  const uniquePRs = dedupePrInfos(candidatePRs);
-  if (uniquePRs.length !== session.prs.length || session.pr !== (uniquePRs[0] ?? null)) {
-    session.prs = uniquePRs;
-    session.pr = uniquePRs[0] ?? null;
-  }
+  // Determine the source PRs: prefer the prs array, fall back to pr if present
+  const sourcePRs = session.prs.length > 0 ? session.prs : session.pr ? [session.pr] : [];
+  const uniquePRs = dedupePrInfos(sourcePRs);
   return uniquePRs;
 }
 
