@@ -475,6 +475,101 @@ export function mutateMetadata(
   );
 }
 
+/**
+ * B7: Structured result type for mutateMetadataSafe.
+ *
+ * Distinguishes between three outcomes that previously collapsed into
+ * `null`:
+ *   - `{ ok: true, value }` — metadata was read (or created) and written
+ *   - `{ ok: false, reason: "missing" }` — file does not exist and
+ *     `createIfMissing` was false
+ *   - `{ ok: false, reason: "corrupt_metadata", path }` — file existed
+ *     but was not parseable. A forensic side-rename was attempted and
+ *     a `metadata.corrupt_detected` activity event was emitted.
+ *
+ * Callers that need to distinguish "file was missing" from "file was
+ * unreadable" should use this variant. The existing `mutateMetadata`
+ * keeps its `null`-on-missing contract for backward compatibility.
+ */
+export type MutateMetadataResult =
+  | { ok: true; value: Record<string, string> }
+  | { ok: false; reason: "missing" }
+  | { ok: false; reason: "corrupt_metadata"; path: string };
+
+export function mutateMetadataSafe(
+  dataDir: string,
+  sessionId: SessionId,
+  updater: (existing: Record<string, string>) => Record<string, string>,
+  options: MutateMetadataOptions = {},
+): MutateMetadataResult {
+  const path = metadataPath(dataDir, sessionId);
+  const lockPath = `${path}.lock`;
+
+  return withFileLockSync(
+    lockPath,
+    () => {
+      let existing: Record<string, string> = {};
+
+      let content: string | undefined;
+      try {
+        content = readFileSync(path, "utf-8").trim();
+      } catch {
+        // File doesn't exist
+      }
+
+      if (content !== undefined) {
+        if (content) {
+          const raw = parseMetadataContent(content);
+          if (raw) {
+            existing = flattenToStringRecord(raw);
+          } else {
+            // Corrupt JSON. Preserve forensic evidence by side-renaming
+            // the file before we overwrite it with the merged update.
+            const corruptPath = `${path}.corrupt-${Date.now()}`;
+            let renamed = false;
+            try {
+              renameSync(path, corruptPath);
+              renamed = true;
+            } catch {
+              // best effort
+            }
+            const contentSample = content.length > 200 ? content.slice(0, 200) : content;
+            const inferredProjectId = basename(dirname(dataDir));
+            const summary = renamed
+              ? `Corrupt metadata for session ${sessionId} renamed to ${basename(corruptPath)}`
+              : `Corrupt metadata detected for session ${sessionId}; failed to rename forensic copy before rewrite`;
+            recordActivityEvent({
+              projectId: inferredProjectId || undefined,
+              sessionId,
+              source: options.activityEventSource ?? "session-manager",
+              kind: "metadata.corrupt_detected",
+              level: "error",
+              summary,
+              data: {
+                path,
+                renamedTo: renamed ? corruptPath : null,
+                renameSucceeded: renamed,
+                contentSample,
+                contentLength: content.length,
+              },
+            });
+            return { ok: false as const, reason: "corrupt_metadata" as const, path };
+          }
+        }
+      } else if (!options.createIfMissing) {
+        return { ok: false as const, reason: "missing" as const };
+      }
+
+      const next = normalizeMetadataRecord(updater({ ...existing }));
+
+      mkdirSync(dirname(path), { recursive: true });
+      atomicWriteFileSync(path, serializeMetadata(unflattenFromStringRecord(next)));
+      return { ok: true as const, value: next };
+    },
+    { timeoutMs: 5_000, staleMs: 30_000 },
+  ) as MutateMetadataResult;
+}
+
 export function readCanonicalLifecycle(
   dataDir: string,
   sessionId: SessionId,
@@ -893,4 +988,172 @@ export function deduplicatePRStorageOnStartup(config: OrchestratorConfig): boole
   }
 
   return migrated;
+}
+
+// ---------------------------------------------------------------------------
+// Typed Metadata Helpers (AO-020)
+// ---------------------------------------------------------------------------
+
+export interface PRReviewCommentsGroup {
+  unresolvedThreads: number;
+  unresolvedComments: Array<{
+    url?: string;
+    path: string;
+    author: string;
+    body: string;
+  }>;
+  reviews: Array<{
+    author: string;
+    state: string;
+    body?: string;
+  }>;
+  commentsUpdatedAt: string;
+}
+
+export interface ReviewDispatchGroup {
+  lastPendingReviewFingerprint?: string;
+  lastPendingReviewDispatchHash?: string;
+  lastPendingReviewDispatchAt?: string;
+  lastAutomatedReviewFingerprint?: string;
+  lastAutomatedReviewDispatchHash?: string;
+  lastAutomatedReviewDispatchAt?: string;
+}
+
+export interface CIFailureDispatchGroup {
+  lastCIFailureFingerprint?: string;
+  lastCIFailureDispatchHash?: string;
+  lastCIFailureDispatchAt?: string;
+  ciPassingStableCount?: string;
+}
+
+export interface MergeConflictGroup {
+  lastMergeConflictFingerprint?: string;
+  lastMergeConflictDispatchHash?: string;
+  lastMergeConflictDispatchAt?: string;
+  lastMergeConflictDispatched?: string;
+}
+
+export interface ReportWatcherGroup {
+  mergedPendingCleanupSince?: string;
+}
+
+/** Get PR review comments group from metadata */
+export function getPRReviewComments(
+  metadata: Record<string, string>,
+): PRReviewCommentsGroup | null {
+  const blob = metadata["prReviewComments"];
+  if (!blob) return null;
+  try {
+    return JSON.parse(blob) as PRReviewCommentsGroup;
+  } catch {
+    return null;
+  }
+}
+
+/** Build patch record to update PR review comments */
+export function buildPRReviewCommentsPatch(
+  comments: PRReviewCommentsGroup,
+): Record<string, string> {
+  return { prReviewComments: JSON.stringify(comments) };
+}
+
+/** Get review dispatch state from metadata */
+export function getReviewDispatch(metadata: Record<string, string>): ReviewDispatchGroup {
+  return {
+    lastPendingReviewFingerprint: metadata["lastPendingReviewFingerprint"],
+    lastPendingReviewDispatchHash: metadata["lastPendingReviewDispatchHash"],
+    lastPendingReviewDispatchAt: metadata["lastPendingReviewDispatchAt"],
+    lastAutomatedReviewFingerprint: metadata["lastAutomatedReviewFingerprint"],
+    lastAutomatedReviewDispatchHash: metadata["lastAutomatedReviewDispatchHash"],
+    lastAutomatedReviewDispatchAt: metadata["lastAutomatedReviewDispatchAt"],
+  };
+}
+
+/** Build patch record for review dispatch group */
+export function buildReviewDispatchPatch(
+  group: Partial<ReviewDispatchGroup>,
+): Record<string, string> {
+  const patch: Record<string, string> = {};
+  if (group.lastPendingReviewFingerprint !== undefined)
+    patch["lastPendingReviewFingerprint"] = group.lastPendingReviewFingerprint;
+  if (group.lastPendingReviewDispatchHash !== undefined)
+    patch["lastPendingReviewDispatchHash"] = group.lastPendingReviewDispatchHash;
+  if (group.lastPendingReviewDispatchAt !== undefined)
+    patch["lastPendingReviewDispatchAt"] = group.lastPendingReviewDispatchAt;
+  if (group.lastAutomatedReviewFingerprint !== undefined)
+    patch["lastAutomatedReviewFingerprint"] = group.lastAutomatedReviewFingerprint;
+  if (group.lastAutomatedReviewDispatchHash !== undefined)
+    patch["lastAutomatedReviewDispatchHash"] = group.lastAutomatedReviewDispatchHash;
+  if (group.lastAutomatedReviewDispatchAt !== undefined)
+    patch["lastAutomatedReviewDispatchAt"] = group.lastAutomatedReviewDispatchAt;
+  return patch;
+}
+
+/** Get CI failure dispatch state from metadata */
+export function getCIFailureDispatch(metadata: Record<string, string>): CIFailureDispatchGroup {
+  return {
+    lastCIFailureFingerprint: metadata["lastCIFailureFingerprint"],
+    lastCIFailureDispatchHash: metadata["lastCIFailureDispatchHash"],
+    lastCIFailureDispatchAt: metadata["lastCIFailureDispatchAt"],
+    ciPassingStableCount: metadata["ciPassingStableCount"],
+  };
+}
+
+/** Build patch record for CI failure dispatch group */
+export function buildCIFailureDispatchPatch(
+  group: Partial<CIFailureDispatchGroup>,
+): Record<string, string> {
+  const patch: Record<string, string> = {};
+  if (group.lastCIFailureFingerprint !== undefined)
+    patch["lastCIFailureFingerprint"] = group.lastCIFailureFingerprint;
+  if (group.lastCIFailureDispatchHash !== undefined)
+    patch["lastCIFailureDispatchHash"] = group.lastCIFailureDispatchHash;
+  if (group.lastCIFailureDispatchAt !== undefined)
+    patch["lastCIFailureDispatchAt"] = group.lastCIFailureDispatchAt;
+  if (group.ciPassingStableCount !== undefined)
+    patch["ciPassingStableCount"] = group.ciPassingStableCount;
+  return patch;
+}
+
+/** Get merge conflict dispatch state from metadata */
+export function getMergeConflictDispatch(metadata: Record<string, string>): MergeConflictGroup {
+  return {
+    lastMergeConflictFingerprint: metadata["lastMergeConflictFingerprint"],
+    lastMergeConflictDispatchHash: metadata["lastMergeConflictDispatchHash"],
+    lastMergeConflictDispatchAt: metadata["lastMergeConflictDispatchAt"],
+    lastMergeConflictDispatched: metadata["lastMergeConflictDispatched"],
+  };
+}
+
+/** Build patch record for merge conflict dispatch group */
+export function buildMergeConflictDispatchPatch(
+  group: Partial<MergeConflictGroup>,
+): Record<string, string> {
+  const patch: Record<string, string> = {};
+  if (group.lastMergeConflictFingerprint !== undefined)
+    patch["lastMergeConflictFingerprint"] = group.lastMergeConflictFingerprint;
+  if (group.lastMergeConflictDispatchHash !== undefined)
+    patch["lastMergeConflictDispatchHash"] = group.lastMergeConflictDispatchHash;
+  if (group.lastMergeConflictDispatchAt !== undefined)
+    patch["lastMergeConflictDispatchAt"] = group.lastMergeConflictDispatchAt;
+  if (group.lastMergeConflictDispatched !== undefined)
+    patch["lastMergeConflictDispatched"] = group.lastMergeConflictDispatched;
+  return patch;
+}
+
+/** Get report watcher state from metadata */
+export function getReportWatcher(metadata: Record<string, string>): ReportWatcherGroup {
+  return {
+    mergedPendingCleanupSince: metadata["mergedPendingCleanupSince"],
+  };
+}
+
+/** Build patch record for report watcher group */
+export function buildReportWatcherPatch(
+  group: Partial<ReportWatcherGroup>,
+): Record<string, string> {
+  const patch: Record<string, string> = {};
+  if (group.mergedPendingCleanupSince !== undefined)
+    patch["mergedPendingCleanupSince"] = group.mergedPendingCleanupSince;
+  return patch;
 }

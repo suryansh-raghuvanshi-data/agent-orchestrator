@@ -424,6 +424,7 @@ export function isDashboardSessionDone(session: DashboardSession): boolean {
 }
 
 function hasTerminalActivity(session: DashboardSession): boolean {
+  if (session.lifecycle?.runtimeState === "alive") return false;
   return session.activity !== null && TERMINAL_ACTIVITIES.has(session.activity);
 }
 
@@ -433,6 +434,7 @@ export function isDashboardSessionTerminal(session: DashboardSession): boolean {
       isDashboardSessionDone(session) ||
       session.lifecycle.runtimeState === "missing" ||
       session.lifecycle.runtimeState === "exited" ||
+      session.lifecycle.runtimeState === "probe_failed" ||
       hasTerminalActivity(session)
     );
   }
@@ -444,6 +446,7 @@ export function isDashboardRuntimeEnded(session: DashboardSession): boolean {
     return (
       session.lifecycle.runtimeState === "missing" ||
       session.lifecycle.runtimeState === "exited" ||
+      session.lifecycle.runtimeState === "probe_failed" ||
       hasTerminalActivity(session)
     );
   }
@@ -457,6 +460,7 @@ export function isDashboardSessionRestorable(session: DashboardSession): boolean
       isDashboardSessionTerminated(session) ||
       session.lifecycle.runtimeState === "missing" ||
       session.lifecycle.runtimeState === "exited" ||
+      session.lifecycle.runtimeState === "probe_failed" ||
       hasTerminalActivity(session);
     return (
       terminalByCoreTruth &&
@@ -521,7 +525,12 @@ function getDetailedAttentionLevel(session: DashboardSession): AttentionLevel {
     session.lifecycle?.sessionState === "stuck" ||
     session.status === SESSION_STATUS.ERRORED ||
     session.status === SESSION_STATUS.NEEDS_INPUT ||
-    session.status === SESSION_STATUS.STUCK
+    session.status === SESSION_STATUS.STUCK ||
+    session.lifecycle?.runtimeState === "missing" ||
+    session.lifecycle?.runtimeState === "exited" ||
+    session.lifecycle?.runtimeState === "probe_failed" ||
+    (session.lifecycle?.runtimeState === "unknown" &&
+      session.lifecycle?.sessionState !== "not_started")
   ) {
     return "respond";
   }

@@ -7,7 +7,7 @@ import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { type DashboardSession } from "@/lib/types";
 import { fetchJsonWithTimeout } from "@/lib/client-fetch";
 
-const SESSION_FETCH_TIMEOUT_MS = 8000;
+const SESSION_FETCH_TIMEOUT_MS = 15000;
 const PROJECTS_FETCH_TIMEOUT_MS = 5000;
 
 function LoadingContent() {

@@ -16,23 +16,24 @@ function StrategyNode({
   status: "pending" | "running" | "done";
   delay?: number;
 }) {
-  const statusIcon = status === "running" ? (
-    <span className="strategy-map__pulse" />
-  ) : status === "done" ? (
-    <svg
-      width="12"
-      height="12"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M20 6L9 17l-5-5" />
-    </svg>
-  ) : (
-    <span className="strategy-map__dot" />
-  );
+  const statusIcon =
+    status === "running" ? (
+      <span className="strategy-map__pulse" />
+    ) : status === "done" ? (
+      <svg
+        width="12"
+        height="12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M20 6L9 17l-5-5" />
+      </svg>
+    ) : (
+      <span className="strategy-map__dot" />
+    );
 
   return (
     <div
@@ -51,9 +52,7 @@ function StrategyNode({
 }
 
 function StrategyEdge({ active = false }: { active?: boolean }) {
-  return (
-    <div className={cn("strategy-map__edge", active && "strategy-map__edge--active")} />
-  );
+  return <div className={cn("strategy-map__edge", active && "strategy-map__edge--active")} />;
 }
 
 export function StrategyMap({ session }: StrategyMapProps) {
@@ -88,8 +87,8 @@ export function StrategyMap({ session }: StrategyMapProps) {
               <StrategyNode label="Merge" status="pending" />
             </div>
             <p className="strategy-map__hint">
-              The orchestrator&rsquo;s strategy will render here once available.
-              You can still chat with the agent on the left.
+              The orchestrator&rsquo;s strategy will render here once available. You can still chat
+              with the agent on the left.
             </p>
           </div>
         )}

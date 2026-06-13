@@ -122,7 +122,7 @@ describe("Multi-Worker Resolution Logic", () => {
     });
 
     it("should fallback to local if nothing is provided", () => {
-      let effectiveProviderOverride: string | undefined = undefined;
+      const effectiveProviderOverride: string | undefined = undefined;
 
       const route = resolveWorkerProvider(
         { projectId: "default", workerProvider: effectiveProviderOverride },

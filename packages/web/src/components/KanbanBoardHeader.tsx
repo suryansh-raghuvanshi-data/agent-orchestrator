@@ -121,7 +121,15 @@ export function KanbanBoardHeader({
           aria-label="Filter"
           aria-expanded={filterOpen}
         >
-          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            width="13"
+            height="13"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
           </svg>
         </button>
@@ -136,13 +144,29 @@ export function KanbanBoardHeader({
             title={`Switch to ${density === "compact" ? "comfortable" : "compact"} view`}
           >
             {density === "compact" ? (
-              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <svg
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <rect x="3" y="3" width="18" height="4" rx="1" />
                 <rect x="3" y="10" width="18" height="4" rx="1" />
                 <rect x="3" y="17" width="18" height="4" rx="1" />
               </svg>
             ) : (
-              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <svg
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M3 12h18" />
                 <path d="M12 3v18" />

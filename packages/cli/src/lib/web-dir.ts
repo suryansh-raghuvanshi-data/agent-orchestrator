@@ -27,24 +27,32 @@ const DEFAULT_TERMINAL_PORT = 14800;
  * regardless of whether the occupying process is bound to 127.0.0.1, ::1,
  * 0.0.0.0, or :: (IPv6 wildcard).
  */
-export function isPortAvailable(port: number): Promise<boolean> {
+function testHost(port: number, host: string): Promise<boolean> {
   return new Promise((resolve) => {
     const s = new Socket();
     s.setTimeout(300);
     s.once("connect", () => {
       s.destroy();
-      resolve(false);
-    }); // something listening → in use
+      resolve(false); // something listening -> not available
+    });
     s.once("error", () => {
       s.destroy();
-      resolve(true);
-    }); // ECONNREFUSED → free
+      resolve(true); // nothing listening -> available
+    });
     s.once("timeout", () => {
       s.destroy();
-      resolve(true);
-    }); // no response → free
-    s.connect(port, "127.0.0.1");
+      resolve(true); // nothing listening -> available
+    });
+    s.connect(port, host);
   });
+}
+
+export async function isPortAvailable(port: number): Promise<boolean> {
+  const [ipv4Available, ipv6Available] = await Promise.all([
+    testHost(port, "127.0.0.1"),
+    testHost(port, "::1"),
+  ]);
+  return ipv4Available && ipv6Available;
 }
 
 /** How many consecutive ports to scan before giving up. */

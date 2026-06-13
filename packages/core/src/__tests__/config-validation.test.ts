@@ -2,8 +2,9 @@
  * Unit tests for config validation (project uniqueness, prefix collisions, external plugins).
  */
 
-import { describe, it, expect } from "vitest";
-import { validateConfig } from "../config.js";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { validateConfig, findConfigFile } from "../config.js";
+import { ConfigNotFoundError } from "../errors.js";
 
 describe("Config Validation - Project Uniqueness", () => {
   it("accepts projects that share a basename when projectIds differ", () => {
@@ -1303,5 +1304,146 @@ describe("Config Validation - Observability Config", () => {
         },
       }),
     ).toThrow();
+  });
+});
+
+describe("AO_CONFIG_PATH (AO-006)", () => {
+  it("loads config when AO_CONFIG_PATH points to an existing file", () => {
+    const prev = process.env["AO_CONFIG_PATH"];
+    process.env["AO_CONFIG_PATH"] = __filename;
+    try {
+      expect(findConfigFile()).toBe(__filename);
+    } finally {
+      process.env["AO_CONFIG_PATH"] = prev;
+    }
+  });
+
+  it("throws ConfigNotFoundError when AO_CONFIG_PATH points to a missing file", () => {
+    const prev = process.env["AO_CONFIG_PATH"];
+    const missing = "/tmp/__ao_nonexistent_config.yaml";
+    process.env["AO_CONFIG_PATH"] = missing;
+    try {
+      expect(() => findConfigFile()).toThrow(ConfigNotFoundError);
+      expect(() => findConfigFile()).toThrow(/AO_CONFIG_PATH is set/);
+      expect(() => findConfigFile()).toThrow(missing);
+    } finally {
+      process.env["AO_CONFIG_PATH"] = prev;
+    }
+  });
+
+  it("falls back to normal search when AO_CONFIG_PATH is unset", () => {
+    const prev = process.env["AO_CONFIG_PATH"];
+    delete process.env["AO_CONFIG_PATH"];
+    try {
+      // Should not throw — falls through to directory search
+      expect(() => findConfigFile()).not.toThrow();
+    } finally {
+      process.env["AO_CONFIG_PATH"] = prev;
+    }
+  });
+});
+
+/**
+ * B5: warn (not reject) on unknown keys in Tracker/SCM/Notifier configs.
+ *
+ * The schemas use `.passthrough()` for forward-compat, so a typo like
+ * `trackers:` instead of `tracker:` would otherwise be silently accepted
+ * and surface as a confusing 4xx at runtime. The warning should fire at
+ * load time without breaking the load.
+ */
+import { recordActivityEvent } from "../activity-events.js";
+import { validateConfig as validateConfigForB5 } from "../config.js";
+import { closeDb, getDb } from "../events-db.js";
+
+const baseB5Config = {
+  port: 3000,
+  readyThresholdMs: 300_000,
+  defaults: {
+    runtime: "tmux",
+    agent: "mock-agent",
+    workspace: "worktree",
+  },
+  projects: {
+    "my-app": {
+      name: "My App",
+      path: "/repos/my-app",
+      repo: "org/my-app",
+      defaultBranch: "main",
+      sessionPrefix: "app",
+    },
+  },
+  notifiers: {},
+  notificationRouting: { urgent: [], action: [], warning: [], info: [] },
+  reactions: {},
+};
+
+describe("B5: warnOnUnknownPluginConfigKeys", () => {
+  beforeEach(() => {
+    closeDb();
+  });
+  afterEach(() => {
+    closeDb();
+  });
+
+  it("emits a warning when a tracker config has an unknown key", () => {
+    const config = {
+      ...baseB5Config,
+      projects: {
+        "my-app": {
+          ...baseB5Config.projects["my-app"],
+          // `typoKey` inside the tracker block is unknown
+          tracker: { plugin: "github", typoKey: "oops" },
+        },
+      },
+    };
+    validateConfigForB5(config);
+    const db = getDb() as unknown as {
+      prepare: (sql: string) => {
+        get: (sql?: string) => unknown;
+        run: (...args: unknown[]) => unknown;
+      };
+    };
+    const row = db
+      .prepare(
+        `SELECT data FROM activity_events
+         WHERE type = 'config.project_malformed' AND log_level = 'warn'
+         ORDER BY id DESC LIMIT 1`,
+      )
+      .get() as { data: string | null } | undefined;
+    expect(row).toBeDefined();
+    const data = JSON.parse(row!.data!);
+    expect(data.configType).toBe("Tracker");
+    expect(data.unknownKeys).toContain("typoKey");
+  });
+
+  it("does not warn for a tracker config that only has known keys", () => {
+    // Use a unique marker inside a KNOWN key's value so we can isolate
+    // this assertion from events left over by other tests sharing the
+    // activity DB. The key itself (`plugin`) is known, so no warning
+    // should fire and no event should mention this marker.
+    const uniqueMarker = `knownMarker_${Date.now()}_${Math.random()}`;
+    const config = {
+      ...baseB5Config,
+      projects: {
+        "my-app": {
+          ...baseB5Config.projects["my-app"],
+          tracker: { plugin: `github-${uniqueMarker}` },
+        },
+      },
+    };
+    validateConfigForB5(config);
+    const db = getDb() as unknown as {
+      prepare: (sql: string) => {
+        get: (sql?: string) => unknown;
+        run: (...args: unknown[]) => unknown;
+      };
+    };
+    const row = db
+      .prepare(
+        `SELECT COUNT(*) as c FROM activity_events
+         WHERE type = 'config.project_malformed' AND data LIKE ?`,
+      )
+      .get(`%${uniqueMarker}%`) as { c: number };
+    expect(row.c).toBe(0);
   });
 });

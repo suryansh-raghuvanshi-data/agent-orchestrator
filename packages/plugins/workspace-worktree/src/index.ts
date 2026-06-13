@@ -687,6 +687,7 @@ export function create(config?: Record<string, unknown>): Workspace {
           try {
             await execFileAsync(shell.cmd, shell.args(command), {
               cwd: info.path,
+              timeout: 30_000,
               windowsHide: true,
             });
           } catch (err) {

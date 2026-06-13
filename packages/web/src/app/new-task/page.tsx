@@ -30,13 +30,20 @@ export default function NewTaskPage() {
   const [selectedProject, setSelectedProject] = useState("");
   const [loading, setLoading] = useState(true);
   const [spawning, setSpawning] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetch("/api/projects").then((r) => r.json()).catch(() => ({ projects: [] })),
-      fetch("/api/agents").then((r) => r.json()).catch(() => ({ agents: [] })),
-      fetch("/api/workers").then((r) => r.json()).catch(() => ({ providers: [] })),
+      fetch("/api/projects")
+        .then((r) => r.json())
+        .catch(() => ({ projects: [] })),
+      fetch("/api/agents")
+        .then((r) => r.json())
+        .catch(() => ({ agents: [] })),
+      fetch("/api/workers")
+        .then((r) => r.json())
+        .catch(() => ({ providers: [] })),
     ]).then(([projectsData, agentsData, workersData]) => {
       if (cancelled) return;
       const fetchedProjects: ProjectInfo[] = projectsData.projects || [];
@@ -54,23 +61,27 @@ export default function NewTaskPage() {
       }
       setLoading(false);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSpawn = useCallback(async () => {
     if (!selectedProject || !selectedAgent || spawning) return;
     setSpawning(true);
+    const isProvider = providers.some((p) => p.name === selectedAgent);
     try {
       const res = await fetch("/api/orchestrators", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId: selectedProject,
-          agent: selectedAgent,
+          agent: isProvider ? undefined : selectedAgent,
+          workerProvider: isProvider ? selectedAgent : undefined,
           workerAgents: autoSelectWorkers ? [] : selectedWorkers,
         }),
       });
-      const data = await res.json().catch(() => null) as {
+      const data = (await res.json().catch(() => null)) as {
         orchestrator?: { id: string; projectId: string };
         error?: string;
       } | null;
@@ -78,10 +89,20 @@ export default function NewTaskPage() {
         throw new Error(data?.error ?? "Failed to spawn orchestrator");
       }
       router.push(`/sessions/${data.orchestrator.id}`);
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to launch task";
+      setErrorMessage(msg);
       setSpawning(false);
     }
-  }, [selectedProject, selectedAgent, selectedWorkers, autoSelectWorkers, spawning, router]);
+  }, [
+    selectedProject,
+    selectedAgent,
+    selectedWorkers,
+    autoSelectWorkers,
+    spawning,
+    router,
+    providers,
+  ]);
 
   if (loading) {
     return (
@@ -109,7 +130,15 @@ export default function NewTaskPage() {
             )}
           >
             {s < step ? (
-              <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+              <svg
+                width="10"
+                height="10"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path d="m5 13 4 4L19 7" />
               </svg>
             ) : (
@@ -146,7 +175,14 @@ export default function NewTaskPage() {
         className="w-full px-4 py-3 text-[13px] text-[var(--color-text-primary)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-[var(--radius-md)] placeholder:text-[var(--color-text-muted)] resize-none focus:outline-none focus:border-[var(--color-accent)] transition-colors duration-[var(--duration-fast)]"
       />
       <div className="flex justify-end mt-1.5">
-        <span className={cn("text-[10px] font-mono", prompt.length > 2000 ? "text-[var(--color-status-error)]" : "text-[var(--color-text-muted)]")}>
+        <span
+          className={cn(
+            "text-[10px] font-mono",
+            prompt.length > 2000
+              ? "text-[var(--color-status-error)]"
+              : "text-[var(--color-text-muted)]",
+          )}
+        >
           {prompt.length}/2000
         </span>
       </div>
@@ -168,7 +204,10 @@ export default function NewTaskPage() {
         <button
           type="button"
           disabled={prompt.length < 10}
-          onClick={() => setStep(2)}
+          onClick={() => {
+            setStep(2);
+            setErrorMessage("");
+          }}
           className={cn(
             "w-full h-10 text-[12px] font-semibold rounded-[var(--radius-md)] transition-all duration-[var(--duration-fast)]",
             prompt.length >= 10
@@ -227,6 +266,31 @@ export default function NewTaskPage() {
               </button>
             );
           })}
+          {providers.map((provider) => {
+            const selected = selectedAgent === provider.name;
+            return (
+              <button
+                key={provider.name}
+                type="button"
+                onClick={() => setSelectedAgent(provider.name)}
+                className={cn(
+                  "flex flex-col gap-1.5 px-3 py-2.5 rounded-[var(--radius-md)] border text-left transition-all duration-[var(--duration-fast)]",
+                  selected
+                    ? "border-[var(--color-accent)] bg-[var(--color-accent-dim)]"
+                    : "border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)]",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-medium text-[var(--color-text-primary)]">
+                    {provider.displayName}
+                  </span>
+                </div>
+                <span className="text-[10px] text-[var(--color-text-tertiary)] line-clamp-1">
+                  {provider.displayName} worker provider
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Worker selection */}
@@ -242,7 +306,10 @@ export default function NewTaskPage() {
             onChange={(e) => setAutoSelectWorkers(e.target.checked)}
             className="w-3.5 h-3.5 accent-[var(--color-accent)]"
           />
-          <label htmlFor="auto-select" className="text-[11px] text-[var(--color-text-secondary)] cursor-pointer">
+          <label
+            htmlFor="auto-select"
+            className="text-[11px] text-[var(--color-text-secondary)] cursor-pointer"
+          >
             Auto-select — let the orchestrator pick workers dynamically
           </label>
         </div>
@@ -268,21 +335,26 @@ export default function NewTaskPage() {
                     onChange={() => {
                       setSelectedWorkers((prev) =>
                         prev.includes(id)
-                          ? prev.length > 1 ? prev.filter((v) => v !== id) : prev
+                          ? prev.length > 1
+                            ? prev.filter((v) => v !== id)
+                            : prev
                           : [...prev, id],
                       );
                     }}
                     className="w-3 h-3 accent-[var(--color-accent)]"
                   />
-                  <span className="text-[11px] text-[var(--color-text-primary)]">{agent.displayName}</span>
+                  <span className="text-[11px] text-[var(--color-text-primary)]">
+                    {agent.displayName}
+                  </span>
                 </label>
               );
             })}
             {providers.map((provider) => {
-              const checked = selectedWorkers.includes(provider.name);
+              const id = `worker-${provider.name}`;
+              const checked = selectedWorkers.includes(id);
               return (
                 <label
-                  key={provider.name}
+                  key={id}
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] border cursor-pointer transition-all duration-[var(--duration-fast)]",
                     checked
@@ -295,14 +367,18 @@ export default function NewTaskPage() {
                     checked={checked}
                     onChange={() => {
                       setSelectedWorkers((prev) =>
-                        prev.includes(provider.name)
-                          ? prev.length > 1 ? prev.filter((v) => v !== provider.name) : prev
-                          : [...prev, provider.name],
+                        prev.includes(id)
+                          ? prev.length > 1
+                            ? prev.filter((v) => v !== id)
+                            : prev
+                          : [...prev, id],
                       );
                     }}
                     className="w-3 h-3 accent-[var(--color-accent)]"
                   />
-                  <span className="text-[11px] text-[var(--color-text-primary)]">{provider.displayName}</span>
+                  <span className="text-[11px] text-[var(--color-text-primary)]">
+                    {provider.displayName}
+                  </span>
                 </label>
               );
             })}
@@ -336,7 +412,10 @@ export default function NewTaskPage() {
   };
 
   const renderStep3 = () => {
-    const agentName = agents.find((a) => a.name === selectedAgent)?.displayName ?? selectedAgent;
+    const agentName =
+      agents.find((a) => a.name === selectedAgent)?.displayName ??
+      providers.find((p) => p.name === selectedAgent)?.displayName ??
+      selectedAgent;
     const projectName = projects.find((p) => p.id === selectedProject)?.name ?? selectedProject;
     const workerNames = autoSelectWorkers
       ? ["Auto (dynamic)"]
@@ -345,7 +424,11 @@ export default function NewTaskPage() {
             const name = w.replace(/^agent-/, "");
             return agents.find((a) => a.name === name)?.displayName ?? name;
           }
-          return providers.find((p) => p.name === w)?.displayName ?? w;
+          if (w.startsWith("worker-")) {
+            const name = w.replace(/^worker-/, "");
+            return providers.find((p) => p.name === name)?.displayName ?? name;
+          }
+          return w;
         });
 
     return (
@@ -359,29 +442,59 @@ export default function NewTaskPage() {
 
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] divide-y divide-[var(--color-border-subtle)] mb-6">
           <div className="px-4 py-3">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-tertiary)]">Task</span>
-            <p className="text-[13px] text-[var(--color-text-primary)] mt-0.5 leading-relaxed">{prompt}</p>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-tertiary)]">
+              Task
+            </span>
+            <p className="text-[13px] text-[var(--color-text-primary)] mt-0.5 leading-relaxed">
+              {prompt}
+            </p>
           </div>
           <div className="px-4 py-3 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-tertiary)]">Orchestrator</span>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                Orchestrator
+              </span>
               <p className="text-[12px] text-[var(--color-text-primary)] mt-0.5">{agentName}</p>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-tertiary)]">Workers</span>
-              <p className="text-[12px] text-[var(--color-text-primary)] mt-0.5">{workerNames.join(", ")}</p>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                Workers
+              </span>
+              <p className="text-[12px] text-[var(--color-text-primary)] mt-0.5">
+                {workerNames.join(", ")}
+              </p>
             </div>
           </div>
           <div className="px-4 py-3">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-tertiary)]">Project</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-tertiary)]">
+              Project
+            </span>
             <p className="text-[12px] text-[var(--color-text-primary)] mt-0.5">{projectName}</p>
           </div>
         </div>
 
+        {errorMessage && (
+          <div className="mb-4 p-3 rounded-[var(--radius-md)] bg-[var(--color-status-error)]/10 border border-[var(--color-status-error)]/30 flex items-start gap-2">
+            <span className="text-[11px] text-[var(--color-status-error)] leading-relaxed flex-1">
+              {errorMessage}
+            </span>
+            <button
+              type="button"
+              onClick={() => setErrorMessage("")}
+              className="text-[var(--color-status-error)] text-[13px] leading-none hover:opacity-70"
+            >
+              &times;
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => setStep(2)}
+            onClick={() => {
+              setStep(2);
+              setErrorMessage("");
+            }}
             className="px-4 h-10 text-[12px] font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-subtle)] transition-colors duration-[var(--duration-fast)]"
           >
             Back
@@ -412,8 +525,8 @@ export default function NewTaskPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center p-4">
-      <div className="w-full max-w-[640px]">
+    <div className="h-screen bg-[var(--color-bg-base)] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="w-full max-w-[640px] py-4">
         {stepIndicator}
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}

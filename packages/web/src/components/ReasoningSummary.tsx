@@ -43,8 +43,21 @@ export function ReasoningSummary({
         onClick={() => setExpanded((v) => !v)}
         className="flex items-center gap-1 text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors duration-[var(--duration-fast)]"
       >
-        <span className={cn("transition-transform duration-[var(--duration-fast)]", expanded && "rotate-90")}>
-          <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+        <span
+          className={cn(
+            "transition-transform duration-[var(--duration-fast)]",
+            expanded && "rotate-90",
+          )}
+        >
+          <svg
+            width="10"
+            height="10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path d="m9 18 6-6-6-6" />
           </svg>
         </span>

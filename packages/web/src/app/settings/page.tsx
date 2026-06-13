@@ -39,22 +39,22 @@ function SettingsClient() {
         >
           <SettingsRow label="Anthropic" description="API key for Claude models" />
           <SettingsRow label="OpenAI" description="API key for GPT models" />
-          <SettingsRow label="GitHub Token" description="Access token for PR and issue operations" />
+          <SettingsRow
+            label="GitHub Token"
+            description="Access token for PR and issue operations"
+          />
         </SettingsSection>
 
-        <SettingsSection
-          title="Notifications"
-          description="Choose when and how you're notified."
-        >
-          <SettingsRow label="Desktop notifications" description="Show alerts via system notifications" />
+        <SettingsSection title="Notifications" description="Choose when and how you're notified.">
+          <SettingsRow
+            label="Desktop notifications"
+            description="Show alerts via system notifications"
+          />
           <SettingsRow label="Slack" description="Send updates to a Slack channel" />
           <SettingsRow label="Email digest" description="Daily summary of completed tasks" />
         </SettingsSection>
 
-        <SettingsSection
-          title="Appearance"
-          description="Customize how the dashboard looks."
-        >
+        <SettingsSection title="Appearance" description="Customize how the dashboard looks.">
           <SettingsRow
             label="Compact density"
             description="Show more information per view"
@@ -97,9 +97,7 @@ function SettingsSection({
 }) {
   return (
     <section>
-      <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-0.5">
-        {title}
-      </h2>
+      <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-0.5">{title}</h2>
       <p className="text-[11px] text-[var(--color-text-muted)] mb-3">{description}</p>
       <div className="space-y-1">{children}</div>
     </section>

@@ -28,6 +28,20 @@ describe("Dashboard project overview cards", () => {
       if (url.includes("/api/version")) {
         return { ok: false, status: 404, json: async () => ({}) } as Response;
       }
+      if (url.includes("/api/agents")) {
+        return {
+          ok: true,
+          json: async () => ({ agents: [{ name: "claude-code", displayName: "Claude Code" }] }),
+        } as Response;
+      }
+      if (url.includes("/api/workers")) {
+        return {
+          ok: true,
+          json: async () => ({
+            providers: [{ name: "local", displayName: "Local", status: "healthy" }],
+          }),
+        } as Response;
+      }
       return { ok: false, status: 500, json: async () => ({}) } as Response;
     });
   });

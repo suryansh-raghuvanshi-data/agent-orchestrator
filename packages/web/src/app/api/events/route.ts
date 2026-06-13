@@ -3,6 +3,10 @@ import { type NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET(_request: NextRequest) {
+  // Hold intervals in a closure-scoped container so the cancel callback
+  // can clear them without smuggling state onto the stream via `as any`.
+  const intervals: ReturnType<typeof setInterval>[] = [];
+
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
@@ -13,21 +17,28 @@ export async function GET(_request: NextRequest) {
 
       send(JSON.stringify({ type: "connected", timestamp: Date.now() }));
 
-      setInterval(() => {
-        send(
-          JSON.stringify({
-            type: "sessions.updated",
-            timestamp: Date.now(),
-          }),
-        );
-      }, 5000);
+      intervals.push(
+        setInterval(() => {
+          send(
+            JSON.stringify({
+              type: "sessions.updated",
+              timestamp: Date.now(),
+            }),
+          );
+        }, 5000),
+      );
 
-      setInterval(() => {
-        controller.enqueue(encoder.encode(":\n\n"));
-      }, 15000);
+      intervals.push(
+        setInterval(() => {
+          controller.enqueue(encoder.encode(":\n\n"));
+        }, 15000),
+      );
     },
     cancel() {
-      // Timers fire until the stream is aborted by the client/runtime.
+      // Clear intervals to prevent memory leak
+      for (const interval of intervals) {
+        clearInterval(interval);
+      }
     },
   });
 

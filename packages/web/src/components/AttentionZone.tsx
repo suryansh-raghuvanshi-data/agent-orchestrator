@@ -12,6 +12,8 @@ interface AttentionZoneProps {
   onKill?: (sessionId: string) => void;
   onMerge?: (prNumber: number, owner?: string, repo?: string) => void;
   onRestore?: (sessionId: string) => void;
+  /** Pending action keys (kill:sessionId, restore:sessionId, merge:prNumber) */
+  pendingActions?: Record<string, boolean>;
   /** Accordion mode: whether this section is collapsed (mobile only) */
   collapsed?: boolean;
   /** Accordion mode: called when the header is tapped to toggle */
@@ -76,6 +78,7 @@ function AttentionZoneView({
   onKill,
   onMerge,
   onRestore,
+  pendingActions,
   collapsed,
   onToggle,
   compactMobile,
@@ -138,6 +141,7 @@ function AttentionZoneView({
                     onKill={onKill}
                     onMerge={onMerge}
                     onRestore={onRestore}
+                    pendingActions={pendingActions}
                   />
                 ),
               )}
@@ -182,6 +186,7 @@ function AttentionZoneView({
                 onKill={onKill}
                 onMerge={onMerge}
                 onRestore={onRestore}
+                pendingActions={pendingActions}
               />
             ))}
           </div>
@@ -199,6 +204,7 @@ function areAttentionZonePropsEqual(prev: AttentionZoneProps, next: AttentionZon
     prev.onKill === next.onKill &&
     prev.onMerge === next.onMerge &&
     prev.onRestore === next.onRestore &&
+    prev.pendingActions === next.pendingActions &&
     prev.compactMobile === next.compactMobile &&
     prev.onPreview === next.onPreview &&
     prev.resetKey === next.resetKey &&

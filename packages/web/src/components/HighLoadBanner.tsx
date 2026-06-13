@@ -17,12 +17,19 @@ export function HighLoadBanner({ taskCount, onPrioritize, className }: HighLoadB
       )}
       role="alert"
     >
-      <svg className="w-4 h-4 shrink-0 text-[var(--color-amber)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        className="w-4 h-4 shrink-0 text-[var(--color-amber)]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
         <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <p className="flex-1 text-[12px] text-[var(--color-text-secondary)]">
-        <span className="font-medium text-[var(--color-text-primary)]">High load:</span>{" "}
-        {taskCount} tasks are currently in progress. Performance may be slower.
+        <span className="font-medium text-[var(--color-text-primary)]">High load:</span> {taskCount}{" "}
+        tasks are currently in progress. Performance may be slower.
       </p>
       {onPrioritize && (
         <button

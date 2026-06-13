@@ -96,6 +96,19 @@ const MAX_PROJECT_ID_LENGTH = 128;
 /** Pattern for safe project IDs — alphanumeric, dots, hyphens, underscores only. */
 const SAFE_PROJECT_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 
+/**
+ * Pattern for safe storage keys in tmux names - must be 12-char hex (from generateConfigHash).
+ * Also used for general shell safety (alphanumeric + dash + underscore).
+ */
+const SAFE_STORAGE_KEY_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+/** Validate a storage key is safe for use in shell commands and tmux sessions. */
+function assertSafeStorageKey(storageKey: string): void {
+  if (!storageKey || !SAFE_STORAGE_KEY_PATTERN.test(storageKey)) {
+    throw new Error(`Unsafe storage key for tmux name: "${storageKey}"`);
+  }
+}
+
 /** Validate a projectId is safe for use as a directory name, shell commands, and tmux sessions. */
 function assertSafeProjectId(projectId: string): void {
   if (
@@ -150,11 +163,27 @@ export function getSessionPath(projectId: string, sessionId: string): string {
 // =============================================================================
 
 /**
+ * Validate a storage key is safe for use in shell commands and tmux sessions.
+ * Valid characters: alphanumeric, dash, underscore (matching 12-char hex format).
+ * Throws if key contains shell metacharacters or path traversal patterns.
+ */
+function validateStorageKeyForShell(storageKey: string): void {
+  if (!storageKey || storageKey === "." || storageKey === "..") {
+    throw new Error(`Invalid storage key: "${storageKey}"`);
+  }
+  const SAFE_STORAGE_KEY_PATTERN = /^[a-zA-Z0-9_-]+$/;
+  if (!SAFE_STORAGE_KEY_PATTERN.test(storageKey)) {
+    throw new Error(`Unsafe storage key: "${storageKey}"`);
+  }
+}
+
+/**
  * @deprecated Use getProjectDir(projectId) instead.
  * Get the project base directory for a storage key.
  * Format: ~/.agent-orchestrator/{storageKey}
  */
 export function getProjectBaseDir(storageKey: string | undefined): string {
+  validateStorageKeyForShell(requireStorageKey(storageKey));
   return join(expandHome("~/.agent-orchestrator"), requireStorageKey(storageKey));
 }
 
@@ -229,7 +258,9 @@ export function generateTmuxName(
   prefix: string,
   num: number,
 ): string {
-  return `${requireStorageKey(storageKey)}-${prefix}-${num}`;
+  const key = requireStorageKey(storageKey);
+  assertSafeStorageKey(key);
+  return `${key}-${prefix}-${num}`;
 }
 
 /**
@@ -294,6 +325,11 @@ export function getPreferencesPath(): string {
 /** Get the portfolio registered projects file path */
 export function getRegisteredPath(): string {
   return join(getPortfolioDir(), "registered.json");
+}
+
+/** Get the backlog claims file path */
+export function getBacklogClaimsPath(): string {
+  return join(getAoBaseDir(), "backlog-claims.json");
 }
 
 /**

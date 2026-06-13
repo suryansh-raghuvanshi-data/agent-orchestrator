@@ -11,6 +11,8 @@ interface ProjectSettingsFormProps {
   projectId: string;
   initialValues: {
     agent: string;
+    orchestratorAgent: string;
+    workerAgent: string;
     runtime: string;
     trackerPlugin: string;
     scmPlugin: string;
@@ -30,6 +32,8 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
   const router = useRouter();
   const { showToast } = useToast();
   const [agent, setAgent] = useState(initialValues.agent);
+  const [orchestratorAgent, setOrchestratorAgent] = useState(initialValues.orchestratorAgent);
+  const [workerAgent, setWorkerAgent] = useState(initialValues.workerAgent);
   const [runtime, setRuntime] = useState(initialValues.runtime);
   const [trackerPlugin, setTrackerPlugin] = useState(initialValues.trackerPlugin);
   const [scmPlugin, setScmPlugin] = useState(initialValues.scmPlugin);
@@ -45,6 +49,8 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
   const behaviorPayload = useMemo(
     () => ({
       agent: (agent || "").trim() || null,
+      orchestrator: (orchestratorAgent || "").trim() ? { agent: orchestratorAgent.trim() } : null,
+      worker: (workerAgent || "").trim() ? { agent: workerAgent.trim() } : null,
       runtime: (runtime || "").trim() || null,
       tracker: (trackerPlugin || "").trim() ? { plugin: trackerPlugin.trim() } : null,
       scm: (scmPlugin || "").trim() ? { plugin: scmPlugin.trim() } : null,
@@ -52,7 +58,17 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
       workerProvider: (workerProvider || "").trim() || null,
       fallbackWorkerProvider: (fallbackWorkerProvider || "").trim() || null,
     }),
-    [agent, runtime, trackerPlugin, scmPlugin, reactions, workerProvider, fallbackWorkerProvider],
+    [
+      agent,
+      orchestratorAgent,
+      workerAgent,
+      runtime,
+      trackerPlugin,
+      scmPlugin,
+      reactions,
+      workerProvider,
+      fallbackWorkerProvider,
+    ],
   );
 
   const submit = async () => {
@@ -75,6 +91,8 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agent: behaviorPayload.agent,
+          orchestrator: behaviorPayload.orchestrator,
+          worker: behaviorPayload.worker,
           runtime: behaviorPayload.runtime,
           tracker: behaviorPayload.tracker,
           scm: behaviorPayload.scm,
@@ -133,6 +151,20 @@ function ProjectSettingsFormInner({ projectId, initialValues }: ProjectSettingsF
             value={agent}
             onChange={setAgent}
             placeholder="claude-code"
+          />
+          <EditableField
+            id="orchestrator-agent"
+            label="Orchestrator Agent"
+            value={orchestratorAgent}
+            onChange={setOrchestratorAgent}
+            placeholder="opencode"
+          />
+          <EditableField
+            id="worker-agent"
+            label="Worker Agent"
+            value={workerAgent}
+            onChange={setWorkerAgent}
+            placeholder="kilo"
           />
           <EditableField
             id="runtime"

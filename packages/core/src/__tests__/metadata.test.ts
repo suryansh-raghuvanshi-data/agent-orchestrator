@@ -17,10 +17,21 @@ import {
   readMetadataRaw,
   readCanonicalLifecycle,
   mutateMetadata,
+  mutateMetadataSafe,
   writeMetadata,
   updateMetadata,
   deleteMetadata,
   listMetadata,
+  getPRReviewComments,
+  buildPRReviewCommentsPatch,
+  getReviewDispatch,
+  buildReviewDispatchPatch,
+  getCIFailureDispatch,
+  buildCIFailureDispatchPatch,
+  getMergeConflictDispatch,
+  buildMergeConflictDispatchPatch,
+  getReportWatcher,
+  buildReportWatcherPatch,
 } from "../metadata.js";
 import { recordActivityEvent } from "../activity-events.js";
 
@@ -931,5 +942,180 @@ describe("corrupt JSON handling", () => {
     const meta = readMetadata(dataDir, "corrupt-mut");
     expect(meta).not.toBeNull();
     expect(meta!.status).toBe("working");
+  });
+});
+
+describe("typed metadata helpers (AO-020)", () => {
+  it("roundtrips PRReviewComments", () => {
+    const comments = {
+      unresolvedThreads: 2,
+      unresolvedComments: [
+        {
+          path: "src/foo.ts",
+          author: "octocat",
+          body: "Please fix this",
+        },
+      ],
+      reviews: [
+        {
+          author: "octocat",
+          state: "CHANGES_REQUESTED",
+        },
+      ],
+      commentsUpdatedAt: "2026-06-12T21:00:00Z",
+    };
+
+    const patch = buildPRReviewCommentsPatch(comments);
+    expect(patch.prReviewComments).toBe(JSON.stringify(comments));
+
+    const record = { prReviewComments: JSON.stringify(comments) };
+    const parsed = getPRReviewComments(record);
+    expect(parsed).toEqual(comments);
+
+    // returns null if missing or invalid
+    expect(getPRReviewComments({})).toBeNull();
+    expect(getPRReviewComments({ prReviewComments: "{invalid" })).toBeNull();
+  });
+
+  it("handles ReviewDispatchGroup", () => {
+    const group = {
+      lastPendingReviewFingerprint: "fingerprint-1",
+      lastPendingReviewDispatchHash: "hash-1",
+      lastPendingReviewDispatchAt: "2026-06-12T21:00:00Z",
+      lastAutomatedReviewFingerprint: "fingerprint-2",
+      lastAutomatedReviewDispatchHash: "hash-2",
+      lastAutomatedReviewDispatchAt: "2026-06-12T21:05:00Z",
+    };
+
+    const patch = buildReviewDispatchPatch(group);
+    expect(patch).toEqual(group);
+
+    const parsed = getReviewDispatch(group);
+    expect(parsed).toEqual(group);
+
+    const partialPatch = buildReviewDispatchPatch({
+      lastPendingReviewFingerprint: "fingerprint-3",
+    });
+    expect(partialPatch).toEqual({ lastPendingReviewFingerprint: "fingerprint-3" });
+  });
+
+  it("handles CIFailureDispatchGroup", () => {
+    const group = {
+      lastCIFailureFingerprint: "fingerprint-ci",
+      lastCIFailureDispatchHash: "hash-ci",
+      lastCIFailureDispatchAt: "2026-06-12T21:10:00Z",
+      ciPassingStableCount: "5",
+    };
+
+    const patch = buildCIFailureDispatchPatch(group);
+    expect(patch).toEqual(group);
+
+    const parsed = getCIFailureDispatch(group);
+    expect(parsed).toEqual(group);
+
+    const partialPatch = buildCIFailureDispatchPatch({ ciPassingStableCount: "6" });
+    expect(partialPatch).toEqual({ ciPassingStableCount: "6" });
+  });
+
+  it("handles MergeConflictGroup", () => {
+    const group = {
+      lastMergeConflictFingerprint: "fingerprint-mc",
+      lastMergeConflictDispatchHash: "hash-mc",
+      lastMergeConflictDispatchAt: "2026-06-12T21:15:00Z",
+      lastMergeConflictDispatched: "true",
+    };
+
+    const patch = buildMergeConflictDispatchPatch(group);
+    expect(patch).toEqual(group);
+
+    const parsed = getMergeConflictDispatch(group);
+    expect(parsed).toEqual(group);
+
+    const partialPatch = buildMergeConflictDispatchPatch({ lastMergeConflictDispatched: "" });
+    expect(partialPatch).toEqual({ lastMergeConflictDispatched: "" });
+  });
+
+  it("handles ReportWatcherGroup", () => {
+    const group = {
+      mergedPendingCleanupSince: "2026-06-12T21:20:00Z",
+    };
+
+    const patch = buildReportWatcherPatch(group);
+    expect(patch).toEqual(group);
+
+    const parsed = getReportWatcher(group);
+    expect(parsed).toEqual(group);
+
+    const partialPatch = buildReportWatcherPatch({
+      mergedPendingCleanupSince: "2026-06-13T21:25:00Z",
+    });
+    expect(partialPatch).toEqual({ mergedPendingCleanupSince: "2026-06-13T21:25:00Z" });
+  });
+});
+
+/**
+ * B7: mutateMetadataSafe returns a structured result so callers can
+ * distinguish "file was missing" from "file was unreadable". Previously
+ * both collapsed to `null`, which made it impossible to tell whether a
+ * failed update should retry vs. surface a corruption warning.
+ */
+describe("mutateMetadataSafe (B7)", () => {
+  it("returns ok=true with the merged value for healthy JSON", () => {
+    writeMetadata(dataDir, "ao-safe-1", {
+      worktree: "/tmp/w",
+      branch: "main",
+      status: "working",
+    });
+    const result = mutateMetadataSafe(dataDir, "ao-safe-1", (existing) => ({
+      ...existing,
+      summary: "hi",
+    }));
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value["summary"]).toBe("hi");
+      expect(result.value["branch"]).toBe("main");
+    }
+  });
+
+  it("returns ok=false reason=missing when file does not exist and createIfMissing is false", () => {
+    const result = mutateMetadataSafe(dataDir, "ao-safe-missing", () => ({ branch: "x" }), {
+      createIfMissing: false,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("missing");
+    }
+  });
+
+  it("returns ok=false reason=corrupt_metadata and emits activity event when JSON is unparseable", () => {
+    const sessionPath = join(dataDir, "ao-safe-2.json");
+    writeFileSync(sessionPath, "{ broken json", "utf-8");
+
+    const result = mutateMetadataSafe(
+      dataDir,
+      "ao-safe-2",
+      (existing) => ({ ...existing, branch: "feat/y" }),
+      { createIfMissing: true },
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok && result.reason === "corrupt_metadata") {
+      expect(result.reason).toBe("corrupt_metadata");
+      expect(result.path).toBe(sessionPath);
+    }
+
+    expect(recordActivityEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: "ao-safe-2",
+        kind: "metadata.corrupt_detected",
+        level: "error",
+      }),
+    );
+
+    // The corrupt forensic copy must exist.
+    const corruptCopies = readdirSync(dataDir).filter((f) =>
+      f.startsWith("ao-safe-2.json.corrupt-"),
+    );
+    expect(corruptCopies).toHaveLength(1);
   });
 });

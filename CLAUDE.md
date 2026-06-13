@@ -352,46 +352,46 @@ All importable from `@aoagents/ao-core` unless noted:
 
 ## Key Files
 
-| File                                             | Purpose                                                                                                                                 |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/core/src/types.ts`                     | Central type definitions (all 8 plugin interfaces)                                                                                      |
-| `packages/core/src/session-manager.ts`           | Session CRUD + stale runtime reconciliation (persists runtime_lost on dead runtimes)                                                    |
-| `packages/core/src/lifecycle-manager.ts`         | State machine + polling loop + reactions                                                                                                |
-| `packages/core/src/lifecycle-state.ts`           | Canonical lifecycle → legacy status mapping (deriveLegacyStatus)                                                                        |
-| `packages/core/src/config.ts`                    | YAML config loading with Zod validation                                                                                                 |
-| `packages/core/src/plugin-registry.ts`           | Plugin discovery and resolution                                                                                                         |
-| `packages/core/src/index.ts`                     | Core public API (stable, do not break)                                                                                                  |
-| `packages/web/src/components/Dashboard.tsx`      | Main dashboard view                                                                                                                     |
-| `packages/web/src/components/SessionDetail.tsx`  | Session detail view                                                                                                                     |
-| `packages/web/src/components/DirectTerminal.tsx` | xterm.js terminal with WebSocket                                                                                                        |
-| `packages/web/src/components/SessionCard.tsx`    | Kanban session card                                                                                                                     |
-| `packages/web/src/hooks/useSessionEvents.ts`     | SSE consumer hook (project filter optional — sidebar uses unscoped)                                                                     |
-| `packages/web/src/lib/types.ts`                  | Dashboard types                                                                                                                         |
-| `packages/web/src/app/globals.css`               | Design tokens and base styles (full token definitions)                                                                                  |
-| `DESIGN.md`                                      | **Design system reference** — design principles, token mapping, component patterns, anti-patterns (read this before writing any web UI) |
-| `agent-orchestrator.yaml`                        | Project-level config (user-created)                                                                                                     |
-| `eslint.config.js`                               | ESLint flat config                                                                                                                      |
-| `tsconfig.base.json`                             | Shared TypeScript base config                                                                                                           |
-| `packages/cli/src/commands/start.ts`             | ao start/stop commands + Ctrl+C graceful shutdown                                                                                       |
-| `packages/cli/src/lib/running-state.ts`          | RunningState + LastStopState management (register/unregister, last-stop read/write)                                                     |
-| `packages/web/src/components/ProjectSidebar.tsx` | Sidebar — always shows all projects' sessions                                                                                           |
-| `packages/web/src/components/KanbanBoard.tsx`   | Kanban board grouped by attention level with search, density toggle, collapsible done section                                          |
-| `packages/web/src/components/LogsView.tsx`      | Two-panel log stream with level filters, search, detail panel, auto-scroll                                                             |
-| `packages/web/src/components/StatusBar.tsx`     | 32px bottom monitoring bar with agent counts, elapsed timer, stop button                                                               |
-| `packages/web/src/components/AgentDrawer.tsx`   | Right-side agent configuration drawer (380px, slide-in, overlay, config fields, capabilities, current task)                            |
-| `packages/web/src/components/AgentDrawerContext.tsx` | Context provider for opening the AgentDrawer from any client component via `useAgentDrawer()`                                     |
-| `packages/web/src/app/history/page.tsx`         | Session history view with date filters, search, and session list                                                                       |
-| `packages/web/src/app/settings/page.tsx`        | Settings view with Agents, API Keys, Notifications, Appearance, Danger zone sections                                                   |
-| `packages/web/src/components/HomeView.tsx`      | Returning-user home dashboard with welcome heading, active task grid, needs-input section, recent sessions, quick actions              |
-| `packages/web/src/app/new-task/page.tsx`        | New task setup screen with 3-step flow: intent → agent selection → review & launch                                                    |
-| `packages/web/src/components/ReasoningSummary.tsx` | Expandable reasoning panel: collapsed link, expanded view with explanation, confidence bar, feedback form                           |
-| `packages/web/src/components/ConflictCard.tsx`  | Two-panel conflict card with side-by-side outputs and Keep A/Keep B/Merge actions                                                     |
-| `packages/web/src/components/HighLoadBanner.tsx` | Amber warning banner for high task load with optional "Prioritize top 5" action                                                       |
-| `packages/web/src/components/CompletionOverlay.tsx` | Full-viewport completion overlay: dark dim + checkmark card, auto-fades after 800ms                                                |
-| `packages/web/src/components/CompletionSummary.tsx` | Completion summary card with counts, elapsed time, skipped/failed tasks, key outputs, action strip                                |
-| `packages/web/src/lib/empty-states.tsx`             | Centralized empty state configs and icons for all major views (dashboard, kanban, logs, history, agents)                         |
-| `packages/web/src/app/globals.css`                  | Design tokens, base styles, motion system animations (pulse-border, stagger, drawer/dropdown/modal entrances), mobile kanban scroll    |
-| `packages/web/src/components/MobileBottomNav.tsx`    | Responsive bottom nav with legacy (Dashboard/PRs/Orchestrator) and new (Board/Logs/Menu) tab sets, auto-detects mode               |
+| File                                                 | Purpose                                                                                                                                 |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core/src/types.ts`                         | Central type definitions (all 8 plugin interfaces)                                                                                      |
+| `packages/core/src/session-manager.ts`               | Session CRUD + stale runtime reconciliation (persists runtime_lost on dead runtimes)                                                    |
+| `packages/core/src/lifecycle-manager.ts`             | State machine + polling loop + reactions                                                                                                |
+| `packages/core/src/lifecycle-state.ts`               | Canonical lifecycle → legacy status mapping (deriveLegacyStatus)                                                                        |
+| `packages/core/src/config.ts`                        | YAML config loading with Zod validation                                                                                                 |
+| `packages/core/src/plugin-registry.ts`               | Plugin discovery and resolution                                                                                                         |
+| `packages/core/src/index.ts`                         | Core public API (stable, do not break)                                                                                                  |
+| `packages/web/src/components/Dashboard.tsx`          | Main dashboard view                                                                                                                     |
+| `packages/web/src/components/SessionDetail.tsx`      | Session detail view                                                                                                                     |
+| `packages/web/src/components/DirectTerminal.tsx`     | xterm.js terminal with WebSocket                                                                                                        |
+| `packages/web/src/components/SessionCard.tsx`        | Kanban session card                                                                                                                     |
+| `packages/web/src/hooks/useSessionEvents.ts`         | SSE consumer hook (project filter optional — sidebar uses unscoped)                                                                     |
+| `packages/web/src/lib/types.ts`                      | Dashboard types                                                                                                                         |
+| `packages/web/src/app/globals.css`                   | Design tokens and base styles (full token definitions)                                                                                  |
+| `DESIGN.md`                                          | **Design system reference** — design principles, token mapping, component patterns, anti-patterns (read this before writing any web UI) |
+| `agent-orchestrator.yaml`                            | Project-level config (user-created)                                                                                                     |
+| `eslint.config.js`                                   | ESLint flat config                                                                                                                      |
+| `tsconfig.base.json`                                 | Shared TypeScript base config                                                                                                           |
+| `packages/cli/src/commands/start.ts`                 | ao start/stop commands + Ctrl+C graceful shutdown                                                                                       |
+| `packages/cli/src/lib/running-state.ts`              | RunningState + LastStopState management (register/unregister, last-stop read/write)                                                     |
+| `packages/web/src/components/ProjectSidebar.tsx`     | Sidebar — always shows all projects' sessions                                                                                           |
+| `packages/web/src/components/KanbanBoard.tsx`        | Kanban board grouped by attention level with search, density toggle, collapsible done section                                           |
+| `packages/web/src/components/LogsView.tsx`           | Two-panel log stream with level filters, search, detail panel, auto-scroll                                                              |
+| `packages/web/src/components/StatusBar.tsx`          | 32px bottom monitoring bar with agent counts, elapsed timer, stop button                                                                |
+| `packages/web/src/components/AgentDrawer.tsx`        | Right-side agent configuration drawer (380px, slide-in, overlay, config fields, capabilities, current task)                             |
+| `packages/web/src/components/AgentDrawerContext.tsx` | Context provider for opening the AgentDrawer from any client component via `useAgentDrawer()`                                           |
+| `packages/web/src/app/history/page.tsx`              | Session history view with date filters, search, and session list                                                                        |
+| `packages/web/src/app/settings/page.tsx`             | Settings view with Agents, API Keys, Notifications, Appearance, Danger zone sections                                                    |
+| `packages/web/src/components/HomeView.tsx`           | Returning-user home dashboard with welcome heading, active task grid, needs-input section, recent sessions, quick actions               |
+| `packages/web/src/app/new-task/page.tsx`             | New task setup screen with 3-step flow: intent → agent selection → review & launch                                                      |
+| `packages/web/src/components/ReasoningSummary.tsx`   | Expandable reasoning panel: collapsed link, expanded view with explanation, confidence bar, feedback form                               |
+| `packages/web/src/components/ConflictCard.tsx`       | Two-panel conflict card with side-by-side outputs and Keep A/Keep B/Merge actions                                                       |
+| `packages/web/src/components/HighLoadBanner.tsx`     | Amber warning banner for high task load with optional "Prioritize top 5" action                                                         |
+| `packages/web/src/components/CompletionOverlay.tsx`  | Full-viewport completion overlay: dark dim + checkmark card, auto-fades after 800ms                                                     |
+| `packages/web/src/components/CompletionSummary.tsx`  | Completion summary card with counts, elapsed time, skipped/failed tasks, key outputs, action strip                                      |
+| `packages/web/src/lib/empty-states.tsx`              | Centralized empty state configs and icons for all major views (dashboard, kanban, logs, history, agents)                                |
+| `packages/web/src/app/globals.css`                   | Design tokens, base styles, motion system animations (pulse-border, stagger, drawer/dropdown/modal entrances), mobile kanban scroll     |
+| `packages/web/src/components/MobileBottomNav.tsx`    | Responsive bottom nav with legacy (Dashboard/PRs/Orchestrator) and new (Board/Logs/Menu) tab sets, auto-detects mode                    |
 
 ## Skills
 

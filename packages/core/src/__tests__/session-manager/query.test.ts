@@ -282,7 +282,7 @@ describe("list", () => {
     });
 
     const sm = createSessionManager({ config, registry: registryWithDead });
-    const sessions = await sm.list();
+    const sessions = await sm.list(undefined, { persistRuntimeProbe: true });
 
     // sm.list() persists "detecting" (not "terminated") so the lifecycle
     // manager's probe pipeline makes the final terminal decision (#1735).
@@ -398,7 +398,7 @@ describe("list", () => {
     });
 
     const sm = createSessionManager({ config, registry: registryWithDeadRuntime });
-    const sessions = await sm.list("my-app");
+    const sessions = await sm.list("my-app", { persistRuntimeProbe: true });
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0].runtimeHandle?.id).toBe(expectedTmuxName);
@@ -507,6 +507,87 @@ describe("list", () => {
 
     expect(sessions[0].status).toBe("working");
     expect(readMetadataRaw(sessionsDir, "app-1")).toEqual(before);
+  });
+
+  it("does not persist runtime_lost state to disk with default read-only listing", async () => {
+    const deadRuntime: Runtime = {
+      ...mockRuntime,
+      isAlive: vi.fn().mockResolvedValue(false),
+    };
+    const registryWithDead: PluginRegistry = {
+      ...mockRegistry,
+      get: vi.fn().mockImplementation((slot: string) => {
+        if (slot === "runtime") return deadRuntime;
+        if (slot === "agent") return mockAgent;
+        return null;
+      }),
+    };
+
+    const runtimeHandle = makeHandle("rt-1");
+    const lifecycle = createInitialCanonicalLifecycle("worker");
+    lifecycle.session.state = "working";
+    lifecycle.session.reason = "task_in_progress";
+    lifecycle.session.startedAt = lifecycle.session.lastTransitionAt;
+    lifecycle.runtime.handle = runtimeHandle;
+
+    writeMetadata(sessionsDir, "app-1", {
+      worktree: "/tmp",
+      branch: "a",
+      status: "working",
+      project: "my-app",
+      agent: "mock-agent",
+      runtimeHandle,
+      lifecycle,
+    });
+    const before = readMetadataRaw(sessionsDir, "app-1");
+
+    const sm = createSessionManager({ config, registry: registryWithDead });
+    const sessions = await sm.list();
+
+    // In-memory enrichment still runs (sets status to "killed"), but the
+    // runtime_lost/detecting state must NOT be persisted to disk (B1 invariant).
+    expect(sessions[0].status).toBe("killed");
+    expect(sessions[0].activity).toBe("exited");
+    const after = readMetadataRaw(sessionsDir, "app-1");
+    // On-disk metadata must still show "working" lifecycle — no runtime_lost persisted
+    expect(after).toEqual(before);
+  });
+
+  it("persists runtime_lost when persistRuntimeProbe is explicitly enabled", async () => {
+    const deadRuntime: Runtime = {
+      ...mockRuntime,
+      isAlive: vi.fn().mockResolvedValue(false),
+    };
+    const registryWithDead: PluginRegistry = {
+      ...mockRegistry,
+      get: vi.fn().mockImplementation((slot: string) => {
+        if (slot === "runtime") return deadRuntime;
+        if (slot === "agent") return mockAgent;
+        return null;
+      }),
+    };
+
+    writeMetadata(sessionsDir, "app-1", {
+      worktree: "/tmp",
+      branch: "a",
+      status: "working",
+      project: "my-app",
+      runtimeHandle: makeHandle("rt-1"),
+    });
+
+    const sm = createSessionManager({ config, registry: registryWithDead });
+    const sessions = await sm.list(undefined, { persistRuntimeProbe: true });
+
+    // When persistence is enabled, list() must persist "detecting" to disk
+    expect(sessions[0].status).toBe("detecting");
+    expect(sessions[0].activity).toBe("exited");
+    const persisted = readMetadataRaw(sessionsDir, "app-1");
+    expect(persisted).not.toBeNull();
+    const lifecycleStr = persisted!["lifecycle"];
+    expect(lifecycleStr).toBeDefined();
+    const lc = JSON.parse(lifecycleStr!) as { session: { state: string; reason: string } };
+    expect(lc.session.state).toBe("detecting");
+    expect(lc.session.reason).toBe("runtime_lost");
   });
 
   it("marks terminal fallback-free stale activity explicitly when timing is missing", async () => {
@@ -752,6 +833,57 @@ describe("get", () => {
 
     const listInvocations = readFileSync(listLogPath, "utf-8").trim().split("\n").filter(Boolean);
     expect(listInvocations).toHaveLength(1);
+  });
+
+  describe("concurrency", () => {
+    it("enumerates all sessions with mapLimit", async () => {
+      for (let i = 1; i <= 3; i++) {
+        writeMetadata(sessionsDir, `app-con-${i}`, {
+          worktree: "/tmp",
+          branch: `feat/con-${i}`,
+          status: "working",
+          project: "my-app",
+          agent: "mock-agent",
+          runtimeHandle: makeHandle(`rt-con-${i}`),
+        });
+      }
+
+      const sm = createSessionManager({ config, registry: mockRegistry });
+      const sessions = await sm.list();
+
+      const conSessions = sessions.filter((s) => s.id.startsWith("app-con-"));
+      expect(conSessions).toHaveLength(3);
+    });
+
+    it("limits concurrent runtime probes to the configured maximum", async () => {
+      let concurrent = 0;
+      let maxConcurrent = 0;
+      mockRuntime.isAlive = vi.fn().mockImplementation(async () => {
+        concurrent++;
+        maxConcurrent = Math.max(maxConcurrent, concurrent);
+        await new Promise((r) => setTimeout(r, 10));
+        concurrent--;
+        return true;
+      });
+
+      // Create 10 sessions — more than the default limit of 8
+      for (let i = 1; i <= 10; i++) {
+        writeMetadata(sessionsDir, `app-con-lim-${i}`, {
+          worktree: "/tmp",
+          branch: `feat/con-lim-${i}`,
+          status: "working",
+          project: "my-app",
+          agent: "mock-agent",
+          runtimeHandle: makeHandle(`rt-con-lim-${i}`),
+        });
+      }
+
+      const sm = createSessionManager({ config, registry: mockRegistry });
+      await sm.list();
+
+      // No more than 8 concurrent probes should have been observed
+      expect(maxConcurrent).toBeLessThanOrEqual(8);
+    });
   });
 
   it("preserves arbitrary metadata flags on loaded sessions", async () => {

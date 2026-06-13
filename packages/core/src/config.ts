@@ -25,7 +25,7 @@ import {
   type OrchestratorConfig,
 } from "./types.js";
 import { generateSessionPrefix } from "./paths.js";
-import { getDefaultRuntime } from "./platform.js";
+import { getDefaultRuntime, isMac } from "./platform.js";
 import {
   getGlobalConfigPath,
   isCanonicalGlobalConfigPath,
@@ -148,6 +148,52 @@ function validatePluginConfigFields(
       message: `${configType} config cannot have both 'package' and 'path' - use one or the other`,
     });
   }
+}
+
+/**
+ * B5: Warn (not reject) on unknown keys in plugin config blocks.
+ *
+ * Tracker/SCM/Notifier configs use `.passthrough()` so a typo like
+ * `trackers:` instead of `tracker:` would be silently accepted and
+ * cause a downstream 4xx at runtime. This helper compares the raw
+ * input keys against the schema's known keys and fires a
+ * `config.project_malformed`-class audit event when an unknown key
+ * is found. The load still succeeds — the goal is to surface the
+ * mistake at load-time, not break configs that have other valid keys.
+ *
+ * Only applied to Tracker/SCM/Notifier (per the B5 plan). Applying
+ * globally would create noise from the many internal fields on
+ * ProjectConfig / OrchestratorConfig.
+ */
+const PLUGIN_CONFIG_KNOWN_KEYS: ReadonlySet<string> = new Set([
+  "plugin",
+  "package",
+  "path",
+  "webhook",
+]);
+
+function warnOnUnknownPluginConfigKeys(
+  raw: unknown,
+  configType: "Tracker" | "SCM" | "Notifier",
+  projectId: string,
+): void {
+  if (typeof raw !== "object" || raw === null) return;
+  const obj = raw as Record<string, unknown>;
+  const unknown: string[] = [];
+  for (const key of Object.keys(obj)) {
+    if (!PLUGIN_CONFIG_KNOWN_KEYS.has(key)) {
+      unknown.push(key);
+    }
+  }
+  if (unknown.length === 0) return;
+  recordActivityEvent({
+    projectId,
+    source: "config",
+    kind: "config.project_malformed",
+    level: "warn",
+    summary: `${configType} config has unknown keys: ${unknown.join(", ")}`,
+    data: { configType, unknownKeys: unknown },
+  });
 }
 
 const ReactionConfigSchema = z.object({
@@ -330,7 +376,7 @@ const PowerConfigSchema = z
      * Uses `caffeinate -i -w <pid>` to hold an assertion.
      * Defaults to true on macOS, no-op on other platforms.
      */
-    preventIdleSleep: z.boolean().default(process.platform === "darwin"),
+    preventIdleSleep: z.boolean().default(isMac()),
   })
   .default({});
 
@@ -511,6 +557,7 @@ export function collectExternalPluginConfigs(config: OrchestratorConfig): Extern
   // Collect from project tracker and scm configs
   for (const [projectId, project] of Object.entries(config.projects)) {
     if (project.tracker) {
+      warnOnUnknownPluginConfigKeys(project.tracker, "Tracker", projectId);
       const entry = processExternalPluginConfig(
         project.tracker,
         `projects.${projectId}.tracker`,
@@ -521,6 +568,7 @@ export function collectExternalPluginConfigs(config: OrchestratorConfig): Extern
     }
 
     if (project.scm) {
+      warnOnUnknownPluginConfigKeys(project.scm, "SCM", projectId);
       const entry = processExternalPluginConfig(
         project.scm,
         `projects.${projectId}.scm`,
@@ -534,6 +582,7 @@ export function collectExternalPluginConfigs(config: OrchestratorConfig): Extern
   // Collect from global notifier configs
   for (const [notifierId, notifierConfig] of Object.entries(config.notifiers ?? {})) {
     if (notifierConfig) {
+      warnOnUnknownPluginConfigKeys(notifierConfig, "Notifier", notifierId);
       const entry = processExternalPluginConfig(
         notifierConfig,
         `notifiers.${notifierId}`,
@@ -771,6 +820,9 @@ export function findConfigFile(startDir?: string): string | null {
     if (existsSync(envPath)) {
       return envPath;
     }
+    throw new ConfigNotFoundError(
+      `AO_CONFIG_PATH is set to "${process.env["AO_CONFIG_PATH"]}" but no config file found at "${envPath}"`,
+    );
   }
 
   // 2. Search up directory tree from CWD (like git)

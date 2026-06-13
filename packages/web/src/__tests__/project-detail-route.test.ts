@@ -254,18 +254,16 @@ describe("/api/projects/[id]", () => {
     const effectiveId = registerProjectInGlobalConfig("demo", "Demo", repoDir);
 
     const destroy = vi.fn().mockResolvedValue(undefined);
-    const list = vi
-      .fn()
-      .mockResolvedValue([
-        {
-          path: path.join(
-            tempRoot,
-            "managed-worktrees",
-            effectiveId,
-            `${effectiveId}-orchestrator-1`,
-          ),
-        },
-      ]);
+    const list = vi.fn().mockResolvedValue([
+      {
+        path: path.join(
+          tempRoot,
+          "managed-worktrees",
+          effectiveId,
+          `${effectiveId}-orchestrator-1`,
+        ),
+      },
+    ]);
     const sessionManager = {
       list: vi.fn().mockResolvedValue([]),
       kill: vi.fn().mockResolvedValue({ cleaned: true, alreadyTerminated: false }),

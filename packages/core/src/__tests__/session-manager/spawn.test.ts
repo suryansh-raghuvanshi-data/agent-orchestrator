@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdirSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, existsSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createSessionManager } from "../../session-manager.js";
 import { validateConfig } from "../../config.js";
@@ -17,6 +17,7 @@ import type {
   Agent,
   Workspace,
   Tracker,
+  WorkerProvider,
 } from "../../types.js";
 import {
   setupTestContext,
@@ -1496,6 +1497,101 @@ describe("spawn", () => {
     });
   });
 
+  describe("external worker rollback", () => {
+    function createMockWorkerProvider(overrides?: Partial<WorkerProvider>): WorkerProvider {
+      return {
+        name: "mock-worker",
+        displayName: "Mock Worker",
+        submitTask: vi.fn().mockResolvedValue({
+          taskId: "task-123",
+          providerName: "mock-worker",
+          data: {},
+        }),
+        cancelTask: vi.fn().mockResolvedValue(undefined),
+        getTaskStatus: vi.fn(),
+        getTaskOutput: vi.fn(),
+        health: vi.fn().mockResolvedValue({
+          status: "healthy",
+          activeTasks: 0,
+          maxTasks: 10,
+          lastHeartbeat: null,
+        }),
+        capabilities: { maxConcurrency: 10, timeoutSupported: false, restartFromCheckpoint: false },
+        ...overrides,
+      };
+    }
+
+    function createRegistryWithWorkerProvider(mockWorker: WorkerProvider): PluginRegistry {
+      return {
+        ...mockRegistry,
+        get: vi.fn().mockImplementation((slot: string) => {
+          if (slot === "worker-provider") return mockWorker;
+          if (slot === "runtime") return mockRuntime;
+          if (slot === "agent") return mockAgent;
+          if (slot === "workspace") return mockWorkspace;
+          return null;
+        }),
+      };
+    }
+
+    it("persists metadata when external worker spawn succeeds", async () => {
+      const mockWorker = createMockWorkerProvider();
+      const registry = createRegistryWithWorkerProvider(mockWorker);
+
+      const sm = createSessionManager({ config, registry });
+      const session = await sm.spawn({
+        projectId: "my-app",
+        workerProvider: "mock-worker",
+      });
+
+      expect(session.id).toContain("ext-");
+      expect(session.status).toBe("working");
+      expect(session.metadata?.workerTaskId).toBe("task-123");
+      expect(session.metadata?.workerProvider).toBe("mock-worker");
+      const meta = readMetadataRaw(sessionsDir, session.id);
+      expect(meta).not.toBeNull();
+      expect(meta!["workerTaskId"]).toBe("task-123");
+      expect(mockWorker.cancelTask).not.toHaveBeenCalled();
+    });
+
+    it("cancels external task when metadata write fails", async () => {
+      const mockWorker = createMockWorkerProvider({
+        cancelTask: vi.fn().mockResolvedValue(undefined),
+      });
+      const registry = createRegistryWithWorkerProvider(mockWorker);
+      const sm = createSessionManager({ config, registry });
+
+      // Block writeMetadata after SM construction but before spawn
+      rmSync(sessionsDir, { recursive: true, force: true });
+      writeFileSync(sessionsDir, "");
+
+      await expect(
+        sm.spawn({ projectId: "my-app", workerProvider: "mock-worker" }),
+      ).rejects.toThrow();
+      expect(mockWorker.cancelTask).toHaveBeenCalledTimes(1);
+      expect(mockWorker.cancelTask).toHaveBeenCalledWith(
+        expect.objectContaining({ taskId: "task-123" }),
+      );
+    });
+
+    it("records cancel failure when both metadata write and cancel fail", async () => {
+      const mockWorker = createMockWorkerProvider({
+        cancelTask: vi.fn().mockRejectedValue(new Error("network error")),
+      });
+      const registry = createRegistryWithWorkerProvider(mockWorker);
+      const sm = createSessionManager({ config, registry });
+
+      // Block writeMetadata after SM construction but before spawn
+      rmSync(sessionsDir, { recursive: true, force: true });
+      writeFileSync(sessionsDir, "");
+
+      await expect(
+        sm.spawn({ projectId: "my-app", workerProvider: "mock-worker" }),
+      ).rejects.toThrow();
+      expect(mockWorker.cancelTask).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("spawnOrchestrator", () => {
     it("throws when no workspace plugin is configured", async () => {
       const registryNoWorkspace: PluginRegistry = {
@@ -2277,6 +2373,54 @@ describe("spawn", () => {
 
       const sm = createSessionManager({
         config: configWithDefaultOrchestratorAgent,
+        registry: registryWithMultipleAgents,
+      });
+      await sm.spawnOrchestrator({ projectId: "my-app" });
+
+      expect(mockCodexAgent.getLaunchCommand).toHaveBeenCalled();
+      expect(readMetadataRaw(sessionsDir, "app-orchestrator")?.["agent"]).toBe("codex");
+    });
+
+    it("uses defaults orchestrator agent even when project.agent is set to opencode", async () => {
+      // This tests the bug: orchestrator should NOT fall back to project.agent
+      const mockCodexAgent: Agent = {
+        ...mockAgent,
+        name: "codex",
+        processName: "codex",
+        getLaunchCommand: vi.fn().mockReturnValue("codex --start"),
+        getEnvironment: vi.fn().mockReturnValue({ CODEX_VAR: "1" }),
+      };
+      const registryWithMultipleAgents: PluginRegistry = {
+        ...mockRegistry,
+        get: vi.fn().mockImplementation((slot: string, name: string) => {
+          if (slot === "runtime") return mockRuntime;
+          if (slot === "workspace") return mockWorkspace;
+          if (slot === "agent") {
+            if (name === "codex") return mockCodexAgent;
+            if (name === "mock-agent") return mockAgent;
+          }
+          return null;
+        }),
+      };
+      const configWithSharedAgent: OrchestratorConfig = {
+        ...config,
+        defaults: {
+          ...config.defaults,
+          orchestrator: {
+            agent: "codex",
+          },
+        },
+        projects: {
+          ...config.projects,
+          "my-app": {
+            ...config.projects["my-app"],
+            agent: "opencode", // Shared agent set - should NOT be used for orchestrator
+          },
+        },
+      };
+
+      const sm = createSessionManager({
+        config: configWithSharedAgent,
         registry: registryWithMultipleAgents,
       });
       await sm.spawnOrchestrator({ projectId: "my-app" });

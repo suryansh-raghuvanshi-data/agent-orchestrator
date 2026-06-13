@@ -222,14 +222,12 @@ describe("restore", () => {
           return {
             ...mockWorkspace,
             exists: vi.fn().mockResolvedValue(true),
-            restore: vi
-              .fn()
-              .mockResolvedValue({
-                path: ws,
-                branch: "main",
-                sessionId: "app-1",
-                projectId: "my-app",
-              }),
+            restore: vi.fn().mockResolvedValue({
+              path: ws,
+              branch: "main",
+              sessionId: "app-1",
+              projectId: "my-app",
+            }),
           };
         return null;
       }),

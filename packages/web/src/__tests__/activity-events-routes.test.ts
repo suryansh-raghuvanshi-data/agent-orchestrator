@@ -118,7 +118,13 @@ const mockSessionManager: SessionManager = {
       metadata: { role: "orchestrator" },
     }),
   ),
-  ensureOrchestrator: vi.fn(),
+  ensureOrchestrator: vi.fn(async () =>
+    makeSession({
+      id: "my-app-orchestrator",
+      projectId: "my-app",
+      metadata: { role: "orchestrator" },
+    }),
+  ),
   remap: vi.fn(async () => "ses_mock"),
   restore: vi.fn(async (id: string) => {
     const session = baseSessions.find((s) => s.id === id);
@@ -383,7 +389,7 @@ describe("API mutation routes emit activity events (api source)", () => {
     });
 
     it.each([
-      ["spawn", false, mockSessionManager.spawnOrchestrator],
+      ["ensure", false, mockSessionManager.ensureOrchestrator],
       ["clean relaunch", true, mockSessionManager.relaunchOrchestrator],
     ])(
       "POST /api/orchestrators does not emit api.orchestrator_spawn_failed when core %s throws",

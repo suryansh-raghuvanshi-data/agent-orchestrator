@@ -57,23 +57,15 @@ export function AppShell({
         {/* Topbar */}
         {(topbarLeft || topbarCenter || topbarRight) && (
           <header className="dashboard-app-header">
-            <div className="flex items-center gap-2 min-w-0">
-              {topbarLeft}
-            </div>
-            {topbarCenter && (
-              <div className="flex items-center gap-2 ml-4">{topbarCenter}</div>
-            )}
+            <div className="flex items-center gap-2 min-w-0">{topbarLeft}</div>
+            {topbarCenter && <div className="flex items-center gap-2 ml-4">{topbarCenter}</div>}
             <div className="flex-1" />
-            {topbarRight && (
-              <div className="dashboard-app-header__actions">{topbarRight}</div>
-            )}
+            {topbarRight && <div className="dashboard-app-header__actions">{topbarRight}</div>}
           </header>
         )}
 
         {/* Main content */}
-        <main className="dashboard-main flex flex-1 min-h-0 overflow-hidden">
-          {children}
-        </main>
+        <main className="dashboard-main flex flex-1 min-h-0 overflow-hidden">{children}</main>
       </div>
     </div>
   );

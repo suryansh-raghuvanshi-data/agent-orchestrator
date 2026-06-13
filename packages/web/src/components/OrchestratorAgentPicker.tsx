@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/cn";
-import type { OrchestratorAgentInfo } from "@/lib/types";
+import type { OrchestratorAgentInfo, WorkerProviderInfo } from "@/lib/types";
 
 interface OrchestratorAgentPickerProps {
   value?: string;
-  onChange?: (agentName: string) => void;
+  onChange?: (agentName: string, type: "agent" | "workerProvider") => void;
   disabled?: boolean;
   className?: string;
 }
@@ -18,47 +18,56 @@ function OrchestratorAgentPickerView({
   className,
 }: OrchestratorAgentPickerProps) {
   const [agents, setAgents] = useState<OrchestratorAgentInfo[]>([]);
+  const [providers, setProviders] = useState<WorkerProviderInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const p = fetch("/api/agents");
-    if (!p || typeof p.then !== "function") {
+    Promise.all([
+      fetch("/api/agents")
+        .then((r) => r.json())
+        .catch(() => ({ agents: [] as OrchestratorAgentInfo[] })),
+      fetch("/api/workers")
+        .then((r) => r.json())
+        .catch(() => ({ providers: [] as WorkerProviderInfo[] })),
+    ]).then(([agentsData, workersData]) => {
+      if (cancelled) return;
+      const fetchedAgents: OrchestratorAgentInfo[] = agentsData.agents || [];
+      const fetchedProviders: WorkerProviderInfo[] = (workersData.providers || []).filter(
+        (p: WorkerProviderInfo) => p.name !== "local",
+      );
+      setAgents(fetchedAgents);
+      setProviders(fetchedProviders);
       setLoading(false);
-      return;
-    }
-    p.then((res) => res.json())
-      .then((data: { agents: OrchestratorAgentInfo[] }) => {
-        if (!cancelled) {
-          const fetchedAgents = data.agents || [];
-          setAgents(fetchedAgents);
-          setLoading(false);
-          // If no value is currently selected, select the first agent
-          if (!value && fetchedAgents.length > 0 && onChange) {
-            onChange(fetchedAgents[0].name);
-          }
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAgents([]);
-          setLoading(false);
-        }
-      });
+      if (!value && fetchedAgents.length > 0 && onChange) {
+        onChange(fetchedAgents[0].name, "agent");
+      }
+    });
     return () => {
       cancelled = true;
     };
   }, [value, onChange]);
 
+  const allOptions = [
+    ...agents.map((a) => ({ name: a.name, displayName: a.displayName, type: "agent" as const })),
+    ...providers.map((p) => ({
+      name: p.name,
+      displayName: p.displayName,
+      type: "workerProvider" as const,
+    })),
+  ];
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      onChange?.(e.target.value);
+      const selected = allOptions.find((o) => o.name === e.target.value);
+      onChange?.(e.target.value, selected?.type ?? "agent");
     },
-    [onChange],
+    [allOptions, onChange],
   );
 
-  const selected = agents.find((a) => a.name === value) ?? agents[0];
+  const selectedOption = allOptions.find((o) => o.name === value) ?? allOptions[0];
+  const selectValue = value ?? selectedOption?.name ?? "claude-code";
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
@@ -78,17 +87,26 @@ function OrchestratorAgentPickerView({
         />
       </svg>
       <select
-        value={value ?? selected?.name ?? "claude-code"}
+        value={selectValue}
         onChange={handleChange}
         disabled={disabled || loading}
         aria-label="Orchestrator Agent"
         className="appearance-none bg-transparent text-[11px] text-[var(--color-text-muted)] outline-none hover:text-[var(--color-text-base)] disabled:opacity-40"
       >
-        {agents.map((a) => (
-          <option key={a.name} value={a.name}>
-            {a.displayName}
-          </option>
-        ))}
+        <optgroup label="Agent Plugins">
+          {agents.map((a) => (
+            <option key={a.name} value={a.name}>
+              {a.displayName}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Worker Providers">
+          {providers.map((p) => (
+            <option key={p.name} value={p.name}>
+              {p.displayName}
+            </option>
+          ))}
+        </optgroup>
       </select>
     </div>
   );

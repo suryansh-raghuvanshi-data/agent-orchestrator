@@ -19,7 +19,13 @@ describe("Dashboard kanban layout", () => {
           close: vi.fn(),
         }) as unknown as EventSource,
     );
-    global.fetch = vi.fn();
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ agents: [], providers: [] }),
+        text: () => Promise.resolve(""),
+      } as Response),
+    );
   });
 
   it("uses four board columns in simple attention mode", () => {

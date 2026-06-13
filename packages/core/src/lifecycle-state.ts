@@ -13,6 +13,7 @@ import type {
 import { z } from "zod";
 import { parsePrFromUrl } from "./utils/pr.js";
 import { safeJsonParse, validateStatus } from "./utils/validation.js";
+import { recordActivityEvent } from "./activity-events.js";
 
 interface ParseCanonicalLifecycleOptions {
   sessionId?: string;
@@ -27,6 +28,14 @@ interface ParseCanonicalLifecycleOptions {
    * through as orchestrators via the `endsWith("-orchestrator")` fallback.
    */
   sessionKind?: SessionKind;
+  /**
+   * P3-14: Result of probing the runtime (tmux session / OS process).
+   * When `true`, synthesize a `state: "alive"` runtime; when `false`,
+   * synthesize `state: "exited"` (if a handle/tmux was recorded) or
+   * `state: "missing"`. When `undefined` (default), the synthesizer
+   * returns `state: "unknown"` to signal that no probe was performed.
+   */
+  runtimeAlive?: boolean;
 }
 
 const TimestampSchema = z.string().nullable();
@@ -252,6 +261,7 @@ function synthesizePRState(
 function synthesizeRuntimeState(
   meta: Record<string, string>,
   runtimeHandle: RuntimeHandle | null,
+  isAlive?: boolean,
 ): {
   state: CanonicalRuntimeState;
   reason: CanonicalRuntimeReason;
@@ -262,6 +272,21 @@ function synthesizeRuntimeState(
   const handle =
     runtimeHandle ??
     (meta["runtimeHandle"] ? safeJsonParse<RuntimeHandle>(meta["runtimeHandle"]) : null);
+
+  // P3-14: if a probe result is available, use it. Without a probe
+  // we can only infer "we don't know" — returning "unknown" is the
+  // safe default that signals to callers they need to probe.
+  if (isAlive === true) {
+    return { state: "alive", reason: "process_running", handle: handle ?? null, tmuxName };
+  }
+  if (isAlive === false) {
+    if (handle || tmuxName) {
+      // We have a recorded handle/tmux name but the probe says it's gone.
+      return { state: "exited", reason: "process_missing", handle: handle ?? null, tmuxName };
+    }
+    return { state: "missing", reason: "process_missing", handle: null, tmuxName: null };
+  }
+
   if (handle || tmuxName) {
     return {
       state: "unknown",
@@ -278,6 +303,29 @@ function synthesizeRuntimeState(
   };
 }
 
+/**
+ * P3-17: Synthesize a full `CanonicalSessionLifecycle` from the flat
+ * metadata record stored on disk. This function is the ONLY place where
+ * defaults for new lifecycle fields are chosen for pre-lifecycle sessions
+ * (sessions written before the canonical lifecycle format shipped).
+ *
+ * IMPORTANT: When adding a new field to `CanonicalSessionLifecycle`, you
+ * MUST update ALL of the following, in lockstep:
+ *   1. The `CanonicalSessionLifecycle` type in `session-types.ts`
+ *   2. The Zod schema in this file (e.g. `LifecycleSchema`) so reads of
+ *      written JSON validate
+ *   3. This synthesizer — every field must have a default expression
+ *      here, otherwise pre-lifecycle sessions will deserialize with
+ *      `undefined` values that downstream code must guard against
+ *   4. The `buildLifecycleMetadataPatch` function — when writing a
+ *      lifecycle back to the flat metadata format, the patch must
+ *      include the new field
+ *   5. A migration entry in `lifecycle-migrations.ts` if existing
+ *      on-disk records need to be backfilled
+ *
+ * The test `lifecycle-state.test.ts > round-trips synthesized lifecycle`
+ * guards the synthesizer ↔ schema ↔ patch invariants.
+ */
 function synthesizeCanonicalLifecycle(
   meta: Record<string, string>,
   options: ParseCanonicalLifecycleOptions = {},
@@ -294,7 +342,7 @@ function synthesizeCanonicalLifecycle(
     new Date().toISOString();
   const sessionState = synthesizeSessionState(status);
   const pr = synthesizePRState(meta, status);
-  const runtime = synthesizeRuntimeState(meta, options.runtimeHandle ?? null);
+  const runtime = synthesizeRuntimeState(meta, options.runtimeHandle ?? null, options.runtimeAlive);
 
   return {
     version: 2,
@@ -502,21 +550,78 @@ export function deriveLegacyStatus(lifecycle: CanonicalSessionLifecycle): Sessio
 }
 
 /**
+ * Safely stringify a value, falling back to a structured-error marker if the
+ * value contains circular references, BigInts, Buffers, or other non-JSON
+ * payloads. Used by buildLifecycleMetadataPatch() so a single bad handle.data
+ * cannot crash the entire poll cycle.
+ */
+function safeJsonStringify(value: unknown): string | undefined {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Build a minimal metadata patch for persisting lifecycle state outside the polling loop.
  * Used by writeCanonicalLifecycle() and agent-report writes. Does NOT include detecting
  * or evidence metadata — use buildTransitionMetadataPatch() for lifecycle poll transitions.
+ *
+ * P2-10 / P3-15: `JSON.stringify(lifecycle)` can throw on non-serializable
+ * `handle.data` (functions, circular refs, Buffers). Callers in session-spawn.ts
+ * and session-actions.ts used to need their own try/catch around the call;
+ * any new caller that forgot would crash the poll cycle. The fix makes the
+ * stringify failure non-fatal: the patch is returned without the offending
+ * field, and a `metadata.serialization_failed` activity event is emitted so
+ * the issue surfaces in RCA instead of silently disappearing.
  */
 export function buildLifecycleMetadataPatch(
   lifecycle: CanonicalSessionLifecycle,
+  sessionId?: string,
 ): Partial<Record<string, string>> {
-  return {
-    lifecycle: JSON.stringify(lifecycle),
-    // status is NOT persisted — computed on read via deriveLegacyStatus()
+  const lifecycleJson = safeJsonStringify(lifecycle);
+  if (lifecycleJson === undefined) {
+    recordLifecycleSerializationFailure("lifecycle", sessionId, lifecycle);
+    // Drop the unstringifiable field rather than crashing the caller.
+    return { pr: lifecycle.pr.url ?? "", tmuxName: lifecycle.runtime.tmuxName ?? "" };
+  }
+
+  const patch: Partial<Record<string, string>> = {
+    lifecycle: lifecycleJson,
     pr: lifecycle.pr.url ?? "",
-    runtimeHandle: lifecycle.runtime.handle ? JSON.stringify(lifecycle.runtime.handle) : "",
     tmuxName: lifecycle.runtime.tmuxName ?? "",
     role: lifecycle.session.kind === "orchestrator" ? "orchestrator" : "",
   };
+
+  if (lifecycle.runtime.handle) {
+    const handleJson = safeJsonStringify(lifecycle.runtime.handle);
+    if (handleJson === undefined) {
+      recordLifecycleSerializationFailure("runtimeHandle", sessionId, lifecycle);
+    } else {
+      patch["runtimeHandle"] = handleJson;
+    }
+  }
+  return patch;
+}
+
+function recordLifecycleSerializationFailure(
+  field: string,
+  sessionId: string | undefined,
+  lifecycle: CanonicalSessionLifecycle,
+): void {
+  try {
+    recordActivityEvent({
+      ...(sessionId ? { sessionId } : {}),
+      source: "lifecycle",
+      kind: "lifecycle.serialization_failed",
+      level: "error",
+      summary: `Failed to serialize lifecycle field "${field}" for metadata write`,
+      data: { field, sessionState: lifecycle.session.state },
+    });
+  } catch {
+    // best effort — don't crash the caller
+  }
 }
 
 export function cloneLifecycle(lifecycle: CanonicalSessionLifecycle): CanonicalSessionLifecycle {

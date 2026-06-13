@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import {
   type DashboardSession,
   isPRRateLimited,
@@ -108,14 +108,16 @@ function getDoneStatusInfo(session: DashboardSession): {
 interface DoneSessionCardProps {
   session: DashboardSession;
   onRestore?: (sessionId: string) => void;
+  pendingActions?: Record<string, boolean>;
 }
 
 /**
  * Done / Terminated card variant — kept intact from the original SessionCard.
  * Click to expand a detail panel (summary, issue, CI checks, PR metrics).
  */
-export function DoneSessionCard({ session, onRestore }: DoneSessionCardProps) {
+export function DoneSessionCard({ session, onRestore, pendingActions }: DoneSessionCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const restorePending = pendingActions?.[`restore:${session.id}`] ?? false;
   const pr = session.pr;
   const rateLimited = pr ? isPRRateLimited(pr) : false;
   const prUnenriched = pr ? isPRUnenriched(pr) : false;
@@ -143,10 +145,12 @@ export function DoneSessionCard({ session, onRestore }: DoneSessionCardProps) {
         <div className="flex-1" />
         {isRestorable && (
           <button
-            onClick={(e) => {
+            onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              if (restorePending) return;
               e.stopPropagation();
               onRestore?.(session.id);
             }}
+            disabled={restorePending}
             className="done-card__restore"
           >
             <svg
@@ -159,7 +163,7 @@ export function DoneSessionCard({ session, onRestore }: DoneSessionCardProps) {
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
             </svg>
-            restore
+            {restorePending ? "restoring" : "restore"}
           </button>
         )}
       </div>

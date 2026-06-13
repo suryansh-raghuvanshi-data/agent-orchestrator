@@ -67,13 +67,15 @@ export function resolveAgentSelection(params: {
   const sharedConfig = project.agentConfig ?? {};
   const roleAgentConfig = roleProjectConfig?.agentConfig ?? {};
 
+  // Worker sessions fall back to project.agent (shared setting), orchestrator sessions
+  // do not - they only use orchestrator-specific and global defaults.
   const agentName = persistedAgent
     ? persistedAgent
     : spawnAgentOverride
       ? spawnAgentOverride
       : role === "worker"
         ? (roleProjectConfig?.agent ?? project.agent ?? roleDefaults?.agent ?? defaults.agent)
-        : (roleProjectConfig?.agent ?? project.agent ?? roleDefaults?.agent ?? defaults.agent);
+        : (roleProjectConfig?.agent ?? roleDefaults?.agent ?? defaults.agent);
 
   const agentConfig: AgentSpecificConfig = {
     ...sharedConfig,

@@ -30,7 +30,10 @@ import {
   type Session,
   isOrchestratorSession,
   TERMINAL_STATUSES,
+  getBacklogClaimsPath,
 } from "@aoagents/ao-core";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { dirname } from "node:path";
 
 // Static plugin imports — webpack needs these to be string literals
 import pluginRuntimeTmux from "@aoagents/ao-plugin-runtime-tmux";
@@ -41,6 +44,7 @@ import pluginAgentCursor from "@aoagents/ao-plugin-agent-cursor";
 import pluginAgentKimicode from "@aoagents/ao-plugin-agent-kimicode";
 import pluginAgentGrok from "@aoagents/ao-plugin-agent-grok";
 import pluginAgentOpencode from "@aoagents/ao-plugin-agent-opencode";
+import pluginAgentCustom from "@aoagents/ao-plugin-agent-custom";
 import pluginWorkspaceWorktree from "@aoagents/ao-plugin-workspace-worktree";
 import pluginScmGithub from "@aoagents/ao-plugin-scm-github";
 import pluginTrackerGithub from "@aoagents/ao-plugin-tracker-github";
@@ -117,6 +121,7 @@ async function initServices(): Promise<Services> {
   registry.register(pluginAgentKimicode);
   registry.register(pluginAgentGrok);
   registry.register(pluginAgentOpencode);
+  registry.register(pluginAgentCustom);
   registry.register(pluginWorkspaceWorktree);
   registry.register(pluginScmGithub);
   registry.register(pluginTrackerGithub);
@@ -165,6 +170,34 @@ const BACKLOG_LABEL = "agent:backlog";
 const BACKLOG_POLL_INTERVAL = 60_000; // 1 minute
 const MAX_CONCURRENT_AGENTS = 5; // Max active agent sessions across all projects
 
+// Durable claim storage for backlog deduplication
+function loadClaims(): Set<string> {
+  try {
+    const claimsPath = getBacklogClaimsPath();
+    if (existsSync(claimsPath)) {
+      const data = readFileSync(claimsPath, "utf-8");
+      const claims: string[] = JSON.parse(data);
+      return new Set(claims);
+    }
+  } catch {
+    // Ignore read errors
+  }
+  return new Set();
+}
+
+function saveClaims(claims: Set<string>): void {
+  try {
+    const claimsPath = getBacklogClaimsPath();
+    const dir = dirname(claimsPath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(claimsPath, JSON.stringify([...claims]), "utf-8");
+  } catch {
+    // Ignore write errors
+  }
+}
+
 const globalForBacklog = globalThis as typeof globalThis & {
   _aoBacklogStarted?: boolean;
   _aoBacklogTimer?: ReturnType<typeof setInterval>;
@@ -181,7 +214,7 @@ export function startBacklogPoller(): void {
 }
 
 // Track which issues we've already processed to avoid repeated API calls
-const processedIssues = new Set<string>();
+const processedIssues = loadClaims();
 
 /** Label GitHub issues for verification when their PRs have been merged. */
 async function labelIssuesForVerification(
@@ -226,10 +259,11 @@ async function labelIssuesForVerification(
         },
         project,
       );
+      processedIssues.add(key);
+      saveClaims(processedIssues);
     } catch (err) {
       console.error(`[backlog] Failed to close issue ${session.issueId}:`, err);
     }
-    processedIssues.add(key);
   }
 }
 
@@ -333,9 +367,6 @@ export async function pollBacklog(): Promise<void> {
 
         try {
           await sessionManager.spawn({ projectId, issueId: issue.id });
-          availableSlots--;
-
-          activeIssueIds.add(issue.id.toLowerCase());
 
           // Mark as claimed on the tracker
           if (tracker.updateIssue) {
@@ -349,6 +380,12 @@ export async function pollBacklog(): Promise<void> {
               project,
             );
           }
+
+          availableSlots--;
+          activeIssueIds.add(issue.id.toLowerCase());
+          const claimKey = `${projectId}:${issue.id}`;
+          processedIssues.add(claimKey);
+          saveClaims(processedIssues);
         } catch (err) {
           console.error(`[backlog] Failed to spawn session for issue ${issue.id}:`, err);
         }

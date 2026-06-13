@@ -641,20 +641,47 @@ For each refactoring step:
 
 ---
 
-## Immediate Next Steps
+## Static Analysis Addendum
 
-1. **Add `sideEffects: false` to all plugin `package.json` files** — enables tree-shaking
-2. **Introduce structured error taxonomy (`AoError`)** — base class + error codes in core
-3. **Add web-vitals reporting endpoint** — dashboard observability with measurable UX targets
-4. **Split `types.ts` into focused modules** — 5 files with backward-compat shim
-5. **Extract Probe Strategies** from `determineStatus()` — Strategy pattern implementation
-6. **Consolidate metadata repair** — startup migration instead of lazy repair
-7. **Implement orchestrator-intelligence module** — metrics collection + `suggestions.jsonl`
-8. **Add CLI `ao intelligence` command** — review and manage suggestions
-9. **Implement process supervision** — lifecycle worker watchdog
-10. **Add optimistic mutations** — kill/restore/send in dashboard
-11. **Lazy-load terminal addons** — xterm.js performance optimization
-12. **Add global error boundary + retry UI** — comprehensive error handling
+A follow-up static analysis scan converted the audit findings into an execution plan: `.kilo/plans/static-analysis-action-plan.md`.
+
+The scan confirmed that the codebase is structurally solid, but the highest-risk areas are hidden side effects, silent failures, and user-facing feedback gaps.
+
+### New high-priority findings
+
+1. `SessionManager.list()` is not read-only and can write metadata during dashboard refreshes.
+2. `SessionManager.list()` can probe every session concurrently.
+3. External worker spawn can leave a remote task running if local metadata write fails.
+4. `sendWithConfirmation()` treats unconfirmed delivery as success.
+5. Restore readiness can accept stale terminal output.
+6. Dashboard kill/restore/merge/spawn actions lacked strong pending-state guards.
+7. SSE closed permanently after errors instead of reconnecting.
+8. Dashboard API calls were duplicated across components instead of using a central helper.
+9. Backlog claim state is only in memory and can duplicate work after restart.
+10. Missing explicit `AO_CONFIG_PATH` is silently ignored.
+11. Port availability checks only test IPv4 `127.0.0.1`.
+12. PTY host logs unhandled rejections but does not shut down cleanly.
+13. Workspace `postCreate` commands lack timeout and Windows-safe options.
+14. Client fetch abort listeners are not removed after merge.
+15. Several empty `catch {}` blocks hide useful diagnostic evidence.
+
+### Updated Immediate Next Steps
+
+1. **Baseline validation** — run `pnpm typecheck`, `pnpm test`, `pnpm --filter @aoagents/ao-web test`, and `pnpm lint`.
+2. **Make session listing side effects explicit** — read-only by default, explicit runtime-probe persistence when needed.
+3. **Add bounded concurrency to `SessionManager.list()`** — prevent dashboard refresh storms.
+4. **Add rollback for external worker tasks** — cancel remote tasks when local metadata write fails.
+5. **Make send confirmation explicit** — distinguish confirmed delivery from attempted-unconfirmed delivery.
+6. **Tighten restore readiness** — do not treat stale output as proof that a restored session is ready.
+7. **Add dashboard pending-state guards** — prevent duplicate kill/restore/merge/spawn requests.
+8. **Reconnect SSE with backoff** — keep the live dashboard path resilient after transient errors.
+9. **Add a central dashboard API helper** — consolidate mutation calls and response parsing.
+10. **Persist backlog claim state** — avoid duplicate backlog sessions after web restart.
+11. **Fail loudly when `AO_CONFIG_PATH` is missing** — avoid silently loading the wrong config.
+12. **Replace empty catches with structured warnings** — keep graceful degradation while preserving evidence.
+13. **Harden cross-platform behavior** — IPv4/IPv6 port detection, Windows-safe postCreate, PTY host cleanup.
+14. **Add regression tests for each quick-win fix** before larger refactors.
+15. **Proceed to structural refactors** only after quick-win behavior is covered by tests.
 
 ---
 

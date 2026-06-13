@@ -40,6 +40,19 @@ const REVIEW_RUN_CREATION_LOCK_WAIT_MS = 5_000;
 const REVIEW_RUN_CREATION_LOCK_STALE_MS = 30_000;
 const REVIEW_LOCK_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 
+function assertSafeReviewLockId(id: string, label: string): void {
+  if (!id || id === "." || id === ".." || !REVIEW_LOCK_ID_PATTERN.test(id)) {
+    throw new Error(`Unsafe ${label}: "${id}"`);
+  }
+}
+
+/** Validate a reviewer session ID is safe for use in paths and git commands. */
+function assertValidReviewerSessionId(id: string): void {
+  if (!REVIEW_LOCK_ID_PATTERN.test(id)) {
+    throw new Error(`Invalid reviewer session ID: "${id}"`);
+  }
+}
+
 async function execFileAsync(
   file: string,
   args: string[],
@@ -466,12 +479,6 @@ function isFsErrorWithCode(error: unknown, code: string): boolean {
   );
 }
 
-function assertSafeReviewLockId(id: string, label: string): void {
-  if (!id || id === "." || id === ".." || !REVIEW_LOCK_ID_PATTERN.test(id)) {
-    throw new Error(`Unsafe ${label}: "${id}"`);
-  }
-}
-
 async function acquireCodeReviewStoreLock({
   store,
   lockFileName,
@@ -681,6 +688,7 @@ export async function prepareGitReviewerWorkspace({
   session: Session;
   run: CodeReviewRun;
 }): Promise<string> {
+  assertValidReviewerSessionId(run.reviewerSessionId);
   const workspaceRoot = join(getProjectCodeReviewsDir(projectId), "workspaces");
   const workspacePath = join(workspaceRoot, run.reviewerSessionId);
   mkdirSync(workspaceRoot, { recursive: true });

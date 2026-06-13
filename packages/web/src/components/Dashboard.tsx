@@ -29,6 +29,7 @@ import { DashboardNotificationButton } from "./DashboardNotificationButton";
 import { SidebarContext, useSidebarContext } from "./workspace/SidebarContext";
 import { ProjectSidebar } from "./ProjectSidebar";
 import { isOrchestratorSession } from "@aoagents/ao-core/types";
+import { postDashboardAction, postSpawnOrchestrator } from "@/lib/client-api";
 import { projectDashboardPath, projectReviewPath, projectSessionPath } from "@/lib/routes";
 import { BottomSheet } from "./BottomSheet";
 import { WorkerAgentsCheckboxPicker } from "./WorkerAgentsCheckboxPicker";
@@ -49,6 +50,8 @@ interface DashboardProps {
 const SIMPLE_KANBAN_LEVELS = ["working", "action", "pending", "merge"] as const;
 const DETAILED_KANBAN_LEVELS = ["working", "respond", "review", "pending", "merge"] as const;
 const EMPTY_ORCHESTRATORS: DashboardOrchestratorLink[] = [];
+const SSE_INITIAL_RECONNECT_DELAY_MS = 500;
+const SSE_MAX_RECONNECT_DELAY_MS = 30_000;
 
 function formatRelativeTimeCompact(isoDate: string | null): string {
   if (!isoDate) return "just now";
@@ -167,7 +170,7 @@ function DashboardInner({
     }
     return levels;
   }, [initialSessions, attentionZones]);
-  const { sessions, attentionLevels, liveSessionsResolved, loadError } = useSessionEvents({
+  const { sessions, liveSessionsResolved, loadError } = useSessionEvents({
     initialSessions,
     // No project filter — sidebar needs all sessions across all projects.
     // Kanban filtering is applied client-side via projectSessions below.
@@ -249,8 +252,15 @@ function DashboardInner({
     (process.env.NODE_ENV === "development" || debugParam === "1" || debugParam === "true");
   const { showToast } = useToast();
   const [selectedWorkerAgents, setSelectedWorkerAgents] = useState<string[]>([]);
-  const [selectedAgent, setSelectedAgent] = useState<string>("claude-code");
+  const [selectedOrchestrator, setSelectedOrchestrator] = useState<string>("claude-code");
+  const [selectedOrchestratorType, setSelectedOrchestratorType] = useState<
+    "agent" | "workerProvider"
+  >("agent");
   const [doneExpanded, setDoneExpanded] = useState(false);
+  const [pendingActions, setPendingActions] = useState<Record<string, boolean>>({});
+  const [optimisticSessionOverrides, setOptimisticSessionOverrides] = useState<
+    Record<string, Partial<DashboardSession>>
+  >({});
   const sessionsRef = useRef(sessions);
 
   sessionsRef.current = sessions;
@@ -279,9 +289,22 @@ function DashboardInner({
   const currentProjectSpawnError = projectId ? (spawnErrors[projectId] ?? null) : null;
 
   const displaySessions = useMemo(() => {
-    if (allProjectsView || !activeSessionId) return projectSessions;
-    return projectSessions.filter((s) => s.id === activeSessionId);
-  }, [projectSessions, allProjectsView, activeSessionId]);
+    const sessionsWithOptimisticUpdates = projectSessions.map((session) => {
+      const override = optimisticSessionOverrides[session.id];
+      return override ? { ...session, ...override } : session;
+    });
+
+    if (allProjectsView || !activeSessionId) return sessionsWithOptimisticUpdates;
+    return sessionsWithOptimisticUpdates.filter((s) => s.id === activeSessionId);
+  }, [projectSessions, optimisticSessionOverrides, allProjectsView, activeSessionId]);
+
+  const displayAttentionLevels = useMemo(() => {
+    const levels: Record<string, AttentionLevel> = {};
+    for (const session of displaySessions) {
+      levels[session.id] = getAttentionLevel(session, attentionZones);
+    }
+    return levels;
+  }, [displaySessions, attentionZones]);
 
   useEffect(() => {
     setActiveOrchestrators((current) => mergeOrchestrators(current, orchestratorLinks));
@@ -291,7 +314,9 @@ function DashboardInner({
     if (typeof window === "undefined" || typeof window.EventSource === "undefined") return;
 
     let cancelled = false;
-    const source = new EventSource("/api/events");
+    let source: EventSource | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectDelay = SSE_INITIAL_RECONNECT_DELAY_MS;
 
     const fetchSessionPatches = async () => {
       try {
@@ -308,6 +333,33 @@ function DashboardInner({
           console.warn("[Dashboard] SSE patch fetch failed:", error);
         }
       }
+    };
+
+    const scheduleReconnect = (failedSource: EventSource) => {
+      if (cancelled || reconnectTimer !== null) return;
+
+      const delay = reconnectDelay;
+      reconnectDelay = Math.min(reconnectDelay * 2, SSE_MAX_RECONNECT_DELAY_MS);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (cancelled) return;
+        failedSource.close();
+        source = new EventSource("/api/events");
+        wireEventSource(source);
+      }, delay);
+    };
+
+    const wireEventSource = (nextSource: EventSource) => {
+      nextSource.onmessage = (event: MessageEvent) => {
+        reconnectDelay = SSE_INITIAL_RECONNECT_DELAY_MS;
+        void handleMessage(event);
+      };
+      nextSource.onerror = () => {
+        if (cancelled) return;
+        setSsePatches(null);
+        void fetchSessionPatches();
+        scheduleReconnect(nextSource);
+      };
     };
 
     const handleMessage = async (event: MessageEvent) => {
@@ -328,27 +380,24 @@ function DashboardInner({
       await fetchSessionPatches();
     };
 
-    source.onmessage = (event: MessageEvent) => {
-      void handleMessage(event);
-    };
-    source.onerror = () => {
-      if (cancelled) return;
-      source.close();
-      setSsePatches(null);
-    };
+    source = new EventSource("/api/events");
+    wireEventSource(source);
 
     return () => {
       cancelled = true;
-      source.close();
+      if (reconnectTimer !== null) {
+        clearTimeout(reconnectTimer);
+      }
+      source?.close();
     };
   }, []);
 
   // Update document title with live attention counts
   useEffect(() => {
-    const needsAttention = countNeedingAttention(attentionLevels);
+    const needsAttention = countNeedingAttention(displayAttentionLevels);
     const label = projectName ?? "ao";
     document.title = needsAttention > 0 ? `${label} (${needsAttention} need attention)` : label;
-  }, [attentionLevels, projectName]);
+  }, [displayAttentionLevels, projectName]);
 
   const grouped = useMemo(() => {
     const zones: Record<AttentionLevel, DashboardSession[]> = {
@@ -368,7 +417,7 @@ function DashboardInner({
 
   const sessionsByProject = useMemo(() => {
     const groupedSessions = new Map<string, DashboardSession[]>();
-    for (const session of sessions) {
+    for (const session of displaySessions) {
       const projectSessions = groupedSessions.get(session.projectId);
       if (projectSessions) {
         projectSessions.push(session);
@@ -377,7 +426,7 @@ function DashboardInner({
       groupedSessions.set(session.projectId, [session]);
     }
     return groupedSessions;
-  }, [sessions]);
+  }, [displaySessions]);
 
   const projectOverviews = useMemo(() => {
     if (!allProjectsView) return [];
@@ -409,25 +458,72 @@ function DashboardInner({
     });
   }, [activeOrchestrators, allProjectsView, attentionZones, projects, sessionsByProject]);
 
+  const applyOptimisticSessionUpdate = useCallback(
+    (sessionId: string, patch: Partial<DashboardSession>) => {
+      setOptimisticSessionOverrides((current) => ({
+        ...current,
+        [sessionId]: patch,
+      }));
+    },
+    [],
+  );
+
+  const clearOptimisticSessionUpdates = useCallback((sessionIds: string[]) => {
+    if (sessionIds.length === 0) return;
+    setOptimisticSessionOverrides((current) =>
+      Object.fromEntries(Object.entries(current).filter(([id]) => !sessionIds.includes(id))),
+    );
+  }, []);
+
+  const applyOptimisticMergeUpdate = useCallback((prNumber: number) => {
+    const now = new Date().toISOString();
+    setOptimisticSessionOverrides((current) => {
+      const next = { ...current };
+      for (const session of sessionsRef.current) {
+        const prs = session.prs ?? [];
+        const matchingPR = prs.find((pr) => pr.number === prNumber) ?? session.pr;
+        if (!matchingPR || matchingPR.number !== prNumber) continue;
+
+        const nextPR = { ...matchingPR, state: "merged" as const };
+        const nextPRs = prs.map((pr) => (pr.number === prNumber ? nextPR : pr));
+        next[session.id] = {
+          ...session,
+          pr: session.pr?.number === prNumber ? nextPR : session.pr,
+          prs: nextPRs,
+          status: "merged",
+          lastActivityAt: now,
+        };
+      }
+      return next;
+    });
+  }, []);
+
   const killSession = useCallback(
     async (sessionId: string) => {
+      const key = `kill:${sessionId}`;
+      if (pendingActions[key]) return;
+      setPendingActions((prev) => ({ ...prev, [key]: true }));
+      applyOptimisticSessionUpdate(sessionId, {
+        status: "terminated",
+        activity: "exited",
+        lastActivityAt: new Date().toISOString(),
+      });
       try {
-        const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/kill`, {
+        await postDashboardAction(`/api/sessions/${encodeURIComponent(sessionId)}/kill`, {
           method: "POST",
         });
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Failed to kill ${sessionId}:`, text);
-          showToast(`Terminate failed: ${text}`, "error");
-        } else {
-          showToast("Session terminated", "success");
-        }
+        showToast("Session terminated", "success");
       } catch (error) {
         console.error(`Network error killing ${sessionId}:`, error);
-        showToast("Network error while terminating session", "error");
+        clearOptimisticSessionUpdates([sessionId]);
+        const message =
+          error instanceof Error ? error.message : "Network error while terminating session";
+        showToast(message, "error");
+      } finally {
+        setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [showToast],
+    [applyOptimisticSessionUpdate, clearOptimisticSessionUpdates, pendingActions, showToast],
   );
 
   const handleKill = useCallback(
@@ -460,48 +556,58 @@ function DashboardInner({
 
   const handleMerge = useCallback(
     async (prNumber: number, owner?: string, repo?: string) => {
+      const key = `merge:${prNumber}`;
+      if (pendingActions[key]) return;
+      setPendingActions((prev) => ({ ...prev, [key]: true }));
+      applyOptimisticMergeUpdate(prNumber);
       try {
-        const params = new URLSearchParams();
-        if (owner) params.set("owner", owner);
-        if (repo) params.set("repo", repo);
-        const qs = params.size > 0 ? `?${params.toString()}` : "";
-        const res = await fetch(`/api/prs/${prNumber}/merge${qs}`, { method: "POST" });
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Failed to merge PR #${prNumber}:`, text);
-          showToast(`Merge failed: ${text}`, "error");
-          return;
-        } else {
-          showToast(`PR #${prNumber} merged`, "success");
-        }
+        await postDashboardAction(`/api/prs/${prNumber}/merge`, {
+          method: "POST",
+          query: { owner, repo },
+        });
+        showToast(`PR #${prNumber} merged`, "success");
       } catch (error) {
         console.error(`Network error merging PR #${prNumber}:`, error);
-        showToast("Network error while merging PR", "error");
+        const failedSessionIds = sessionsRef.current
+          .filter((session) => (session.prs ?? []).some((pr) => pr.number === prNumber))
+          .map((session) => session.id);
+        clearOptimisticSessionUpdates(failedSessionIds);
+        const message = error instanceof Error ? error.message : "Network error while merging PR";
+        showToast(message, "error");
+      } finally {
+        setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [showToast],
+    [applyOptimisticMergeUpdate, clearOptimisticSessionUpdates, pendingActions, showToast],
   );
 
   const handleRestore = useCallback(
     async (sessionId: string) => {
+      const key = `restore:${sessionId}`;
+      if (pendingActions[key]) return;
+      setPendingActions((prev) => ({ ...prev, [key]: true }));
+      applyOptimisticSessionUpdate(sessionId, {
+        status: "working",
+        activity: "active",
+        lastActivityAt: new Date().toISOString(),
+      });
       try {
-        const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/restore`, {
+        await postDashboardAction(`/api/sessions/${encodeURIComponent(sessionId)}/restore`, {
           method: "POST",
         });
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Failed to restore ${sessionId}:`, text);
-          showToast(`Restore failed: ${text}`, "error");
-        } else {
-          showToast("Session restored", "success");
-          routerRef.current.refresh();
-        }
+        showToast("Session restored", "success");
+        routerRef.current.refresh();
       } catch (error) {
         console.error(`Network error restoring ${sessionId}:`, error);
-        showToast("Network error while restoring session", "error");
+        clearOptimisticSessionUpdates([sessionId]);
+        const message =
+          error instanceof Error ? error.message : "Network error while restoring session";
+        showToast(message, "error");
+      } finally {
+        setPendingActions((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [showToast],
+    [applyOptimisticSessionUpdate, clearOptimisticSessionUpdates, pendingActions, showToast],
   );
 
   const handleSpawnOrchestrator = async (project: ProjectInfo) => {
@@ -511,23 +617,16 @@ function DashboardInner({
     setSpawnErrors(({ [project.id]: _ignored, ...current }) => current);
 
     try {
-      const res = await fetch("/api/orchestrators", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: project.id,
-          workerAgents: selectedWorkerAgents,
-          agent: selectedAgent,
-        }),
+      const data = await postSpawnOrchestrator({
+        projectId: project.id,
+        workerAgents: selectedWorkerAgents,
+        ...(selectedOrchestratorType === "workerProvider"
+          ? { workerProvider: selectedOrchestrator }
+          : { agent: selectedOrchestrator }),
       });
 
-      const data = (await res.json().catch(() => null)) as {
-        orchestrator?: DashboardOrchestratorLink;
-        error?: string;
-      } | null;
-
-      if (!res.ok || !data?.orchestrator) {
-        throw new Error(data?.error ?? `Failed to spawn orchestrator for ${project.name}`);
+      if (!data.orchestrator) {
+        throw new Error(data.error ?? `Failed to spawn orchestrator for ${project.name}`);
       }
 
       const orchestrator = data.orchestrator;
@@ -567,8 +666,8 @@ function DashboardInner({
   ) : null;
 
   const anyRateLimited = useMemo(
-    () => sessions.some((session) => session.pr && isPRRateLimited(session.pr)),
-    [sessions],
+    () => displaySessions.some((session) => session.pr && isPRRateLimited(session.pr)),
+    [displaySessions],
   );
   // Always show the human-readable project name in the titlebar — never the raw
   // project id hash (that was a poor disambiguation hack and reads as gibberish).
@@ -666,7 +765,13 @@ function DashboardInner({
         <div className="dashboard-app-header__actions">
           {showDebugBundleButton ? <CopyDebugBundleButton projectId={projectId} /> : null}
           <DashboardNotificationButton />
-          <OrchestratorAgentPicker value={selectedAgent} onChange={setSelectedAgent} />
+          <OrchestratorAgentPicker
+            value={selectedOrchestrator}
+            onChange={(name, type) => {
+              setSelectedOrchestrator(name);
+              setSelectedOrchestratorType(type);
+            }}
+          />
           <WorkerAgentsCheckboxPicker
             value={selectedWorkerAgents}
             onChange={setSelectedWorkerAgents}
@@ -724,7 +829,7 @@ function DashboardInner({
       </header>
 
       <main className="dashboard-main flex flex-col flex-1 min-h-0 overflow-hidden">
-        <DynamicFavicon attentionLevels={attentionLevels} projectName={projectName} />
+        <DynamicFavicon attentionLevels={displayAttentionLevels} projectName={projectName} />
         <div className="dashboard-main__subhead">
           <h1 className="dashboard-main__title">Board</h1>
           <p className="dashboard-main__subtitle">
@@ -795,7 +900,9 @@ function DashboardInner({
                     level={level}
                     sessions={grouped[level]}
                     onKill={handleKill}
+                    onMerge={handleMerge}
                     onRestore={handleRestore}
+                    pendingActions={pendingActions}
                     compactMobile={isMobile}
                     collapsed={isMobile && collapsedZones.has(level)}
                     onToggle={isMobile ? handleZoneToggle : undefined}
@@ -870,7 +977,7 @@ function DashboardInner({
       onConfirm={handleBottomSheetConfirmKill}
       onRequestKill={handleRequestKill}
       onMerge={handleMerge}
-      isMergeReady={previewSession ? attentionLevels[previewSession.id] === "merge" : false}
+      isMergeReady={previewSession ? displayAttentionLevels[previewSession.id] === "merge" : false}
     />
   );
 

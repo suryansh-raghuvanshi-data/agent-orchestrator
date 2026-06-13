@@ -33,7 +33,13 @@ vi.mock("@/providers/MuxProvider", () => ({
 import { Dashboard } from "../Dashboard";
 
 beforeEach(() => {
-  global.fetch = vi.fn();
+  global.fetch = vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ agents: [], providers: [] }),
+      text: () => Promise.resolve(""),
+    } as Response),
+  );
   currentMuxLastError = null;
 });
 

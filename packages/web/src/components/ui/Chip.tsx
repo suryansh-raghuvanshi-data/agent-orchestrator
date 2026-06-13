@@ -35,7 +35,15 @@ export function Chip({ children, variant = "default", onRemove, className }: Chi
           className="ml-0.5 inline-flex items-center justify-center w-3.5 h-3.5 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--duration-fast)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           aria-label="Remove"
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            aria-hidden="true"
+          >
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>

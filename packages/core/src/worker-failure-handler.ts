@@ -53,6 +53,12 @@ function computeBackoff(attempt: number, policy: WorkerRetryPolicy): number {
   return Math.min(delay, policy.maxDelayMs);
 }
 
+/**
+ * Wait for a worker task to reach a terminal state, polling at the
+ * configured interval. P2-8: this function NEVER throws. On abort,
+ * timeout, or provider error it returns a status object with
+ * `state: "cancelled"`, `"timed_out"`, or `"failed"` respectively.
+ */
 export async function waitForTask(
   provider: WorkerProvider,
   handle: WorkerProviderTaskHandle,
@@ -90,6 +96,22 @@ export async function waitForTask(
   };
 }
 
+/**
+ * Execute a worker task with automatic retry on transient failures.
+ *
+ * P2-8 contract: This function NEVER throws. All error conditions
+ * (abort, timeout, retry exhaustion, non-transient provider errors)
+ * are surfaced via the returned `WorkerTaskResult`:
+ *   - `result.status.state` indicates the terminal state:
+ *     `"completed"`, `"cancelled"`, `"timed_out"`, or `"failed"`
+ *   - `result.status.error` contains the error details when state
+ *     is not `"completed"`. For `state === "failed"` with exhausted
+ *     retries, `error.code === "RETRY_EXHAUSTED"`.
+ *   - `result.retriesAttempted` reports how many retries were used.
+ *
+ * Callers must inspect `result.status` rather than wrapping this in
+ * try/catch — there is nothing to catch.
+ */
 export async function executeTaskWithRetry(
   provider: WorkerProvider,
   taskConfig: Parameters<WorkerProvider["submitTask"]>[0],
@@ -122,7 +144,34 @@ export async function executeTaskWithRetry(
       await sleep(delay);
     }
 
-    handle = await provider.submitTask(taskConfig);
+    try {
+      handle = await provider.submitTask(taskConfig);
+    } catch (err) {
+      // P2-8: provider threw during submission (unexpected — well-behaved
+      // providers return error states, not throw). Convert to a transient
+      // error so the retry loop can decide whether to continue, matching
+      // the documented "never throws" contract.
+      const submitError: WorkerProviderError = {
+        code: "SUBMIT_FAILED",
+        message: err instanceof Error ? err.message : String(err),
+        isTransient: true,
+      };
+      lastError = submitError;
+      const canRetry = provider.canRetry ? provider.canRetry(submitError) : true;
+      if (!canRetry || attempt === retryPolicy.maxRetries) {
+        return {
+          status: {
+            state: "failed",
+            lastUpdatedAt: new Date().toISOString(),
+            error: submitError,
+          },
+          handle: { taskId: "", providerName: provider.name, data: {} },
+          retriesAttempted,
+          totalElapsedMs: Date.now() - startTime,
+        };
+      }
+      continue;
+    }
     const status = await waitForTask(provider, handle, timeoutConfig, signal);
 
     if (status.state === "completed") {
@@ -176,6 +225,14 @@ export async function executeTaskWithRetry(
   };
 }
 
+/**
+ * Cancel a task on one provider and resubmit it to another.
+ *
+ * P2-8: this function NEVER throws. All errors (cancel failure, submit
+ * failure, non-completed terminal state) are returned as
+ * `{ success: false, reason }`. On success, returns
+ * `{ success: true, handle }`.
+ */
 export async function reassignTask(
   sourceProvider: WorkerProvider,
   sourceHandle: WorkerProviderTaskHandle,

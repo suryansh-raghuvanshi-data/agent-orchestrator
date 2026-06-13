@@ -245,7 +245,10 @@ export function isTerminalSession(session: {
       session.lifecycle.session.state === "terminated" ||
       session.lifecycle.pr.state === "merged" ||
       session.lifecycle.runtime.state === "missing" ||
-      session.lifecycle.runtime.state === "exited"
+      session.lifecycle.runtime.state === "exited" ||
+      session.lifecycle.runtime.state === "probe_failed" ||
+      (session.lifecycle.runtime.state === "unknown" &&
+        session.lifecycle.session.state !== "not_started")
     );
   }
   return (
@@ -583,6 +586,15 @@ export interface KillOptions {
   reason?: LifecycleKillReason;
 }
 
+export interface ListOptions {
+  /**
+   * When true, list() persists runtime-probe results (e.g., "detecting"
+   * state for dead runtimes) to disk so the lifecycle manager can read
+   * them on the next poll cycle. Defaults to false (read-only listing).
+   */
+  persistRuntimeProbe?: boolean;
+}
+
 /** Session manager — CRUD for sessions */
 export interface SessionManager {
   spawn(config: SessionSpawnConfig): Promise<Session>;
@@ -596,7 +608,7 @@ export interface SessionManager {
    */
   relaunchOrchestrator(config: OrchestratorSpawnConfig): Promise<Session>;
   restore(sessionId: SessionId): Promise<Session>;
-  list(projectId?: string): Promise<Session[]>;
+  list(projectId?: string, options?: ListOptions): Promise<Session[]>;
   get(sessionId: SessionId): Promise<Session | null>;
   kill(sessionId: SessionId, options?: KillOptions): Promise<KillResult>;
   cleanup(

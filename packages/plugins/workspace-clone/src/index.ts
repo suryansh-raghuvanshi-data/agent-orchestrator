@@ -281,7 +281,11 @@ export function create(config?: Record<string, unknown>): Workspace {
       if (project.postCreate) {
         const shell = getShell();
         for (const command of project.postCreate) {
-          await execFileAsync(shell.cmd, shell.args(command), { cwd: info.path });
+          await execFileAsync(shell.cmd, shell.args(command), {
+            cwd: info.path,
+            timeout: 30_000,
+            windowsHide: true,
+          });
         }
       }
     },

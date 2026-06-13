@@ -1470,10 +1470,12 @@ describe("workspace.postCreate()", () => {
     expect(mockGetShell).toHaveBeenCalled();
     expect(mockExecFileAsync).toHaveBeenCalledWith("sh", ["-c", "pnpm install"], {
       cwd: "/mock-home/.worktrees/myproject/session-1",
+      timeout: 30_000,
       windowsHide: true,
     });
     expect(mockExecFileAsync).toHaveBeenCalledWith("sh", ["-c", "pnpm build"], {
       cwd: "/mock-home/.worktrees/myproject/session-1",
+      timeout: 30_000,
       windowsHide: true,
     });
   });
@@ -1493,7 +1495,7 @@ describe("workspace.postCreate()", () => {
     expect(mockExecFileAsync).toHaveBeenCalledWith(
       "pwsh",
       ["-NoLogo", "-NonInteractive", "-Command", "npm install"],
-      { cwd: "/mock-home/.worktrees/myproject/session-1", windowsHide: true },
+      { cwd: "/mock-home/.worktrees/myproject/session-1", timeout: 30_000, windowsHide: true },
     );
   });
 
@@ -1631,6 +1633,7 @@ describe("workspace.postCreate()", () => {
     expect(mockSymlinkSync).toHaveBeenCalledTimes(1);
     expect(mockExecFileAsync).toHaveBeenCalledWith("sh", ["-c", "pnpm install"], {
       cwd: "/mock-home/.worktrees/myproject/session-1",
+      timeout: 30_000,
       windowsHide: true,
     }); // getShell() returns { cmd: "sh", args: ["-c", cmd] } in tests
   });

@@ -598,3 +598,81 @@ describe("remap", () => {
     expect(meta?.["opencodeSessionId"]).toBe("ses_project_agent");
   });
 });
+
+describe("restore readiness (AO-005)", () => {
+  it("does not accept stale terminal output as readiness proof after restore", async () => {
+    vi.useFakeTimers();
+    try {
+      const wsPath = join(tmpDir, "ws-stale");
+      mkdirSync(wsPath, { recursive: true });
+
+      writeMetadata(sessionsDir, "app-stale", {
+        worktree: wsPath,
+        branch: "feat/stale",
+        status: "working",
+        project: "my-app",
+        runtimeHandle: makeHandle("rt-old"),
+      });
+
+      // rt-old is dead → restore kicks in → rt-restored is created
+      vi.mocked(mockRuntime.isAlive).mockImplementation(async (handle) => handle.id !== "rt-old");
+      // Process is NOT running after restore
+      vi.mocked(mockAgent.isProcessRunning).mockImplementation(async () => false);
+      vi.mocked(mockRuntime.create).mockResolvedValue(makeHandle("rt-restored"));
+      // Static stale output — never changes between polls
+      vi.mocked(mockRuntime.getOutput).mockResolvedValue("stale output from previous session");
+      vi.mocked(mockAgent.detectActivity).mockReturnValue("idle");
+
+      const sm = createSessionManager({ config, registry: mockRegistry });
+      const sendPromise = sm.send("app-stale", "hi");
+      const rejection = expect(sendPromise).rejects.toThrow(
+        /restored session did not become ready/,
+      );
+
+      await vi.runAllTimersAsync();
+      await rejection;
+      expect(mockRuntime.sendMessage).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("accepts fresh terminal output (changed between polls) after restore", async () => {
+    vi.useFakeTimers();
+    try {
+      const wsPath = join(tmpDir, "ws-fresh");
+      mkdirSync(wsPath, { recursive: true });
+
+      writeMetadata(sessionsDir, "app-fresh", {
+        worktree: wsPath,
+        branch: "feat/fresh",
+        status: "working",
+        project: "my-app",
+        runtimeHandle: makeHandle("rt-old"),
+      });
+
+      // rt-old is dead → restore kicks in → rt-restored is created
+      vi.mocked(mockRuntime.isAlive).mockImplementation(async (handle) => handle.id !== "rt-old");
+      // Process is NOT running (simulating edge case where process check misses it)
+      vi.mocked(mockAgent.isProcessRunning).mockImplementation(async () => false);
+      vi.mocked(mockRuntime.create).mockResolvedValue(makeHandle("rt-restored"));
+      // Output empty on first poll, then has content on subsequent polls (fresh)
+      vi.mocked(mockRuntime.getOutput)
+        .mockResolvedValueOnce("")
+        .mockResolvedValue("agent prompt > ");
+      vi.mocked(mockAgent.detectActivity).mockReturnValue("idle");
+
+      const sm = createSessionManager({ config, registry: mockRegistry });
+      const sendPromise = sm.send("app-fresh", "hi");
+
+      // Advance enough time for the polling loop to iterate past
+      // the first (empty) poll and see fresh output on the second.
+      await vi.advanceTimersByTimeAsync(5_000);
+
+      await expect(sendPromise).resolves.toBeUndefined();
+      expect(mockRuntime.sendMessage).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

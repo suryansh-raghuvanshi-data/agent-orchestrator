@@ -44,13 +44,30 @@ describe("Dashboard unified layout (mobile viewport)", () => {
       OPEN: 1,
       CLOSED: 2,
     }) as unknown as typeof EventSource;
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
+    global.fetch = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/agents")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({ agents: [{ name: "claude-code", displayName: "Claude Code" }] }),
+        } as Response);
+      }
+      if (url.includes("/api/workers")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              providers: [{ name: "local", displayName: "Local", status: "healthy" }],
+            }),
+        } as Response);
+      }
+      return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({}),
         text: () => Promise.resolve(""),
-      } as Response),
-    );
+      } as Response);
+    });
   });
 
   it("shows all sessions in the dashboard", () => {

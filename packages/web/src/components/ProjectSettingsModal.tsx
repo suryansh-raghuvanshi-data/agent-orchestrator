@@ -23,6 +23,8 @@ interface ProjectSettingsResponse {
     reactions?: Record<string, unknown>;
     workerProvider?: string;
     fallbackWorkerProvider?: string;
+    orchestrator?: { agent?: string };
+    worker?: { agent?: string };
   };
   error?: string;
   degraded?: boolean;
@@ -96,6 +98,8 @@ export function ProjectSettingsModal({ open, projectId, onClose }: ProjectSettin
     if (!project || !projectId) return null;
     return {
       agent: project.agent ?? "",
+      orchestratorAgent: project.orchestrator?.agent ?? "",
+      workerAgent: project.worker?.agent ?? "",
       runtime: project.runtime ?? "",
       trackerPlugin: project.tracker?.plugin ?? "",
       scmPlugin: project.scm?.plugin ?? "",

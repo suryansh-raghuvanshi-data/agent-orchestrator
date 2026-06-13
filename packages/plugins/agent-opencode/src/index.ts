@@ -343,35 +343,23 @@ function createOpenCodeAgent(): Agent {
     async isProcessRunning(handle: RuntimeHandle): Promise<ProcessProbeResult> {
       try {
         if (handle.runtimeName === "tmux" && handle.id) {
-          // tmux and ps are Unix-only; guard before any tmux calls on Windows.
-          if (isWindows()) return false;
-          const { stdout: ttyOut } = await execFileAsync(
-            "tmux",
-            ["list-panes", "-t", handle.id, "-F", "#{pane_tty}"],
-            { timeout: 30_000 },
-          );
-          const ttys = ttyOut
-            .trim()
-            .split("\n")
-            .map((t) => t.trim())
-            .filter(Boolean);
-          if (ttys.length === 0) return false;
-
-          const { stdout: psOut } = await execFileAsync("ps", ["-eo", "pid,tty,args"], {
-            timeout: 30_000,
-          });
-          if (!psOut) return PROCESS_PROBE_INDETERMINATE;
-          const ttySet = new Set(ttys.map((t) => t.replace(/^\/dev\//, "")));
-          const processRe = /(?:^|\/)opencode(?:\s|$)/;
-          for (const line of psOut.split("\n")) {
-            const cols = line.trimStart().split(/\s+/);
-            if (cols.length < 3 || !ttySet.has(cols[1] ?? "")) continue;
-            const args = cols.slice(2).join(" ");
-            if (processRe.test(args)) {
-              return true;
-            }
+          if (isWindows()) return PROCESS_PROBE_INDETERMINATE;
+          try {
+            const { stdout: ttyOut } = await execFileAsync(
+              "tmux",
+              ["list-panes", "-t", handle.id, "-F", "#{pane_tty}"],
+              { timeout: 30_000 },
+            );
+            const ttys = ttyOut
+              .trim()
+              .split("\n")
+              .map((t) => t.trim())
+              .filter(Boolean);
+            if (ttys.length > 0) return true;
+            return false;
+          } catch {
+            return false;
           }
-          return false;
         }
 
         const rawPid = handle.data["pid"];

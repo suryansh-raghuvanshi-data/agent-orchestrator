@@ -18,7 +18,7 @@ const nextConfig = {
     "@aoagents/ao-plugin-tracker-linear",
     "@aoagents/ao-plugin-workspace-worktree",
   ],
-  serverExternalPackages: ["yaml", "zod", "@aoagents/ao-core", "better-sqlite3"],
+  serverExternalPackages: ["yaml", "zod", "@aoagents/ao-core", "better-sqlite3", "@composio/core"],
   webpack: (config, { isServer }) => {
     if (process.platform === "win32") {
       config.snapshot = {

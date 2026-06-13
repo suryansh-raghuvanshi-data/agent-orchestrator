@@ -359,7 +359,7 @@ describe("runtime.lost_detected (MUST)", () => {
     vi.mocked(ctx.mockAgent.isProcessRunning).mockResolvedValue(false);
 
     const sm = createSessionManager({ config, registry: mockRegistry });
-    await sm.list();
+    await sm.list(undefined, { persistRuntimeProbe: true });
 
     const event = findEvent("runtime.lost_detected");
     expect(event).toBeDefined();
@@ -631,5 +631,64 @@ describe("metadata.corrupt_detected (MUST)", () => {
     const data = event!.data as Record<string, unknown>;
     expect(data["renameSucceeded"]).toBe(true);
     expect(data["renamedTo"]).toMatch(/\.corrupt-\d+$/);
+  });
+});
+
+describe("session.send_unconfirmed (AO-004)", () => {
+  it("does not emit when delivery is confirmed", async () => {
+    writeMetadata(sessionsDir, "app-ok", {
+      worktree: "/tmp",
+      branch: "main",
+      status: "working",
+      project: "my-app",
+      runtimeHandle: makeHandle("rt-1"),
+    });
+    vi.mocked(ctx.mockRuntime.getOutput)
+      .mockResolvedValueOnce("before")
+      .mockResolvedValueOnce("after");
+
+    const sm = createSessionManager({ config, registry: mockRegistry });
+    await sm.send("app-ok", "hi");
+
+    expect(findEvent("session.send_unconfirmed")).toBeUndefined();
+  });
+
+  it("emits warning when delivery cannot be confirmed", async () => {
+    writeMetadata(sessionsDir, "app-unconf", {
+      worktree: "/tmp",
+      branch: "main",
+      status: "working",
+      project: "my-app",
+      runtimeHandle: makeHandle("rt-1"),
+    });
+    // Steady output so confirmation heuristics never flip
+    vi.mocked(ctx.mockRuntime.getOutput).mockResolvedValue("steady output");
+
+    const sm = createSessionManager({ config, registry: mockRegistry });
+    await sm.send("app-unconf", "hi");
+
+    const event = findEvent("session.send_unconfirmed");
+    expect(event).toBeDefined();
+    expect(event!.level).toBe("warn");
+    expect(event!.sessionId).toBe("app-unconf");
+    expect(event!.source).toBe("session-manager");
+    expect(event!.summary).toContain("message sent but delivery not confirmed");
+    expect(event!.data).toMatchObject({ stage: "initial" });
+  });
+
+  it("does not emit session.send_failed for unconfirmed delivery", async () => {
+    writeMetadata(sessionsDir, "app-unconf2", {
+      worktree: "/tmp",
+      branch: "main",
+      status: "working",
+      project: "my-app",
+      runtimeHandle: makeHandle("rt-1"),
+    });
+    vi.mocked(ctx.mockRuntime.getOutput).mockResolvedValue("steady output");
+
+    const sm = createSessionManager({ config, registry: mockRegistry });
+    await sm.send("app-unconf2", "hi");
+
+    expect(findEvent("session.send_failed")).toBeUndefined();
   });
 });

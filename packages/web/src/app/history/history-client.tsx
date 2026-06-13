@@ -85,11 +85,7 @@ export function HistoryClient({ initialSessions }: HistoryClientProps) {
       const now = Date.now();
       const day = 86400000;
       const cutoff =
-        dateFilter === "today"
-          ? now - day
-          : dateFilter === "week"
-            ? now - 7 * day
-            : now - 30 * day;
+        dateFilter === "today" ? now - day : dateFilter === "week" ? now - 7 * day : now - 30 * day;
       result = result.filter((s) => {
         const t = s.lastActivityAt ? new Date(s.lastActivityAt).getTime() : 0;
         return t >= cutoff;
@@ -109,12 +105,18 @@ export function HistoryClient({ initialSessions }: HistoryClientProps) {
   const getSpec = (s: HistorySession) => {
     const status = s.status;
     const activity = s.activity;
-    if (status === "merged" || status === "done") return { tone: "merged" as const, label: "Merged", breathing: false };
-    if (status === "killed" || status === "terminated") return { tone: "neutral" as const, label: "Terminated", breathing: false };
-    if (status === "errored" || status === "stuck") return { tone: "fail" as const, label: "Stuck", breathing: false };
-    if (activity === "waiting_input" || activity === "blocked") return { tone: "input" as const, label: "Needs input", breathing: false };
-    if (activity === "active") return { tone: "working" as const, label: "Working", breathing: true };
-    if (status === "working" || status === "idle") return { tone: "neutral" as const, label: "Idle", breathing: false };
+    if (status === "merged" || status === "done")
+      return { tone: "merged" as const, label: "Merged", breathing: false };
+    if (status === "killed" || status === "terminated")
+      return { tone: "neutral" as const, label: "Terminated", breathing: false };
+    if (status === "errored" || status === "stuck")
+      return { tone: "fail" as const, label: "Stuck", breathing: false };
+    if (activity === "waiting_input" || activity === "blocked")
+      return { tone: "input" as const, label: "Needs input", breathing: false };
+    if (activity === "active")
+      return { tone: "working" as const, label: "Working", breathing: true };
+    if (status === "working" || status === "idle")
+      return { tone: "neutral" as const, label: "Idle", breathing: false };
     return { tone: "neutral" as const, label: status ?? "Unknown", breathing: false };
   };
 
@@ -184,7 +186,15 @@ export function HistoryClient({ initialSessions }: HistoryClientProps) {
           {filtered.length === 0 ? (
             <EmptyState
               icon={
-                <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24" aria-hidden="true">
+                <svg
+                  width="22"
+                  height="22"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 6v6l4 2" />
                 </svg>
@@ -200,7 +210,8 @@ export function HistoryClient({ initialSessions }: HistoryClientProps) {
             <div className="divide-y divide-[var(--color-border-subtle)]">
               {filtered.map((session) => {
                 const spec = getSpec(session);
-                const title = session.displayName || session.summary || session.issueTitle || session.id;
+                const title =
+                  session.displayName || session.summary || session.issueTitle || session.id;
                 const sessionPath = session.projectId
                   ? `/projects/${encodeURIComponent(session.projectId)}/sessions/${encodeURIComponent(session.id)}`
                   : null;
@@ -217,7 +228,15 @@ export function HistoryClient({ initialSessions }: HistoryClientProps) {
                     }}
                   >
                     <Avatar size={28}>
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                      <svg
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
                         <rect x="3" y="4" width="18" height="16" rx="2" />
                         <path d="M3 8h18" />
                       </svg>

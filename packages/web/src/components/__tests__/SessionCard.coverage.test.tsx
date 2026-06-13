@@ -141,4 +141,39 @@ describe("SessionCard diff coverage", () => {
 
     expect(screen.getByText("terminal").closest("a")).toHaveClass("session-card__terminal-link");
   });
+
+  it("disables merge action while the PR merge is pending", () => {
+    const session = makeSession({
+      id: "merge-pending",
+      pr: makePR({ number: 101 }),
+    });
+
+    render(<SessionCard session={session} pendingActions={{ "merge:101": true }} />);
+
+    const mergeButton = screen.getByRole("button", { name: /Merging.../i });
+    expect(mergeButton).toBeDisabled();
+  });
+
+  it("disables restore action while a done session restore is pending", () => {
+    const session = makeSession({
+      id: "restore-pending",
+      status: "terminated",
+      activity: "exited",
+    });
+
+    render(<SessionCard session={session} pendingActions={{ "restore:restore-pending": true }} />);
+
+    const restoreButton = screen.getByRole("button", { name: /restoring/i });
+    expect(restoreButton).toBeDisabled();
+  });
+
+  it("disables kill action while a live session kill is pending", () => {
+    const session = makeSession({ id: "kill-pending" });
+
+    render(<SessionCard session={session} pendingActions={{ "kill:kill-pending": true }} />);
+
+    const killButton = screen.getByRole("button", { name: /Terminating session/i });
+    expect(killButton).toBeDisabled();
+    expect(screen.getByText("killing...")).toBeInTheDocument();
+  });
 });

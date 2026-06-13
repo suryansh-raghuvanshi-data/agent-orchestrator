@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildLifecycleMetadataPatch,
   cloneLifecycle,
   createInitialCanonicalLifecycle,
   deriveLegacyStatus,
@@ -225,5 +226,63 @@ describe("cloneLifecycle", () => {
     expect(cloned.runtime.handle?.data).toEqual({
       nested: { attempts: [1, 2, 3, 4] },
     });
+  });
+});
+
+/**
+ * P2-10 / P3-15: buildLifecycleMetadataPatch used to call JSON.stringify
+ * directly on the lifecycle (and on runtime.handle). Either could throw
+ * on non-serializable handle.data (functions, circular refs, Buffers),
+ * crashing the entire poll cycle. The fix makes stringify failure
+ * non-fatal: the patch is returned without the offending field, and an
+ * activity event is emitted for RCA.
+ */
+describe("buildLifecycleMetadataPatch (P2-10)", () => {
+  it("returns a patch with a stringified lifecycle for healthy input", () => {
+    const lifecycle = createInitialCanonicalLifecycle("worker", new Date());
+    const patch = buildLifecycleMetadataPatch(lifecycle, "app-1");
+    expect(patch.lifecycle).toBeDefined();
+    expect(() => JSON.parse(patch.lifecycle!)).not.toThrow();
+  });
+
+  it("does not throw when handle.data contains a function (functions are silently dropped by JSON.stringify)", () => {
+    const lifecycle = createInitialCanonicalLifecycle("worker", new Date());
+    // Functions are not JSON-serializable — JSON.stringify drops them
+    // silently. The patch is still returned with the function-bearing handle.
+    lifecycle.runtime.handle = {
+      id: "rt-1",
+      runtimeName: "tmux",
+      data: { callback: () => "never called" } as unknown as Record<string, unknown>,
+    };
+    let patch;
+    expect(() => {
+      patch = buildLifecycleMetadataPatch(lifecycle, "app-1");
+    }).not.toThrow();
+    // The handle is still stringified (function stripped), patch is intact.
+    expect(patch!.runtimeHandle).toBeDefined();
+    expect(patch!.lifecycle).toBeDefined();
+  });
+
+  it("does not throw and omits the whole lifecycle field on circular reference", () => {
+    const lifecycle = createInitialCanonicalLifecycle("worker", new Date()) as unknown as {
+      runtime: {
+        handle: { id?: string; runtimeName?: string; data: Record<string, unknown> | null };
+      };
+      session: unknown;
+      pr: unknown;
+      agent: unknown;
+      [key: string]: unknown;
+    };
+    // Build a circular structure inside handle.data
+    const circular: Record<string, unknown> = { a: 1 };
+    circular["self"] = circular;
+    lifecycle.runtime.handle = { id: "rt-1", runtimeName: "tmux", data: circular };
+    let patch;
+    expect(() => {
+      patch = buildLifecycleMetadataPatch(lifecycle as never, "app-1");
+    }).not.toThrow();
+    // The lifecycle field is dropped, but pr/tmuxName are still returned.
+    expect(patch!.lifecycle).toBeUndefined();
+    expect(patch!.pr).toBeDefined();
   });
 });

@@ -104,4 +104,28 @@ describe("dedupFetch", () => {
     await expectation;
     expect(cancelBody).toHaveBeenCalled();
   });
+
+  it("removes abort event listeners on fetch completion to prevent leaks", async () => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const addSpy = vi.spyOn(signal, "addEventListener");
+    const removeSpy = vi.spyOn(signal, "removeEventListener");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ data: "ok" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchJsonWithTimeout("/api/sessions/ao-187", {
+      signal,
+      timeoutMs: 5000,
+    });
+
+    expect(result).toEqual({ data: "ok" });
+    expect(addSpy).toHaveBeenCalled();
+    expect(removeSpy).toHaveBeenCalled();
+  });
 });
