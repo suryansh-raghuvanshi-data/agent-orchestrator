@@ -47,10 +47,7 @@ import {
 } from "./metadata.js";
 import { getProjectSessionsDir } from "./paths.js";
 import { applyDecisionToLifecycle as commitLifecycleDecisionInPlace } from "./lifecycle-transition.js";
-import {
-  DETECTING_MAX_ATTEMPTS,
-  isDetectingTimedOut,
-} from "./lifecycle-status-decisions.js";
+import { DETECTING_MAX_ATTEMPTS, isDetectingTimedOut } from "./lifecycle-status-decisions.js";
 import {
   auditAgentReports,
   getReactionKeyForTrigger,
@@ -188,8 +185,6 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     updateSessionMetadata,
   };
 
-
-
   /**
    * When a session's PR is merged, tear down its tmux runtime, remove its
    * worktree, and archive its metadata. Guarded by an idleness check so we
@@ -224,7 +219,10 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
 
     if (agentIsBusy && !graceElapsed) {
       if (!getReportWatcher(session.metadata).mergedPendingCleanupSince) {
-        updateSessionMetadata(session, buildReportWatcherPatch({ mergedPendingCleanupSince: nowIso }));
+        updateSessionMetadata(
+          session,
+          buildReportWatcherPatch({ mergedPendingCleanupSince: nowIso }),
+        );
       }
       observer.recordOperation({
         metric: "lifecycle_poll",
@@ -294,7 +292,10 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
       // Leave `merged` status in place so the next poll retries. Preserve the
       // deferral marker so idempotent retries don't restart the grace clock.
       if (!getReportWatcher(session.metadata).mergedPendingCleanupSince) {
-        updateSessionMetadata(session, buildReportWatcherPatch({ mergedPendingCleanupSince: nowIso }));
+        updateSessionMetadata(
+          session,
+          buildReportWatcherPatch({ mergedPendingCleanupSince: nowIso }),
+        );
       }
       const errorMsg = err instanceof Error ? err.message : String(err);
       observer.recordOperation({
@@ -408,8 +409,7 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     if ((session.metadata["tmuxName"] ?? "") !== expectedTmuxName) {
       metadataUpdates["tmuxName"] = expectedTmuxName;
     }
-    const expectedRole =
-      session.lifecycle.session.kind === "orchestrator" ? "orchestrator" : "";
+    const expectedRole = session.lifecycle.session.kind === "orchestrator" ? "orchestrator" : "";
     if ((session.metadata["role"] ?? "") !== expectedRole) {
       metadataUpdates["role"] = expectedRole;
     }
@@ -512,7 +512,12 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
             const project = config.projects[session.projectId];
             const scm = project?.scm?.plugin ? registry.get<SCM>("scm", project.scm.plugin) : null;
             if (scm) {
-              const failedChecks = await getFailedCIChecks(scm, session.pr, { allowFetch: false }, ctx);
+              const failedChecks = await getFailedCIChecks(
+                scm,
+                session.pr,
+                { allowFetch: false },
+                ctx,
+              );
               if (failedChecks) {
                 reactionConfig = {
                   ...reactionConfig,
@@ -526,7 +531,12 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
           if (reactionConfig && reactionConfig.action) {
             // auto: false skips automated agent actions but still allows notifications
             if (reactionConfig.auto !== false || reactionConfig.action === "notify") {
-              const reactionResult = await executeReaction(session, reactionKey, reactionConfig, ctx);
+              const reactionResult = await executeReaction(
+                session,
+                reactionKey,
+                reactionConfig,
+                ctx,
+              );
               transitionReaction = { key: reactionKey, result: reactionResult, messageEnriched };
               observer.recordOperation({
                 metric: "lifecycle_poll",
@@ -851,7 +861,12 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
                 metadata: {},
                 agentInfo: null,
               };
-              await executeReaction(systemSession, reactionKey, reactionConfig as ReactionConfig, ctx);
+              await executeReaction(
+                systemSession,
+                reactionKey,
+                reactionConfig as ReactionConfig,
+                ctx,
+              );
             }
           }
         }

@@ -49,10 +49,11 @@ Per-project values take precedence over `defaults`. Any project that does not de
 <Callout type="warning">
   **Agent inheritance is role-specific.** The top-level `agent` field in a project config is a **shared default for workers only**. Setting `agent: opencode` does **not** make the orchestrator use opencode — you must explicitly configure `orchestrator.agent` if you want a different agent for the orchestrator role.
 
-  Priority order for each role:
-  - **Worker:** `project.worker.agent` → `project.agent` → `defaults.worker.agent` → `defaults.agent`
-  - **Orchestrator:** `project.orchestrator.agent` → `defaults.orchestrator.agent` → `defaults.agent` (no shared fallback)
-</Callout>
+Priority order for each role:
+
+- **Worker:** `project.worker.agent` → `project.agent` → `defaults.worker.agent` → `defaults.agent`
+- **Orchestrator:** `project.orchestrator.agent` → `defaults.orchestrator.agent` → `defaults.agent` (no shared fallback)
+  </Callout>
 
 ## Recipe 1: Opus orchestrator, Sonnet workers
 

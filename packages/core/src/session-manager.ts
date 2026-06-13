@@ -41,19 +41,9 @@ import {
   restore,
 } from "./session-spawn.js";
 
-import {
-  list,
-  listCached,
-  get,
-} from "./session-query.js";
+import { list, listCached, get } from "./session-query.js";
 
-import {
-  kill,
-  cleanup,
-  send,
-  claimPR,
-  remap,
-} from "./session-actions.js";
+import { kill, cleanup, send, claimPR, remap } from "./session-actions.js";
 
 import { deduplicatePRStorageOnStartup } from "./metadata.js";
 
@@ -103,19 +93,20 @@ export function createSessionManager(deps: SessionManagerDeps): OpenCodeSessionM
 
   return {
     spawn: (spawnConfig: SessionSpawnConfig) => spawn(spawnConfig, context),
-    spawnOrchestrator: (spawnConfig: OrchestratorSpawnConfig) => spawnOrchestrator(spawnConfig, context),
-    ensureOrchestrator: (spawnConfig: OrchestratorSpawnConfig) => ensureOrchestrator(spawnConfig, context),
-    relaunchOrchestrator: (spawnConfig: OrchestratorSpawnConfig) => relaunchOrchestrator(spawnConfig, context),
+    spawnOrchestrator: (spawnConfig: OrchestratorSpawnConfig) =>
+      spawnOrchestrator(spawnConfig, context),
+    ensureOrchestrator: (spawnConfig: OrchestratorSpawnConfig) =>
+      ensureOrchestrator(spawnConfig, context),
+    relaunchOrchestrator: (spawnConfig: OrchestratorSpawnConfig) =>
+      relaunchOrchestrator(spawnConfig, context),
     restore: (sessionId: SessionId) => restore(sessionId, context),
     list: (projectId?: string, options?: ListOptions) => list(projectId, options, context),
     listCached: (projectId?: string) => listCached(projectId, undefined, context),
     invalidateCache: () => context.invalidateCache(),
     get: (sessionId: SessionId) => get(sessionId, context),
     kill: (sessionId: SessionId, options?: KillOptions) => kill(sessionId, options, context),
-    cleanup: (
-      projectId?: string,
-      options?: { dryRun?: boolean; purgeOpenCode?: boolean },
-    ) => cleanup(projectId, options, context),
+    cleanup: (projectId?: string, options?: { dryRun?: boolean; purgeOpenCode?: boolean }) =>
+      cleanup(projectId, options, context),
     send: (sessionId: SessionId, message: string) => send(sessionId, message, context),
     claimPR: (sessionId: SessionId, prRef: string, options?: ClaimPROptions) =>
       claimPR(sessionId, prRef, options, context),

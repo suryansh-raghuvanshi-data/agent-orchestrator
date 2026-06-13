@@ -38,12 +38,11 @@ async function resolveGhBinary(): Promise<string> {
 
   // On Windows the binary is `gh.exe` (or `gh.cmd` for npm shims). Honor
   // PATHEXT so we match whatever the user actually installed.
-  const exts =
-    isWindows()
-      ? (process.env["PATHEXT"]?.split(";").filter(Boolean) ?? [".EXE", ".CMD", ".BAT"]).map((e) =>
-          e.toLowerCase(),
-        )
-      : [""];
+  const exts = isWindows()
+    ? (process.env["PATHEXT"]?.split(";").filter(Boolean) ?? [".EXE", ".CMD", ".BAT"]).map((e) =>
+        e.toLowerCase(),
+      )
+    : [""];
 
   for (const dir of dirs) {
     for (const ext of exts) {

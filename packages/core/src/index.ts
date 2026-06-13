@@ -501,7 +501,13 @@ export type {
   PortfolioSession,
 } from "./types.js";
 
-export { getAoBaseDir, getPortfolioDir, getPreferencesPath, getRegisteredPath, getBacklogClaimsPath } from "./paths.js";
+export {
+  getAoBaseDir,
+  getPortfolioDir,
+  getPreferencesPath,
+  getRegisteredPath,
+  getBacklogClaimsPath,
+} from "./paths.js";
 
 export {
   discoverProjects,

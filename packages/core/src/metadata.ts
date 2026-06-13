@@ -1038,7 +1038,9 @@ export interface ReportWatcherGroup {
 }
 
 /** Get PR review comments group from metadata */
-export function getPRReviewComments(metadata: Record<string, string>): PRReviewCommentsGroup | null {
+export function getPRReviewComments(
+  metadata: Record<string, string>,
+): PRReviewCommentsGroup | null {
   const blob = metadata["prReviewComments"];
   if (!blob) return null;
   try {
@@ -1049,7 +1051,9 @@ export function getPRReviewComments(metadata: Record<string, string>): PRReviewC
 }
 
 /** Build patch record to update PR review comments */
-export function buildPRReviewCommentsPatch(comments: PRReviewCommentsGroup): Record<string, string> {
+export function buildPRReviewCommentsPatch(
+  comments: PRReviewCommentsGroup,
+): Record<string, string> {
   return { prReviewComments: JSON.stringify(comments) };
 }
 
@@ -1066,14 +1070,22 @@ export function getReviewDispatch(metadata: Record<string, string>): ReviewDispa
 }
 
 /** Build patch record for review dispatch group */
-export function buildReviewDispatchPatch(group: Partial<ReviewDispatchGroup>): Record<string, string> {
+export function buildReviewDispatchPatch(
+  group: Partial<ReviewDispatchGroup>,
+): Record<string, string> {
   const patch: Record<string, string> = {};
-  if (group.lastPendingReviewFingerprint !== undefined) patch["lastPendingReviewFingerprint"] = group.lastPendingReviewFingerprint;
-  if (group.lastPendingReviewDispatchHash !== undefined) patch["lastPendingReviewDispatchHash"] = group.lastPendingReviewDispatchHash;
-  if (group.lastPendingReviewDispatchAt !== undefined) patch["lastPendingReviewDispatchAt"] = group.lastPendingReviewDispatchAt;
-  if (group.lastAutomatedReviewFingerprint !== undefined) patch["lastAutomatedReviewFingerprint"] = group.lastAutomatedReviewFingerprint;
-  if (group.lastAutomatedReviewDispatchHash !== undefined) patch["lastAutomatedReviewDispatchHash"] = group.lastAutomatedReviewDispatchHash;
-  if (group.lastAutomatedReviewDispatchAt !== undefined) patch["lastAutomatedReviewDispatchAt"] = group.lastAutomatedReviewDispatchAt;
+  if (group.lastPendingReviewFingerprint !== undefined)
+    patch["lastPendingReviewFingerprint"] = group.lastPendingReviewFingerprint;
+  if (group.lastPendingReviewDispatchHash !== undefined)
+    patch["lastPendingReviewDispatchHash"] = group.lastPendingReviewDispatchHash;
+  if (group.lastPendingReviewDispatchAt !== undefined)
+    patch["lastPendingReviewDispatchAt"] = group.lastPendingReviewDispatchAt;
+  if (group.lastAutomatedReviewFingerprint !== undefined)
+    patch["lastAutomatedReviewFingerprint"] = group.lastAutomatedReviewFingerprint;
+  if (group.lastAutomatedReviewDispatchHash !== undefined)
+    patch["lastAutomatedReviewDispatchHash"] = group.lastAutomatedReviewDispatchHash;
+  if (group.lastAutomatedReviewDispatchAt !== undefined)
+    patch["lastAutomatedReviewDispatchAt"] = group.lastAutomatedReviewDispatchAt;
   return patch;
 }
 
@@ -1088,12 +1100,18 @@ export function getCIFailureDispatch(metadata: Record<string, string>): CIFailur
 }
 
 /** Build patch record for CI failure dispatch group */
-export function buildCIFailureDispatchPatch(group: Partial<CIFailureDispatchGroup>): Record<string, string> {
+export function buildCIFailureDispatchPatch(
+  group: Partial<CIFailureDispatchGroup>,
+): Record<string, string> {
   const patch: Record<string, string> = {};
-  if (group.lastCIFailureFingerprint !== undefined) patch["lastCIFailureFingerprint"] = group.lastCIFailureFingerprint;
-  if (group.lastCIFailureDispatchHash !== undefined) patch["lastCIFailureDispatchHash"] = group.lastCIFailureDispatchHash;
-  if (group.lastCIFailureDispatchAt !== undefined) patch["lastCIFailureDispatchAt"] = group.lastCIFailureDispatchAt;
-  if (group.ciPassingStableCount !== undefined) patch["ciPassingStableCount"] = group.ciPassingStableCount;
+  if (group.lastCIFailureFingerprint !== undefined)
+    patch["lastCIFailureFingerprint"] = group.lastCIFailureFingerprint;
+  if (group.lastCIFailureDispatchHash !== undefined)
+    patch["lastCIFailureDispatchHash"] = group.lastCIFailureDispatchHash;
+  if (group.lastCIFailureDispatchAt !== undefined)
+    patch["lastCIFailureDispatchAt"] = group.lastCIFailureDispatchAt;
+  if (group.ciPassingStableCount !== undefined)
+    patch["ciPassingStableCount"] = group.ciPassingStableCount;
   return patch;
 }
 
@@ -1108,12 +1126,18 @@ export function getMergeConflictDispatch(metadata: Record<string, string>): Merg
 }
 
 /** Build patch record for merge conflict dispatch group */
-export function buildMergeConflictDispatchPatch(group: Partial<MergeConflictGroup>): Record<string, string> {
+export function buildMergeConflictDispatchPatch(
+  group: Partial<MergeConflictGroup>,
+): Record<string, string> {
   const patch: Record<string, string> = {};
-  if (group.lastMergeConflictFingerprint !== undefined) patch["lastMergeConflictFingerprint"] = group.lastMergeConflictFingerprint;
-  if (group.lastMergeConflictDispatchHash !== undefined) patch["lastMergeConflictDispatchHash"] = group.lastMergeConflictDispatchHash;
-  if (group.lastMergeConflictDispatchAt !== undefined) patch["lastMergeConflictDispatchAt"] = group.lastMergeConflictDispatchAt;
-  if (group.lastMergeConflictDispatched !== undefined) patch["lastMergeConflictDispatched"] = group.lastMergeConflictDispatched;
+  if (group.lastMergeConflictFingerprint !== undefined)
+    patch["lastMergeConflictFingerprint"] = group.lastMergeConflictFingerprint;
+  if (group.lastMergeConflictDispatchHash !== undefined)
+    patch["lastMergeConflictDispatchHash"] = group.lastMergeConflictDispatchHash;
+  if (group.lastMergeConflictDispatchAt !== undefined)
+    patch["lastMergeConflictDispatchAt"] = group.lastMergeConflictDispatchAt;
+  if (group.lastMergeConflictDispatched !== undefined)
+    patch["lastMergeConflictDispatched"] = group.lastMergeConflictDispatched;
   return patch;
 }
 
@@ -1125,8 +1149,11 @@ export function getReportWatcher(metadata: Record<string, string>): ReportWatche
 }
 
 /** Build patch record for report watcher group */
-export function buildReportWatcherPatch(group: Partial<ReportWatcherGroup>): Record<string, string> {
+export function buildReportWatcherPatch(
+  group: Partial<ReportWatcherGroup>,
+): Record<string, string> {
   const patch: Record<string, string> = {};
-  if (group.mergedPendingCleanupSince !== undefined) patch["mergedPendingCleanupSince"] = group.mergedPendingCleanupSince;
+  if (group.mergedPendingCleanupSince !== undefined)
+    patch["mergedPendingCleanupSince"] = group.mergedPendingCleanupSince;
   return patch;
 }

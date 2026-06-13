@@ -35,7 +35,14 @@ export function ConflictCard({
       )}
     >
       <div className="flex items-center gap-2 px-3 py-2 bg-[color-mix(in_srgb,var(--color-status-error)_10%,transparent)] border-b border-[var(--color-status-error)]/20">
-        <svg className="w-3.5 h-3.5 shrink-0 text-[var(--color-status-error)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+        <svg
+          className="w-3.5 h-3.5 shrink-0 text-[var(--color-status-error)]"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
           <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span className="text-[11px] font-semibold text-[var(--color-status-error)] uppercase tracking-wider">
@@ -56,7 +63,12 @@ export function ConflictCard({
           <pre className="text-[11px] text-[var(--color-text-secondary)] font-mono leading-relaxed whitespace-pre-wrap line-clamp-6">
             {outputA.content}
           </pre>
-          <Button variant="primary" size="sm" onClick={onKeepA} className="w-full justify-center text-[10px]">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onKeepA}
+            className="w-full justify-center text-[10px]"
+          >
             Keep A
           </Button>
         </div>
@@ -69,7 +81,12 @@ export function ConflictCard({
           <pre className="text-[11px] text-[var(--color-text-secondary)] font-mono leading-relaxed whitespace-pre-wrap line-clamp-6">
             {outputB.content}
           </pre>
-          <Button variant="primary" size="sm" onClick={onKeepB} className="w-full justify-center text-[10px]">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onKeepB}
+            className="w-full justify-center text-[10px]"
+          >
             Keep B
           </Button>
         </div>
@@ -77,7 +94,12 @@ export function ConflictCard({
 
       {onMerge && (
         <div className="px-3 py-2 border-t border-[var(--color-status-error)]/20">
-          <Button variant="ghost" size="sm" onClick={onMerge} className="w-full justify-center text-[10px]">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onMerge}
+            className="w-full justify-center text-[10px]"
+          >
             Merge both
           </Button>
         </div>

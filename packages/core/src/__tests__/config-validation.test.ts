@@ -1397,7 +1397,12 @@ describe("B5: warnOnUnknownPluginConfigKeys", () => {
       },
     };
     validateConfigForB5(config);
-    const db = getDb() as unknown as { prepare: (sql: string) => { get: (sql?: string) => unknown; run: (...args: unknown[]) => unknown } };
+    const db = getDb() as unknown as {
+      prepare: (sql: string) => {
+        get: (sql?: string) => unknown;
+        run: (...args: unknown[]) => unknown;
+      };
+    };
     const row = db
       .prepare(
         `SELECT data FROM activity_events
@@ -1427,7 +1432,12 @@ describe("B5: warnOnUnknownPluginConfigKeys", () => {
       },
     };
     validateConfigForB5(config);
-    const db = getDb() as unknown as { prepare: (sql: string) => { get: (sql?: string) => unknown; run: (...args: unknown[]) => unknown } };
+    const db = getDb() as unknown as {
+      prepare: (sql: string) => {
+        get: (sql?: string) => unknown;
+        run: (...args: unknown[]) => unknown;
+      };
+    };
     const row = db
       .prepare(
         `SELECT COUNT(*) as c FROM activity_events

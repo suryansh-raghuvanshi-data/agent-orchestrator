@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { config, registry, sessionManager } = await getServices();
-    
+
     // Check if the agent name is actually a registered worker provider
     const manifests = registry.list("worker-provider");
     const providerNames = manifests.map((m) => m.name);

@@ -312,7 +312,7 @@ All in `packages/web/src/lib/__tests__/client-api.test.ts`:
 - `pnpm exec eslint packages/web/src/lib/client-api.ts packages/web/src/lib/__tests__/client-api.test.ts packages/web/src/components/Dashboard.tsx` — passed with only the repo-level `.eslintignore` warning.
 - `pnpm exec prettier --check packages/web/src/lib/client-api.ts packages/web/src/lib/__tests__/client-api.test.ts packages/web/src/components/Dashboard.tsx` — passed.
 
- ---
+  ***
 
 ## AO-010: Add Optimistic UI With Rollback
 

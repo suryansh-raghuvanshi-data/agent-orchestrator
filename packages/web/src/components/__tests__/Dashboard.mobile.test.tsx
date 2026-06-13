@@ -49,13 +49,17 @@ describe("Dashboard unified layout (mobile viewport)", () => {
       if (url.includes("/api/agents")) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ agents: [{ name: "claude-code", displayName: "Claude Code" }] }),
+          json: () =>
+            Promise.resolve({ agents: [{ name: "claude-code", displayName: "Claude Code" }] }),
         } as Response);
       }
       if (url.includes("/api/workers")) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ providers: [{ name: "local", displayName: "Local", status: "healthy" }] }),
+          json: () =>
+            Promise.resolve({
+              providers: [{ name: "local", displayName: "Local", status: "healthy" }],
+            }),
         } as Response);
       }
       return Promise.resolve({

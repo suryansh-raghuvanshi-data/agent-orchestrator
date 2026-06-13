@@ -28,12 +28,18 @@ interface AgentDrawerProps {
 }
 
 const defaultDescriptions: Record<string, string> = {
-  "claude-code": "Anthropic's Claude Code — plans, delegates, and reviews across the entire codebase. Excels at architecture decisions and complex multi-step reasoning.",
-  codex: "OpenAI Codex — autonomous agent optimized for rapid code generation and iteration. Strong at implementing well-scoped features and fixing bugs.",
-  opencode: "Open-source CLI agent designed for parallel task execution. Lightweight and efficient for routine coding tasks across multiple files.",
-  aider: "AI pair programmer that works directly with your codebase. Best for refactoring, test writing, and incremental improvements.",
-  cursor: "Cursor AI — deep IDE integration for context-aware edits. Strong at navigating existing code and making surgical changes.",
-  devin: "Autonomous software engineer that handles entire features end-to-end. Excels at research, setup, and complex multi-file changes.",
+  "claude-code":
+    "Anthropic's Claude Code — plans, delegates, and reviews across the entire codebase. Excels at architecture decisions and complex multi-step reasoning.",
+  codex:
+    "OpenAI Codex — autonomous agent optimized for rapid code generation and iteration. Strong at implementing well-scoped features and fixing bugs.",
+  opencode:
+    "Open-source CLI agent designed for parallel task execution. Lightweight and efficient for routine coding tasks across multiple files.",
+  aider:
+    "AI pair programmer that works directly with your codebase. Best for refactoring, test writing, and incremental improvements.",
+  cursor:
+    "Cursor AI — deep IDE integration for context-aware edits. Strong at navigating existing code and making surgical changes.",
+  devin:
+    "Autonomous software engineer that handles entire features end-to-end. Excels at research, setup, and complex multi-file changes.",
   kilo: "Rapid prototyping agent optimized for speed. Best for quick experiments, boilerplate generation, and proof-of-concept work.",
 };
 
@@ -95,7 +101,12 @@ export function AgentDrawer({ agent, onClose, onRemove, className }: AgentDrawer
   const capabilities = agent.capabilities || defaultCapabilities[agent.name] || [];
 
   return (
-    <div className="fixed inset-0 z-[var(--z-overlay)]" role="dialog" aria-modal="true" aria-label={`${agent.displayName} configuration`}>
+    <div
+      className="fixed inset-0 z-[var(--z-overlay)]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${agent.displayName} configuration`}
+    >
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/40 animate-in fade-in duration-150"
@@ -118,7 +129,15 @@ export function AgentDrawer({ agent, onClose, onRemove, className }: AgentDrawer
         {/* Header */}
         <div className="flex items-start gap-4 px-5 pt-5 pb-4">
           <Avatar size={36}>
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <circle cx="12" cy="8" r="4" />
               <path d="M5 20v-2a7 7 0 0114 0v2" />
             </svg>
@@ -141,7 +160,15 @@ export function AgentDrawer({ agent, onClose, onRemove, className }: AgentDrawer
             className="inline-flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] transition-colors duration-[var(--duration-fast)]"
             aria-label="Close"
           >
-            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <svg
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
           </button>
@@ -177,13 +204,26 @@ export function AgentDrawer({ agent, onClose, onRemove, className }: AgentDrawer
                   <label className="block text-[11px] text-[var(--color-text-tertiary)] mb-1">
                     Temperature
                   </label>
-                  <Input type="number" defaultValue={0.7} min={0} max={2} step={0.1} className="h-[30px] text-[12px]" />
+                  <Input
+                    type="number"
+                    defaultValue={0.7}
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    className="h-[30px] text-[12px]"
+                  />
                 </div>
                 <div>
                   <label className="block text-[11px] text-[var(--color-text-tertiary)] mb-1">
                     Max tokens
                   </label>
-                  <Input type="number" defaultValue={8192} min={256} step={256} className="h-[30px] text-[12px]" />
+                  <Input
+                    type="number"
+                    defaultValue={8192}
+                    min={256}
+                    step={256}
+                    className="h-[30px] text-[12px]"
+                  />
                 </div>
               </div>
               <div>
@@ -207,8 +247,18 @@ export function AgentDrawer({ agent, onClose, onRemove, className }: AgentDrawer
               </h3>
               <ul className="space-y-1.5">
                 {capabilities.map((cap, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
-                    <svg className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[var(--color-accent)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]"
+                  >
+                    <svg
+                      className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[var(--color-accent)]"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
                       <path d="m9 12 2 2 4-4" />
                       <circle cx="12" cy="12" r="10" />
                     </svg>
@@ -232,7 +282,17 @@ export function AgentDrawer({ agent, onClose, onRemove, className }: AgentDrawer
                   </span>
                 </div>
                 <Badge
-                  variant={agent.currentTask.status === "error" ? "error" : agent.currentTask.status === "working" ? "working" : agent.currentTask.status === "waiting" ? "waiting" : agent.currentTask.status === "success" ? "success" : "idle"}
+                  variant={
+                    agent.currentTask.status === "error"
+                      ? "error"
+                      : agent.currentTask.status === "working"
+                        ? "working"
+                        : agent.currentTask.status === "waiting"
+                          ? "waiting"
+                          : agent.currentTask.status === "success"
+                            ? "success"
+                            : "idle"
+                  }
                   label={agent.currentTask.status}
                   size="sm"
                 />

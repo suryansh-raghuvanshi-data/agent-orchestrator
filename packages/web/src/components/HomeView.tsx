@@ -42,14 +42,15 @@ export function HomeView({ sessions, className }: HomeViewProps) {
     [sessions],
   );
   const recentSessions = useMemo(
-    () => sessions
-      .filter((s) => TERMINAL_STATUSES.includes(s.status))
-      .sort((a, b) => {
-        const aTime = new Date(a.lastActivityAt ?? a.createdAt ?? 0).getTime();
-        const bTime = new Date(b.lastActivityAt ?? b.createdAt ?? 0).getTime();
-        return bTime - aTime;
-      })
-      .slice(0, 8),
+    () =>
+      sessions
+        .filter((s) => TERMINAL_STATUSES.includes(s.status))
+        .sort((a, b) => {
+          const aTime = new Date(a.lastActivityAt ?? a.createdAt ?? 0).getTime();
+          const bTime = new Date(b.lastActivityAt ?? b.createdAt ?? 0).getTime();
+          return bTime - aTime;
+        })
+        .slice(0, 8),
     [sessions],
   );
 
@@ -58,9 +59,7 @@ export function HomeView({ sessions, className }: HomeViewProps) {
   return (
     <div className={cn("max-w-[880px] mx-auto px-6 py-8", className)}>
       <div className="mb-8">
-        <h1 className="text-[20px] font-semibold text-[var(--color-text-primary)]">
-          Welcome back
-        </h1>
+        <h1 className="text-[20px] font-semibold text-[var(--color-text-primary)]">Welcome back</h1>
         <p className="text-[13px] text-[var(--color-text-secondary)] mt-1">
           {inProgressCount > 0 || needsInputSessions.length > 0
             ? `${activeSessions.length} active task${activeSessions.length !== 1 ? "s" : ""}, ${inProgressCount} in progress${needsInputSessions.length > 0 ? `, ${needsInputSessions.length} needs your input` : ""}`
@@ -71,7 +70,14 @@ export function HomeView({ sessions, className }: HomeViewProps) {
       {needsInputSessions.length > 0 && (
         <section className="mb-8 rounded-[var(--radius-md)] border border-[var(--color-amber-dim)] bg-[color-mix(in_srgb,var(--color-amber-dim)_15%,var(--color-bg-surface))] overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--color-amber-dim)]">
-            <svg className="w-3.5 h-3.5 text-[var(--color-amber)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <svg
+              className="w-3.5 h-3.5 text-[var(--color-amber)]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path d="M12 9v4m0 4h.01" />
               <circle cx="12" cy="12" r="10" />
             </svg>
@@ -118,12 +124,21 @@ export function HomeView({ sessions, className }: HomeViewProps) {
 
         {activeSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <svg className="w-8 h-8 text-[var(--color-text-muted)] mb-3" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
+            <svg
+              className="w-8 h-8 text-[var(--color-text-muted)] mb-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" />
             </svg>
             <p className="text-[13px] text-[var(--color-text-secondary)]">No active tasks</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Start a new task to begin orchestrating.</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
+              Start a new task to begin orchestrating.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -190,7 +205,15 @@ export function HomeView({ sessions, className }: HomeViewProps) {
           href="/new-task"
           className="inline-flex items-center gap-1.5 px-3.5 h-8 text-[11px] font-semibold text-white bg-[var(--color-accent)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-[var(--duration-fast)]"
         >
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path d="M12 5v14m-7-7h14" />
           </svg>
           New Task
@@ -199,7 +222,15 @@ export function HomeView({ sessions, className }: HomeViewProps) {
           href="/?view=kanban"
           className="inline-flex items-center gap-1.5 px-3.5 h-8 text-[11px] font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-[var(--radius-sm)] hover:bg-[var(--color-bg-subtle)] transition-colors duration-[var(--duration-fast)]"
         >
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path d="M9 5H5a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V6a1 1 0 00-1-1zM19 5h-4a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V6a1 1 0 00-1-1zM9 15H5a1 1 0 00-1 1v2a1 1 0 001 1h4a1 1 0 001-1v-2a1 1 0 00-1-1zM19 13h-4a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1v-4a1 1 0 00-1-1z" />
           </svg>
           View Kanban
@@ -208,7 +239,15 @@ export function HomeView({ sessions, className }: HomeViewProps) {
           href="/history"
           className="inline-flex items-center gap-1.5 px-3.5 h-8 text-[11px] font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-[var(--radius-sm)] hover:bg-[var(--color-bg-subtle)] transition-colors duration-[var(--duration-fast)]"
         >
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <circle cx="12" cy="12" r="10" />
             <path d="M12 6v6l4 2" />
           </svg>

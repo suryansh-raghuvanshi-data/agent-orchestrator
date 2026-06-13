@@ -615,9 +615,7 @@ describe("restore readiness (AO-005)", () => {
       });
 
       // rt-old is dead → restore kicks in → rt-restored is created
-      vi.mocked(mockRuntime.isAlive).mockImplementation(
-        async (handle) => handle.id !== "rt-old",
-      );
+      vi.mocked(mockRuntime.isAlive).mockImplementation(async (handle) => handle.id !== "rt-old");
       // Process is NOT running after restore
       vi.mocked(mockAgent.isProcessRunning).mockImplementation(async () => false);
       vi.mocked(mockRuntime.create).mockResolvedValue(makeHandle("rt-restored"));
@@ -654,9 +652,7 @@ describe("restore readiness (AO-005)", () => {
       });
 
       // rt-old is dead → restore kicks in → rt-restored is created
-      vi.mocked(mockRuntime.isAlive).mockImplementation(
-        async (handle) => handle.id !== "rt-old",
-      );
+      vi.mocked(mockRuntime.isAlive).mockImplementation(async (handle) => handle.id !== "rt-old");
       // Process is NOT running (simulating edge case where process check misses it)
       vi.mocked(mockAgent.isProcessRunning).mockImplementation(async () => false);
       vi.mocked(mockRuntime.create).mockResolvedValue(makeHandle("rt-restored"));

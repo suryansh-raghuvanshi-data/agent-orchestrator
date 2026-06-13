@@ -253,7 +253,9 @@ function DashboardInner({
   const { showToast } = useToast();
   const [selectedWorkerAgents, setSelectedWorkerAgents] = useState<string[]>([]);
   const [selectedOrchestrator, setSelectedOrchestrator] = useState<string>("claude-code");
-  const [selectedOrchestratorType, setSelectedOrchestratorType] = useState<"agent" | "workerProvider">("agent");
+  const [selectedOrchestratorType, setSelectedOrchestratorType] = useState<
+    "agent" | "workerProvider"
+  >("agent");
   const [doneExpanded, setDoneExpanded] = useState(false);
   const [pendingActions, setPendingActions] = useState<Record<string, boolean>>({});
   const [optimisticSessionOverrides, setOptimisticSessionOverrides] = useState<
@@ -764,12 +766,12 @@ function DashboardInner({
           {showDebugBundleButton ? <CopyDebugBundleButton projectId={projectId} /> : null}
           <DashboardNotificationButton />
           <OrchestratorAgentPicker
-             value={selectedOrchestrator}
-             onChange={(name, type) => {
-               setSelectedOrchestrator(name);
-               setSelectedOrchestratorType(type);
-             }}
-           />
+            value={selectedOrchestrator}
+            onChange={(name, type) => {
+              setSelectedOrchestrator(name);
+              setSelectedOrchestratorType(type);
+            }}
+          />
           <WorkerAgentsCheckboxPicker
             value={selectedWorkerAgents}
             onChange={setSelectedWorkerAgents}

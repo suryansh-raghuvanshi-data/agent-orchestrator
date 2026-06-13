@@ -38,7 +38,14 @@ export function CompletionSummary({
     >
       <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-success-dim)]">
         <div className="w-6 h-6 rounded-full bg-[var(--color-success-dim)] flex items-center justify-center">
-          <svg className="w-3 h-3 text-[var(--color-success)]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            className="w-3 h-3 text-[var(--color-success)]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path d="m5 13 4 4L19 7" />
           </svg>
         </div>
@@ -55,7 +62,9 @@ export function CompletionSummary({
           </div>
           <div>
             <span className="text-[var(--color-text-tertiary)]">Elapsed </span>
-            <span className="text-[var(--color-text-primary)] font-mono text-[11px]">{timeElapsed}</span>
+            <span className="text-[var(--color-text-primary)] font-mono text-[11px]">
+              {timeElapsed}
+            </span>
           </div>
         </div>
 
@@ -83,7 +92,9 @@ export function CompletionSummary({
               {keyOutputs.map((o, i) => (
                 <li key={i} className="text-[11px] text-[var(--color-accent)]">
                   {o.url ? (
-                    <a href={o.url} className="hover:underline">{o.label}</a>
+                    <a href={o.url} className="hover:underline">
+                      {o.label}
+                    </a>
                   ) : (
                     o.label
                   )}

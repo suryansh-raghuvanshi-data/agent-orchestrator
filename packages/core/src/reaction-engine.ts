@@ -96,7 +96,10 @@ export function createEvent(
 }
 
 /** Determine which event type corresponds to a status transition. */
-export function statusToEventType(_from: SessionStatus | undefined, to: SessionStatus): EventType | null {
+export function statusToEventType(
+  _from: SessionStatus | undefined,
+  to: SessionStatus,
+): EventType | null {
   switch (to) {
     case "working":
       return "session.working";
@@ -389,7 +392,11 @@ export async function executeReaction(
   };
 }
 
-export function clearReactionTracker(sessionId: string, reactionKey: string, ctx: LifecycleContext): void {
+export function clearReactionTracker(
+  sessionId: string,
+  reactionKey: string,
+  ctx: LifecycleContext,
+): void {
   ctx.reactionTrackers.delete(`${sessionId}:${reactionKey}`);
 }
 
@@ -483,14 +490,17 @@ export async function maybeDispatchReviewBacklog(
     clearReactionTracker(session.id, humanReactionKey, ctx);
     clearReactionTracker(session.id, automatedReactionKey, ctx);
     ctx.lastReviewBacklogCheckAt.delete(session.id);
-    ctx.updateSessionMetadata(session, buildReviewDispatchPatch({
-      lastPendingReviewFingerprint: "",
-      lastPendingReviewDispatchHash: "",
-      lastPendingReviewDispatchAt: "",
-      lastAutomatedReviewFingerprint: "",
-      lastAutomatedReviewDispatchHash: "",
-      lastAutomatedReviewDispatchAt: "",
-    }));
+    ctx.updateSessionMetadata(
+      session,
+      buildReviewDispatchPatch({
+        lastPendingReviewFingerprint: "",
+        lastPendingReviewDispatchHash: "",
+        lastPendingReviewDispatchAt: "",
+        lastAutomatedReviewFingerprint: "",
+        lastAutomatedReviewDispatchHash: "",
+        lastAutomatedReviewDispatchAt: "",
+      }),
+    );
     return;
   }
 
@@ -618,18 +628,24 @@ export async function maybeDispatchReviewBacklog(
       clearReactionTracker(session.id, humanReactionKey, ctx);
     }
     if (pendingFingerprint !== lastPendingFingerprint) {
-      ctx.updateSessionMetadata(session, buildReviewDispatchPatch({
-        lastPendingReviewFingerprint: pendingFingerprint,
-      }));
+      ctx.updateSessionMetadata(
+        session,
+        buildReviewDispatchPatch({
+          lastPendingReviewFingerprint: pendingFingerprint,
+        }),
+      );
     }
 
     if (!pendingFingerprint) {
       clearReactionTracker(session.id, humanReactionKey, ctx);
-      ctx.updateSessionMetadata(session, buildReviewDispatchPatch({
-        lastPendingReviewFingerprint: "",
-        lastPendingReviewDispatchHash: "",
-        lastPendingReviewDispatchAt: "",
-      }));
+      ctx.updateSessionMetadata(
+        session,
+        buildReviewDispatchPatch({
+          lastPendingReviewFingerprint: "",
+          lastPendingReviewDispatchHash: "",
+          lastPendingReviewDispatchAt: "",
+        }),
+      );
     } else if (pendingFingerprint !== lastPendingDispatchHash) {
       const reactionConfig = getReactionConfigForSession(session, humanReactionKey, ctx);
       if (
@@ -660,10 +676,13 @@ export async function maybeDispatchReviewBacklog(
           success = result.success;
         }
         if (success) {
-          ctx.updateSessionMetadata(session, buildReviewDispatchPatch({
-            lastPendingReviewDispatchHash: pendingFingerprint,
-            lastPendingReviewDispatchAt: new Date().toISOString(),
-          }));
+          ctx.updateSessionMetadata(
+            session,
+            buildReviewDispatchPatch({
+              lastPendingReviewDispatchHash: pendingFingerprint,
+              lastPendingReviewDispatchAt: new Date().toISOString(),
+            }),
+          );
         }
       }
     }
@@ -677,18 +696,24 @@ export async function maybeDispatchReviewBacklog(
 
     if (automatedFingerprint !== lastAutomatedFingerprint) {
       clearReactionTracker(session.id, automatedReactionKey, ctx);
-      ctx.updateSessionMetadata(session, buildReviewDispatchPatch({
-        lastAutomatedReviewFingerprint: automatedFingerprint,
-      }));
+      ctx.updateSessionMetadata(
+        session,
+        buildReviewDispatchPatch({
+          lastAutomatedReviewFingerprint: automatedFingerprint,
+        }),
+      );
     }
 
     if (!automatedFingerprint) {
       clearReactionTracker(session.id, automatedReactionKey, ctx);
-      ctx.updateSessionMetadata(session, buildReviewDispatchPatch({
-        lastAutomatedReviewFingerprint: "",
-        lastAutomatedReviewDispatchHash: "",
-        lastAutomatedReviewDispatchAt: "",
-      }));
+      ctx.updateSessionMetadata(
+        session,
+        buildReviewDispatchPatch({
+          lastAutomatedReviewFingerprint: "",
+          lastAutomatedReviewDispatchHash: "",
+          lastAutomatedReviewDispatchAt: "",
+        }),
+      );
     } else if (automatedFingerprint !== lastAutomatedDispatchHash) {
       const reactionConfig = getReactionConfigForSession(session, automatedReactionKey, ctx);
       if (
@@ -715,10 +740,13 @@ export async function maybeDispatchReviewBacklog(
           success = result.success;
         }
         if (success) {
-          ctx.updateSessionMetadata(session, buildReviewDispatchPatch({
-            lastAutomatedReviewDispatchHash: automatedFingerprint,
-            lastAutomatedReviewDispatchAt: new Date().toISOString(),
-          }));
+          ctx.updateSessionMetadata(
+            session,
+            buildReviewDispatchPatch({
+              lastAutomatedReviewDispatchHash: automatedFingerprint,
+              lastAutomatedReviewDispatchAt: new Date().toISOString(),
+            }),
+          );
         }
       }
     }
@@ -839,11 +867,14 @@ export async function maybeDispatchCIFailureDetails(
 
   if (newStatus === "merged" || newStatus === "killed") {
     clearReactionTracker(session.id, ciReactionKey, ctx);
-    ctx.updateSessionMetadata(session, buildCIFailureDispatchPatch({
-      lastCIFailureFingerprint: "",
-      lastCIFailureDispatchHash: "",
-      lastCIFailureDispatchAt: "",
-    }));
+    ctx.updateSessionMetadata(
+      session,
+      buildCIFailureDispatchPatch({
+        lastCIFailureFingerprint: "",
+        lastCIFailureDispatchHash: "",
+        lastCIFailureDispatchAt: "",
+      }),
+    );
     return;
   }
 
@@ -852,11 +883,14 @@ export async function maybeDispatchCIFailureDetails(
     const lastFingerprint = ciDispatch.lastCIFailureFingerprint ?? "";
     if (lastFingerprint) {
       clearReactionTracker(session.id, ciReactionKey, ctx);
-      ctx.updateSessionMetadata(session, buildCIFailureDispatchPatch({
-        lastCIFailureFingerprint: "",
-        lastCIFailureDispatchHash: "",
-        lastCIFailureDispatchAt: "",
-      }));
+      ctx.updateSessionMetadata(
+        session,
+        buildCIFailureDispatchPatch({
+          lastCIFailureFingerprint: "",
+          lastCIFailureDispatchHash: "",
+          lastCIFailureDispatchAt: "",
+        }),
+      );
     }
     return;
   }
@@ -873,9 +907,12 @@ export async function maybeDispatchCIFailureDetails(
     clearReactionTracker(session.id, ciReactionKey, ctx);
   }
   if (ciFingerprint !== lastCIFingerprint) {
-    ctx.updateSessionMetadata(session, buildCIFailureDispatchPatch({
-      lastCIFailureFingerprint: ciFingerprint,
-    }));
+    ctx.updateSessionMetadata(
+      session,
+      buildCIFailureDispatchPatch({
+        lastCIFailureFingerprint: ciFingerprint,
+      }),
+    );
   }
 
   if (
@@ -884,10 +921,13 @@ export async function maybeDispatchCIFailureDetails(
     (transitionReaction.messageEnriched === true ||
       transitionReaction.result.action !== "send-to-agent")
   ) {
-    ctx.updateSessionMetadata(session, buildCIFailureDispatchPatch({
-      lastCIFailureDispatchHash: ciFingerprint,
-      lastCIFailureDispatchAt: new Date().toISOString(),
-    }));
+    ctx.updateSessionMetadata(
+      session,
+      buildCIFailureDispatchPatch({
+        lastCIFailureDispatchHash: ciFingerprint,
+        lastCIFailureDispatchAt: new Date().toISOString(),
+      }),
+    );
     return;
   }
 
@@ -920,10 +960,13 @@ export async function maybeDispatchCIFailureDetails(
         await notifyHuman(event, reactionConfig.priority ?? "warning", ctx);
       }
 
-      ctx.updateSessionMetadata(session, buildCIFailureDispatchPatch({
-        lastCIFailureDispatchHash: ciFingerprint,
-        lastCIFailureDispatchAt: new Date().toISOString(),
-      }));
+      ctx.updateSessionMetadata(
+        session,
+        buildCIFailureDispatchPatch({
+          lastCIFailureDispatchHash: ciFingerprint,
+          lastCIFailureDispatchAt: new Date().toISOString(),
+        }),
+      );
     } catch {
       // ignore
     }
@@ -993,18 +1036,24 @@ export async function maybeDispatchMergeConflicts(
 
         const result = await executeReaction(session, conflictReactionKey, enrichedConfig, ctx);
         if (result.success && result.action !== "escalated") {
-          ctx.updateSessionMetadata(session, buildMergeConflictDispatchPatch({
-            lastMergeConflictDispatched: "true",
-          }));
+          ctx.updateSessionMetadata(
+            session,
+            buildMergeConflictDispatchPatch({
+              lastMergeConflictDispatched: "true",
+            }),
+          );
         }
       } catch {
         // ignore
       }
     }
   } else if (lastDispatched === "true") {
-    ctx.updateSessionMetadata(session, buildMergeConflictDispatchPatch({
-      lastMergeConflictDispatched: "",
-    }));
+    ctx.updateSessionMetadata(
+      session,
+      buildMergeConflictDispatchPatch({
+        lastMergeConflictDispatched: "",
+      }),
+    );
     clearReactionTracker(session.id, conflictReactionKey, ctx);
   }
 }

@@ -46,9 +46,7 @@ interface ChatThreadProps {
 }
 
 export function ChatThread({ session, projectId }: ChatThreadProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    buildInitialMessages(session),
-  );
+  const [messages, setMessages] = useState<ChatMessage[]>(() => buildInitialMessages(session));
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [slashCommands, setSlashCommands] = useState<string[]>([]);
@@ -95,14 +93,11 @@ export function ChatThread({ session, projectId }: ChatThreadProps) {
     setInput("");
 
     try {
-      const res = await fetch(
-        `/api/sessions/${encodeURIComponent(session.id)}/send`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: trimmed }),
-        },
-      );
+      const res = await fetch(`/api/sessions/${encodeURIComponent(session.id)}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed }),
+      });
 
       if (!res.ok) {
         const text = await res.text().catch(() => "Send failed");
@@ -142,17 +137,13 @@ export function ChatThread({ session, projectId }: ChatThreadProps) {
 
     if (e.key === "ArrowUp" && slashCommands.length > 0) {
       e.preventDefault();
-      setSelectedCommandIndex((prev) =>
-        prev <= 0 ? slashCommands.length - 1 : prev - 1,
-      );
+      setSelectedCommandIndex((prev) => (prev <= 0 ? slashCommands.length - 1 : prev - 1));
       return;
     }
 
     if (e.key === "ArrowDown" && slashCommands.length > 0) {
       e.preventDefault();
-      setSelectedCommandIndex((prev) =>
-        prev >= slashCommands.length - 1 ? 0 : prev + 1,
-      );
+      setSelectedCommandIndex((prev) => (prev >= slashCommands.length - 1 ? 0 : prev + 1));
       return;
     }
 
@@ -191,10 +182,7 @@ export function ChatThread({ session, projectId }: ChatThreadProps) {
   return (
     <div className="chat-thread flex h-full flex-col">
       <div className="chat-thread__header">
-        <Link
-          href={projectSessionPath(projectId, session.id)}
-          className="chat-thread__back"
-        >
+        <Link href={projectSessionPath(projectId, session.id)} className="chat-thread__back">
           <svg
             width="14"
             height="14"
@@ -226,14 +214,10 @@ export function ChatThread({ session, projectId }: ChatThreadProps) {
                   msg.role === "user" ? "chat-thread__msg--user" : "chat-thread__msg--assistant",
                 )}
               >
-                <div className="chat-thread__msg-role">
-                  {msg.role === "user" ? "You" : "Agent"}
-                </div>
+                <div className="chat-thread__msg-role">{msg.role === "user" ? "You" : "Agent"}</div>
                 <div className="chat-thread__msg-content">
                   {msg.role === "assistant" ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content}
-                    </ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   ) : (
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   )}

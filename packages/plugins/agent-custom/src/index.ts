@@ -35,9 +35,10 @@ function createCustomAgent(): Agent {
 
     getLaunchCommand(config: AgentLaunchConfig): string {
       const agentConfig = config.projectConfig.agentConfig as Record<string, unknown> | undefined;
-      const customCommand = typeof agentConfig?.command === "string" && agentConfig.command.length > 0
-        ? agentConfig.command
-        : "bash";
+      const customCommand =
+        typeof agentConfig?.command === "string" && agentConfig.command.length > 0
+          ? agentConfig.command
+          : "bash";
       if (config.prompt) {
         return `${customCommand} -c ${shellEscape(config.prompt)}`;
       }

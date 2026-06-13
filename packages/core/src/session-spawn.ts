@@ -63,8 +63,16 @@ import {
   EXEC_SHELL_OPTION,
   OPENCODE_INTERACTIVE_DISCOVERY_TIMEOUT_MS,
 } from "./session-context.js";
-import { resolveOpenCodeSessionReuse, discoverOpenCodeSessionIdByTitle } from "./session-opencode.js";
-import { get, metadataToSession, findSessionRecord, enrichSessionWithRuntimeState } from "./session-query.js";
+import {
+  resolveOpenCodeSessionReuse,
+  discoverOpenCodeSessionIdByTitle,
+} from "./session-opencode.js";
+import {
+  get,
+  metadataToSession,
+  findSessionRecord,
+  enrichSessionWithRuntimeState,
+} from "./session-query.js";
 import { kill } from "./session-actions-shared.js";
 import { recordActivityEvent } from "./activity-events.js";
 import { isGitBranchNameSafe } from "./utils.js";
@@ -230,7 +238,10 @@ function reserveFixedOrchestratorIdentity(
   };
 }
 
-export async function spawn(spawnConfig: SessionSpawnConfig, ctx?: SessionContext): Promise<Session> {
+export async function spawn(
+  spawnConfig: SessionSpawnConfig,
+  ctx?: SessionContext,
+): Promise<Session> {
   if (!ctx) throw new Error("Context is required");
   recordActivityEvent({
     projectId: spawnConfig.projectId,
@@ -1177,7 +1188,10 @@ async function _spawnOrchestratorInner(
   return session;
 }
 
-async function waitForConcurrentOrchestrator(sessionId: string, ctx: SessionContext): Promise<Session | null> {
+async function waitForConcurrentOrchestrator(
+  sessionId: string,
+  ctx: SessionContext,
+): Promise<Session | null> {
   const deadline = Date.now() + ENSURE_ORCHESTRATOR_CONFLICT_WAIT_MS;
   while (Date.now() < deadline) {
     const existing = await get(sessionId, ctx);
@@ -1588,7 +1602,8 @@ export async function restore(sessionId: SessionId, ctx?: SessionContext): Promi
       AO_CALLER_TYPE: "agent",
       ...(projectId && { AO_PROJECT_ID: projectId }),
       AO_CONFIG_PATH: ctx.config.configPath,
-      ...(ctx.config.port !== undefined && ctx.config.port !== null && { AO_PORT: String(ctx.config.port) }),
+      ...(ctx.config.port !== undefined &&
+        ctx.config.port !== null && { AO_PORT: String(ctx.config.port) }),
     },
   });
 

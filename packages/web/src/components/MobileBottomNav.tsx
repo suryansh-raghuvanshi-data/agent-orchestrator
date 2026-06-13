@@ -31,7 +31,15 @@ const DEFAULT_TABS: MobileBottomNavTabConfig[] = [
     label: "Board",
     href: "/?view=kanban",
     icon: (
-      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
         <path d="M9 5H5a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V6a1 1 0 00-1-1zM19 5h-4a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V6a1 1 0 00-1-1zM9 15H5a1 1 0 00-1 1v2a1 1 0 001 1h4a1 1 0 001-1v-2a1 1 0 00-1-1zM19 13h-4a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1v-4a1 1 0 00-1-1z" />
       </svg>
     ),
@@ -41,7 +49,15 @@ const DEFAULT_TABS: MobileBottomNavTabConfig[] = [
     label: "Logs",
     href: "/?view=logs",
     icon: (
-      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
         <polyline points="4 17 10 11 4 5" />
         <line x1="12" y1="19" x2="20" y2="19" />
       </svg>
@@ -52,7 +68,15 @@ const DEFAULT_TABS: MobileBottomNavTabConfig[] = [
     label: "Menu",
     href: "/settings",
     icon: (
-      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
         <circle cx="12" cy="5" r="1" />
         <circle cx="12" cy="12" r="1" />
         <circle cx="12" cy="19" r="1" />
@@ -74,28 +98,58 @@ export function MobileBottomNav({
   const isLegacy = legacy || dashboardHref !== undefined || prsHref !== undefined;
   const navTabs = isLegacy
     ? ([
-        { id: "dashboard", label: "Dashboard", href: dashboardHref, icon: (
-          <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 13h8V3H3zm10 8h8V11h-8zM3 21h8v-6H3zm10-10h8V3h-8z" />
-          </svg>
-        )},
-        { id: "prs", label: "PRs", href: prsHref, icon: (
-          <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-          </svg>
-        )},
+        {
+          id: "dashboard",
+          label: "Dashboard",
+          href: dashboardHref,
+          icon: (
+            <svg
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M3 13h8V3H3zm10 8h8V11h-8zM3 21h8v-6H3zm10-10h8V3h-8z" />
+            </svg>
+          ),
+        },
+        {
+          id: "prs",
+          label: "PRs",
+          href: prsHref,
+          icon: (
+            <svg
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+            </svg>
+          ),
+        },
         ...(showOrchestrator
-          ? [{
-              id: "orchestrator" as const,
-              label: "Orchestrator",
-              href: orchestratorHref ?? "#",
-              icon: (
-                <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 3H5a2 2 0 0 0-2 2v4m16 0V5a2 2 0 0 0-2-2h-4m0 18h4a2 2 0 0 0 2-2v-4M3 15v4a2 2 0 0 0 2 2h4" />
-                  <path d="M9 9h6v6H9z" />
-                </svg>
-              ),
-            }]
+          ? [
+              {
+                id: "orchestrator" as const,
+                label: "Orchestrator",
+                href: orchestratorHref ?? "#",
+                icon: (
+                  <svg
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path d="M9 3H5a2 2 0 0 0-2 2v4m16 0V5a2 2 0 0 0-2-2h-4m0 18h4a2 2 0 0 0 2-2v-4M3 15v4a2 2 0 0 0 2 2h4" />
+                    <path d="M9 9h6v6H9z" />
+                  </svg>
+                ),
+              },
+            ]
           : []),
       ] as MobileBottomNavTabConfig[])
     : (tabs ?? DEFAULT_TABS);
@@ -112,7 +166,13 @@ export function MobileBottomNav({
         );
         if (isDisabled) {
           return (
-            <button key={tab.id} type="button" className="mobile-bottom-nav__item" disabled aria-label={tab.label}>
+            <button
+              key={tab.id}
+              type="button"
+              className="mobile-bottom-nav__item"
+              disabled
+              aria-label={tab.label}
+            >
               {content}
             </button>
           );

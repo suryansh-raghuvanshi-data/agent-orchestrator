@@ -1,14 +1,17 @@
 # Agent Orchestrator — World-Class UI/UX Implementation Plan
+
 ### A Complete Blueprint for Multi-Agent Build Teams
 
 ## COMPLETED WORK
 
 ### Phase 1.2 — Atomic UI Component Library ✅
+
 - `Badge`, `Chip`, `Tooltip`, `Button`, `Input`, `Textarea`, `Separator`, `Spinner`, `Avatar`, `EmptyState`, `Skeleton`, `AppShell` built in `packages/web/src/components/ui/`
 - All barrel-exported from `index.ts`
 - `AppShell` composable layout: sidebar slot + collapse state, topbar left/center/right slots, fluid main viewport, mobile overlay
 
 ### Phase 2.3 — Agent Configuration Drawer ✅
+
 - `AgentDrawer` component: 380px right-drawer slides in from right (220ms ease-out) with overlay backdrop
 - Agent avatar (48px) + name + type badge (Orchestrator/Worker)
 - Description paragraph, config fields (model, temperature, max tokens, system prompt), capabilities list, current task section
@@ -16,6 +19,7 @@
 - `AgentDrawerContext` + `AgentDrawerProvider` wired into root layout — available via `useAgentDrawer()` from any client component
 
 ### Phase 3.1 — Chat Panel Component ✅
+
 - `ChatThread` component built with Markdown rendering (`react-markdown` + `remark-gfm`)
 - Slash command autocomplete (`/help`, `/status`, `/summary`, `/review`, `/fix`, `/retry`, `/kill`)
 - Context chips (`@file`, `@agent`) in composer
@@ -23,17 +27,20 @@
 - New route: `/projects/[projectId]/sessions/[id]/chat/page.tsx`
 
 ### Phase 3.2 — Strategy / Orchestration Map Panel ✅
+
 - `StrategyMap` placeholder component renders structured strategy when `session.metadata["strategy"]` exists
 - Falls back to demo node/edge graph with status indicators
 - Right rail in split-pane layout (desktop) or stacked (mobile)
 
 ### Phase 3 — Chat Workspace Layout ✅
+
 - `ChatWorkspace` split-pane: chat thread (left) + strategy map (right)
 - Responsive: stacks vertically on mobile, side-by-side on desktop
 - All styles use existing Mission Control design tokens (`--color-bg-*`, `--color-border-*`, `--color-text-*`)
 - CSS added to `packages/web/src/app/mc-session.css`
 
 ### Phase 6.1 — New Task Setup Screen ✅
+
 - New route `/new-task` with 3-step form flow
 - Step 1: Large textarea input with example prompt chips, character count, Continue button (disabled until 10+ chars)
 - Step 2: Orchestrator selection cards (horizontal grid, recommended chip) + worker checkboxes with auto-select toggle
@@ -41,23 +48,28 @@
 - Fetches projects, agents, and workers on mount; spawns via `POST /api/orchestrators`
 
 ### Phase 6.2 — Dashboard / Home View ✅
+
 - `HomeView` component at `/`: welcome heading with task counts, active task cards (grid), needs-input section (amber highlighted), recent sessions list, quick actions bar
 - Kanban board accessible via `/?view=kanban` link from quick actions
 
 ### Phase 4 — Kanban Board ✅
+
 - `KanbanBoard` groups sessions by attention level into columns with column count chips, search filtering, density toggle, done/terminated collapsible section
 - `KanbanBoardHeader`: title, counts, search, filter, density toggle
 - Reuses existing `AttentionZone`/`SessionCard`/`TaskCard` components
 
 ### Phase 5 — Execution Logs and Monitoring ✅
+
 - `LogsView`: two-panel layout (stream + detail panel), level filters, search, auto-scroll, metadata/stack trace display
 - `StatusBar`: 32px bottom bar, running/completed/needs-input counts, live elapsed timer, stop button with confirmation cooldown
 
 ### Phase 8 — History and Settings ✅
+
 - Session History view at `/history`: server-side fetch via `sessionManager.list()`, client with search, date filter tabs (today/week/month), session list with avatar/ID/timestamp/StatusBadge pill, empty states
 - Settings view at `/settings`: sections for Agents, API Keys, Notifications, Appearance, Danger zone with toggle switches, Configure buttons, destructive action
 
 ### Dependencies Added
+
 - `react-markdown` ^10.1.0
 - `remark-gfm` ^4.0.1
 
@@ -68,6 +80,7 @@
 This document is a fully self-contained implementation blueprint. Every task is atomic, independently pickable, and has enough context to be executed without verbal handoff. The orchestrating agent should assign tasks in phase order. Within each phase, tasks can be parallelized unless explicitly marked `[SEQUENTIAL]`.
 
 **Tech Stack (locked):**
+
 - Framework: React 18+ with TypeScript
 - Styling: Tailwind CSS v4 with CSS custom properties
 - State: Zustand (global) + React Query (server state)
@@ -172,9 +185,10 @@ Letter spacing: -0.01em on sizes >= text-lg
 
 **The product should feel like a Bloomberg terminal built by a design team that also made Linear.** It is dark, dense, and precise — but never oppressive. Every surface should feel like it belongs to an operating system, not a marketing site.
 
-**Signature visual element:** A thin, animated `--color-accent` left-border line on the active task card. When an agent is working on that card, the line pulses slowly (opacity 0.4 → 1.0 at 2s intervals). This is the single "alive" indicator that runs through the entire product. It signals: *something is happening here.* Everything else is calm.
+**Signature visual element:** A thin, animated `--color-accent` left-border line on the active task card. When an agent is working on that card, the line pulses slowly (opacity 0.4 → 1.0 at 2s intervals). This is the single "alive" indicator that runs through the entire product. It signals: _something is happening here._ Everything else is calm.
 
 **Do:**
+
 - Use flat, borderless column backgrounds (`bg-[var(--color-bg-surface)]`)
 - Show status via a 8×8px dot + label, not large colorful banners
 - Use thin separators (`border-[var(--color-border)]`) rather than cards-within-cards
@@ -183,6 +197,7 @@ Letter spacing: -0.01em on sizes >= text-lg
 - Prefer sentence case everywhere. No all-caps except badge labels.
 
 **Don't:**
+
 - Gradient backgrounds on content areas (reserve for empty states only)
 - Rounded corners > 12px on data-dense components
 - Shadows that create strong depth (use only `shadow-sm` max on elevated surfaces)
@@ -214,6 +229,7 @@ Letter spacing: -0.01em on sizes >= text-lg
 ```
 
 The MainViewport has three primary view modes toggled from a tab strip at top:
+
 1. **Workspace** — Split: Chat (left, 420px) + Strategy/Orchestration Map (right, fluid)
 2. **Kanban** — Full-width board
 3. **Logs** — Execution trace + live terminal feed
@@ -232,6 +248,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Goal:** Establish the monorepo structure, install all dependencies, declare all design tokens.
 
 **Deliverables:**
+
 - Next.js 14+ App Router project with TypeScript strict mode
 - `globals.css` with all CSS custom properties from the Design System section above
 - Tailwind v4 config extending the token system
@@ -241,6 +258,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - Prettier + ESLint config with import ordering rules
 
 **Acceptance criteria:**
+
 - Visiting `/` renders a blank dark (`#0c0c11`) page with correct fonts loaded
 - No console errors
 - All token variables are accessible in devtools
@@ -254,6 +272,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Build these atomic components. Each must be dark-theme native, typed, and exported from `components/ui/index.ts`:**
 
 #### `Badge`
+
 - Props: `variant` (`idle` | `working` | `waiting` | `error` | `success`), `label: string`, `size` (`sm` | `md`)
 - Renders: 8×8px status dot + label text
 - Colors map: `idle`→muted, `working`→orange, `waiting`→amber, `error`→red, `success`→green
@@ -261,16 +280,19 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - No border, no shadow. Background is `--color-bg-elevated` with 6px padding.
 
 #### `Chip`
+
 - Compact tag. Used for agent names, labels, task tags.
 - Variants: `default`, `active` (accent-dim background + accent border), `removable`
 - Removable variant shows an `×` icon on hover that triggers `onRemove` callback
 
 #### `Tooltip`
+
 - Wraps any child. Shows on hover after 400ms delay (avoids tooltip flicker on cursor sweep).
 - Content: small panel, `--color-bg-elevated`, 11px monospace for metadata, 13px regular for labels
 - Arrow pointing to trigger. Max width 240px.
 
 #### `Button`
+
 - Variants: `primary` (accent blue fill), `secondary` (surface bg + border), `ghost` (transparent + text-secondary), `danger` (error color on hover)
 - Sizes: `sm` (28px height), `md` (34px), `lg` (40px)
 - Loading state: replaces label with a 14px spinner (CSS, not SVG) + "Working..." text
@@ -278,6 +300,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - All transitions: `duration-fast ease-out`
 
 #### `Input` and `Textarea`
+
 - Background: `--color-bg-elevated`
 - Border: `--color-border` at rest, `--color-border-active` on focus
 - Focus ring: 2px `--color-accent` at 40% opacity (not the default browser outline)
@@ -285,24 +308,29 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - Textarea: auto-resize up to 6 lines, then scrollable
 
 #### `Separator`
+
 - Thin 1px horizontal or vertical rule using `--color-border`
 
 #### `Spinner`
+
 - Three dots (not a rotating ring) that animate in sequence: fade up → fade down, staggered 200ms apart
 - Color: `--color-text-muted` by default, overridable
 - Sizes: `sm` (4px dots), `md` (6px), `lg` (8px)
 
 #### `Avatar`
+
 - Circular icon container for agent identities
 - Sizes: 20px, 28px, 36px
 - Contains: agent icon (SVG) on a dim tinted background matching agent color
 - Supports status indicator: 8px dot positioned bottom-right
 
 #### `EmptyState`
+
 - Full centered container with icon (64px, muted), heading, subtext, optional CTA button
 - Background: none (inherits page bg). No borders, no card.
 
 #### `Skeleton`
+
 - Animated shimmer block for loading states
 - Uses a horizontal shimmer sweep: gradient from transparent → `rgba(255,255,255,0.04)` → transparent
 - Respects `border-radius` prop
@@ -316,6 +344,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Build `AppShell` — the master layout wrapper that all pages use.**
 
 **LeftSidebar:**
+
 - Width: 240px expanded, 40px collapsed
 - Collapse triggered by a button at the bottom of the sidebar (chevron icon)
 - Transition: `width` animates in `220ms ease-out` (Framer Motion `layout` prop)
@@ -328,12 +357,14 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - Collapsed: show only icons, no labels. Tooltip on hover shows label.
 
 **TopBar:**
+
 - Height: 48px, fixed to top
 - Left: hamburger icon (mobile only) or nothing (desktop — sidebar handles nav)
 - Center: view toggle tabs — Workspace | Kanban | Logs (pill-style segmented control)
 - Right: `OrchestratorAgentPicker` + `WorkerAgentsCheckboxPicker` + notification bell + run/stop controls
 
 **MainViewport:**
+
 - Takes remaining space
 - Contains a `<main>` with appropriate padding
 - Overflow: hidden at shell level; individual views manage their own scroll
@@ -347,6 +378,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Owner:** Agent Selection Agent
 
 **Design spec:**
+
 - Rendered in TopBar, right section
 - Appearance: compact pill button showing: colored dot (accent blue) + agent name + chevron down
 - Dropdown opens below, width 280px, `--color-bg-elevated` background, `shadow-md`
@@ -359,6 +391,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - At most 8 agents shown; if more, scrollable list with max-height 320px
 
 **Behavior:**
+
 - Fetches from `GET /api/agents` on mount, shows skeleton rows while loading
 - Error state: "Couldn't load agents" with a retry button
 - Only one agent can be selected at a time (radio semantics)
@@ -372,12 +405,14 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Owner:** Agent Selection Agent
 
 **Design spec:**
+
 - Rendered in TopBar, right of OrchestratorAgentPicker
 - Appearance: compact pill button showing: stacked mini-avatars (max 3 visible) + "+N more" label if >3 + chevron
 - If no workers selected: shows "Workers" label + plus icon
 - Dropdown: width 320px, absolute-positioned below trigger, `--color-bg-elevated`
 
 **Dropdown internals:**
+
 - Search input at top: "Filter agents..." — filters list in real-time
 - Two sections with `Separator` and 11px uppercase muted label:
   1. "LOCAL PLUGINS" — agents with `agent-` prefix
@@ -397,6 +432,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Triggered by:** Clicking an agent name anywhere in the app opens a right drawer (not a full page)
 
 **Drawer spec:**
+
 - Width: 380px, slides in from right (`translateX(100%)` → `translateX(0)`, 220ms ease-out)
 - Overlay: `rgba(0,0,0,0.4)` behind drawer, clicking it closes drawer
 - Content:
@@ -439,12 +475,14 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 ```
 
 **Chat Header:**
+
 - Shows orchestrator agent avatar, name, and current status badge
 - When agent is actively orchestrating: badge shows `working` variant with orange dot
 - When waiting for user: badge shows `waiting` variant with amber dot + gentle amber tint on header bg
 - "New task" ghost button (top right) — clears conversation and resets state
 
 **MessageList:**
+
 - User messages: right-aligned, `--color-bg-elevated` background, `--radius-md` with flat bottom-right corner
 - Agent messages: left-aligned, no background (uses page bg), left border 2px `--color-accent`
 - Agent message anatomy:
@@ -454,11 +492,12 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - **Orchestration update messages** (system messages, not user/agent messages):
   - Indented 16px from left
   - Dot separator style: a thin left border in muted color + italic text in `--color-text-secondary`
-  - Example: *"Delegated subtask #3 to ResearchWorker"* or *"Worker failed — retrying with fallback"*
+  - Example: _"Delegated subtask #3 to ResearchWorker"_ or _"Worker failed — retrying with fallback"_
   - These are visually quieter than agent messages — they are operational, not conversational
 - Scroll behavior: auto-scroll to newest message. If user has scrolled up, show a "Jump to latest" pill button anchored to the bottom of the list.
 
 **SuggestionStrip:**
+
 - Shows only when conversation is empty or agent is waiting
 - Horizontally scrollable row of `Chip` components with sample prompts
 - Examples: "Summarize the codebase", "Run a competitive analysis", "Generate a project plan"
@@ -466,6 +505,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - Disappears after first message is sent
 
 **InputArea:**
+
 - `Textarea` component (auto-resizing, max 5 lines)
 - Right side: Send button (icon-only, 34px, primary variant when input is non-empty, ghost when empty)
 - Below input: row of command shortcuts (small chips): `/plan`, `/delegate`, `/summarize`, `/pause`
@@ -473,6 +513,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - Keyboard: `Enter` sends, `Shift+Enter` inserts newline, `Escape` clears input
 
 **Command shortcuts behavior:**
+
 - `/plan` — Triggers agent to generate a project plan and populate Kanban
 - `/delegate` — Opens worker assignment panel inline
 - `/summarize` — Agent produces a progress summary of current task
@@ -489,10 +530,12 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Purpose:** This panel visualizes the live orchestration tree — what the master agent is doing, what subtasks exist, and which workers are handling them. Think of it as a live dependency graph that updates in real time.
 
 **Display modes (toggle in panel header):**
+
 1. **Tree view** (default) — hierarchical indented list
 2. **Graph view** — node-link diagram (basic, using SVG — not a third-party graph lib)
 
 **Tree view spec:**
+
 - Root node: Orchestrator agent (avatar + name + current action description)
 - Children: Subtasks, each showing:
   - Task title (14px, primary)
@@ -506,6 +549,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - When a subtask completes, its status badge transitions to success green and the row dims to 60% opacity after 1s delay
 
 **Graph view spec:**
+
 - SVG canvas, pan + zoom enabled
 - Orchestrator node: 48×48px rounded square, accent blue
 - Worker nodes: 36×36px circles, colored by worker status
@@ -523,16 +567,17 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 
 **Columns (left to right):**
 
-| Column | Meaning | Max cards shown (virtual scroll if more) |
-|---|---|---|
-| **Backlog** | Tasks queued, not yet started | Unlimited |
-| **Assigned** | Delegated to a worker, pending start | Unlimited |
-| **In Progress** | Worker actively executing | Unlimited |
-| **Needs Input** | Blocked — requires human decision | Highlighted (amber column header) |
-| **Review** | Agent work done, awaiting human approval | Highlighted (blue column header) |
-| **Done** | Completed and confirmed | Collapsible, shows last 10 by default |
+| Column          | Meaning                                  | Max cards shown (virtual scroll if more) |
+| --------------- | ---------------------------------------- | ---------------------------------------- |
+| **Backlog**     | Tasks queued, not yet started            | Unlimited                                |
+| **Assigned**    | Delegated to a worker, pending start     | Unlimited                                |
+| **In Progress** | Worker actively executing                | Unlimited                                |
+| **Needs Input** | Blocked — requires human decision        | Highlighted (amber column header)        |
+| **Review**      | Agent work done, awaiting human approval | Highlighted (blue column header)         |
+| **Done**        | Completed and confirmed                  | Collapsible, shows last 10 by default    |
 
 **Column component spec:**
+
 - Background: `--color-bg-surface`
 - No card outline borders on the column itself — just the background fill
 - Column header: sticky at top of column
@@ -543,6 +588,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - "Needs Input" and "Review" columns have a subtle top border in their semantic color (amber and accent respectively) — 2px only
 
 **Add column button:**
+
 - Appears as a ghost column with dashed border at the far right
 - Clicking opens an inline input to name the custom column
 
@@ -553,6 +599,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Owner:** Kanban Agent
 
 **Base card spec:**
+
 - Background: `--color-bg-elevated`
 - Border: `--color-border` (1px)
 - Border-radius: `--radius-md`
@@ -561,25 +608,29 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - Active/working: animated left-border pulse (signature element — 2px, `--color-accent`, opacity pulse 0.4→1.0 at 2s)
 
 **Card anatomy (top to bottom):**
+
 1. **Top row:** Task ID chip (monospace, `#T-042` style) + Status badge (right-aligned)
 2. **Title:** 14px, 500 weight, primary color. Max 2 lines, ellipsis after.
 3. **Description preview:** 12px, secondary color. Max 1 line. Hidden if empty.
 4. **Worker row:** Worker avatar chips (20px) with names truncated. If multiple workers, stack with overlap.
-5. **Bottom meta row:** 
+5. **Bottom meta row:**
    - Left: Priority indicator (3 levels: `•` low, `••` medium, `•••` high — monospace dots in respective muted/amber/red colors)
    - Right: Duration timer (if in progress — monospace, live counting up), or completion timestamp (if done)
 
 **Expanded state (click to expand):**
+
 - Card expands in-place (not a modal) using Framer Motion `layout` animation
 - Shows: full description, subtask checklist, agent activity log (last 5 entries), action buttons
 
 **Card action buttons (visible on hover or in expanded state):**
+
 - Reassign worker (icon: person + arrow)
 - Edit task (icon: pencil)
 - View logs (icon: terminal)
 - Archive (icon: box)
 
 **Drag and drop:**
+
 - Uses `dnd-kit` for column-to-column drag
 - Dragging a card: creates a drag ghost that is a 90% opacity copy of the card
 - Drop zones: columns highlight with a 2px `--color-accent` dashed border as drag target
@@ -612,22 +663,26 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Owner:** Kanban Agent
 
 **Board header strip (above columns):**
+
 - Left: "Board" title + task count ("42 tasks, 7 in progress")
 - Center: View density toggle (Compact/Comfortable — changes card content verbosity)
 - Right: Filter button (opens filter drawer) + Group-by dropdown + Search input
 
 **Filter drawer (right side panel, 300px):**
+
 - Filter by: Worker, Status, Priority, Date range, Tag
 - Each filter is a multi-select checkbox list
 - Active filter count shown as badge on filter button
 - "Clear all filters" link at top of drawer
 
 **Group-by options:**
+
 - By column (default)
 - By worker (creates a swimlane per worker)
 - By priority
 
 **Swimlane mode (Group by Worker):**
+
 - Horizontal bands labeled by worker avatar + name
 - Columns still visible within each swimlane
 - Useful for seeing each worker's load at a glance
@@ -643,6 +698,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Full-viewport view toggled from the TopBar tab strip.**
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Logs Header: filter bar + search + level picker    │
@@ -658,6 +714,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 ```
 
 **Log stream item anatomy:**
+
 - Time: `HH:MM:SS.ms` in monospace, muted — 80px fixed-width left column
 - Level indicator: colored square badge (4×16px) — INFO (blue), WARN (amber), ERROR (red), SUCCESS (green), DEBUG (muted)
 - Source: agent name in a small chip
@@ -665,6 +722,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - Each item is a clickable row — hover reveals selection, click opens detail panel
 
 **Log stream behavior:**
+
 - Auto-scrolls to latest (newest at bottom)
 - "Pause scroll" button appears when user has scrolled up — clicking it resumes auto-scroll
 - Log level filter chips at top: click to toggle INFO/WARN/ERROR/DEBUG visibility
@@ -672,6 +730,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - Virtual scroll: handles 10,000+ log entries without performance issues (use `react-virtual` or similar)
 
 **Detail panel:**
+
 - Full log message in a code block (monospace, selectable text)
 - Metadata table: Timestamp, Agent, Task ID, Worker ID, Event type
 - Stack trace section (if error): collapsible, syntax-highlighted
@@ -713,6 +772,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Flow:**
 
 **Step 1 — Intent (what are you trying to accomplish?):**
+
 - Large `Textarea` input, placeholder: "Describe your goal. The more specific, the better."
 - Below: example prompts as chip links ("Research our top 5 competitors", "Build a landing page", "Analyze our Q3 metrics")
 - Clicking an example fills the textarea
@@ -720,6 +780,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - "Continue" button (primary, full-width of textarea) — disabled until 10+ chars entered
 
 **Step 2 — Agent Selection (Choose who handles this):**
+
 - Orchestrator section:
   - "Who leads this task?" label
   - Horizontal list of orchestrator agent cards (3–4 cards visible)
@@ -731,6 +792,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
   - "Auto-select" option: lets the orchestrator pick workers dynamically
 
 **Step 3 — Review and Launch:**
+
 - Summary card: "Task: [user's goal truncated] • Orchestrator: [name] • Workers: [names] • Estimated subtasks: [?]"
 - "Launch task" button (large, primary, full-width)
 - Transition: on click, button becomes a progress bar (1.5s fill animation), then navigates to Workspace view with the chat pre-populated
@@ -767,6 +829,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 ```
 
 **Dashboard task cards** (different from Kanban cards — larger, more informational):
+
 - 280px wide, horizontal row on desktop, stacked on mobile
 - Shows: task title, orchestrator + worker avatars, progress bar (fraction of subtasks done), status badge, "Continue" CTA
 
@@ -785,19 +848,23 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 - All components use existing Mission Control color tokens for error/amber states
 
 **User changes direction midway:**
+
 - User sends a new message that contradicts current task direction
 - Orchestrator sends: "It looks like you'd like to change direction. Should I [new direction] or continue with [original direction]?" with two action buttons as chips
 
 **System waiting for user input:**
+
 - The status bar amber segment lights up
 - If the user is on the Kanban view (not chat), an amber dot appears on the "Workspace" tab in the TopBar
 - A toast notification appears at top-right: "[OrchestratorName] needs your input" with "Open chat" button
 
 **Task partially complete:**
+
 - If a session ends with some tasks complete and some not, the completion summary (see below) clearly shows the split
 - Incomplete tasks have a "Resume" action
 
 **Too many active tasks (>20 in progress):**
+
 - A warning banner appears at top of Kanban: "High load: 23 tasks are currently in progress. Performance may be slower."
 - Suggestion chip: "Prioritize top 5 tasks" — clicking pauses all tasks except the top 5 by priority
 
@@ -819,11 +886,13 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Left sidebar `History` nav item leads here.**
 
 **List view:**
+
 - Each session row: title (truncated), date + time, orchestrator chip, worker count, status badge (Complete/Partial/Failed/Archived)
 - Clicking a row navigates to a read-only replay of that session
 - Search + date range filter at top
 
 **Session replay:**
+
 - Read-only version of the Workspace view
 - Chat messages shown as static (no input area)
 - Kanban shows final state with timestamps on each card
@@ -837,6 +906,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 **Owner:** Settings Agent
 
 **Sections:**
+
 1. **Agents** — list of configured agents, add/remove/configure
 2. **API Keys** — masked credential management
 3. **Notifications** — configure when to be notified (needs input, failure, completion)
@@ -851,6 +921,7 @@ On screens < 768px: Single-column, tab-based navigation between Chat, Board, and
 ### Task 9.1 — Motion System Audit ✅
 
 CSS animations added to `globals.css`:
+
 - `@keyframes pulse-border`: 2s infinite opacity pulse for working state indicators
 - `@keyframes stagger-fade-in` + `.stagger-enter` classes: staggered list entrance (30ms × index, max 5)
 - `@keyframes drawer-slide-in` + `.drawer-enter`: `translateX(100%)→0` over 220ms ease-out
@@ -875,24 +946,26 @@ CSS animations added to `globals.css`:
 - Kanban horizontal scroll on mobile: columns fixed at 280px with `scroll-snap`, `overflow-x: auto`, hidden scrollbar, touch-friendly scrolling
 - All 1036 tests pass, backward compatible with existing `PullRequestsPage` and `SessionDetail` callers
 
-
 ---
 
 ## PHASE 11 — ORCHESTRATOR & WORKER OPTIONS AND CUSTOM AGENT
 
 ### Task 11.1 — Custom Agent Plugin
+
 - Create a new agent plugin package at `packages/plugins/agent-custom/`.
 - Read custom command from `agentConfig.command` in the project config or default to `"bash"`.
 - Implement minimal required Agent methods (`getLaunchCommand`, `getEnvironment`, `detectActivity`, `isProcessRunning`).
 - Register the plugin in `packages/core/src/plugin-registry.ts` and `packages/web/src/lib/services.ts`.
 
 ### Task 11.2 — Unified Orchestrator Selection
+
 - Modify `packages/web/src/app/new-task/page.tsx` step 2 to allow selecting agents or worker providers as the orchestrator.
 - Fetch both `/api/agents` and `/api/workers`.
 - Map selected worker providers to the `workerProvider` parameter and selected agent plugins (including `custom`) to the `agent` parameter in the spawn request payload.
 - Update the layout and cards style to display them unified under "Who leads this task?".
 
 ### Task 11.3 — Update Web Dashboard Selectors
+
 - Modify `OrchestratorAgentPicker.tsx` to display both agent plugins and worker providers in its select dropdown.
 - Update `Dashboard.tsx` to handle spawning with the new parameters appropriately.
 
@@ -951,18 +1024,20 @@ PHASE 11  ✅
    11.3  Update Web Dashboard Selectors — done
 ```
 
-
 ---
 
 ## ACCEPTANCE CRITERIA — QUALITY BAR
 
 **A mediocre version:**
+
 - Functional but generic. Uses default Tailwind colors. Shadows everywhere. Spinner on every async action. Overcrowded cards. Inconsistent spacing. Motion is either absent or overdone.
 
 **A strong version:**
+
 - Dark theme with correct semantic colors. Good spacing rhythm. Agent states clearly communicated. Chat feels like a real product. Kanban is usable and scannable.
 
 **A world-class version:**
+
 - The signature animated border pulse makes the active task feel alive without being distracting
 - Chat messages distinguish between conversation, orchestration updates, and action items without confusion
 - Agent pickers are delightful to use — the animated checkboxes feel premium

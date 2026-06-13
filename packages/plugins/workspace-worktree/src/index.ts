@@ -679,18 +679,18 @@ export function create(config?: Record<string, unknown>): Workspace {
         }
       }
 
-// Run postCreate hooks
-       // NOTE: commands run with full shell privileges — they come from trusted YAML config
-       if (project.postCreate) {
-         const shell = getShell();
-         for (const command of project.postCreate) {
-           try {
-             await execFileAsync(shell.cmd, shell.args(command), {
-               cwd: info.path,
-               timeout: 30_000,
-               windowsHide: true,
-             });
-           } catch (err) {
+      // Run postCreate hooks
+      // NOTE: commands run with full shell privileges — they come from trusted YAML config
+      if (project.postCreate) {
+        const shell = getShell();
+        for (const command of project.postCreate) {
+          try {
+            await execFileAsync(shell.cmd, shell.args(command), {
+              cwd: info.path,
+              timeout: 30_000,
+              windowsHide: true,
+            });
+          } catch (err) {
             // Surface which postCreate command failed. Lifecycle records
             // a generic spawn_failed but loses the specific command and
             // its sanitized error output.

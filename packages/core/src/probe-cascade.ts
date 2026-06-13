@@ -15,10 +15,7 @@ import {
   type PRInfo,
   type PREnrichmentData,
 } from "./types.js";
-import {
-  cloneLifecycle,
-  deriveLegacyStatus,
-} from "./lifecycle-state.js";
+import { cloneLifecycle, deriveLegacyStatus } from "./lifecycle-state.js";
 import {
   classifyActivitySignal,
   createActivitySignal,
@@ -143,7 +140,11 @@ export async function readWorkspaceBranch(workspacePath: string): Promise<Worksp
 }
 
 /** Check if idle time exceeds the agent-stuck threshold. */
-export function isIdleBeyondThreshold(session: Session, idleTimestamp: Date, ctx: LifecycleContext): boolean {
+export function isIdleBeyondThreshold(
+  session: Session,
+  idleTimestamp: Date,
+  ctx: LifecycleContext,
+): boolean {
   const stuckReaction = getReactionConfigForSession(session, "agent-stuck", ctx);
   const thresholdStr = stuckReaction?.threshold;
   if (typeof thresholdStr !== "string") return false;
@@ -153,11 +154,7 @@ export function isIdleBeyondThreshold(session: Session, idleTimestamp: Date, ctx
   return idleMs > stuckThresholdMs;
 }
 
-function getReactionConfigForSession(
-  session: Session,
-  reactionKey: string,
-  ctx: LifecycleContext,
-) {
+function getReactionConfigForSession(session: Session, reactionKey: string, ctx: LifecycleContext) {
   const project = ctx.config.projects[session.projectId];
   const globalReaction = ctx.config.reactions[reactionKey];
   const projectReaction = project?.reactions?.[reactionKey];
@@ -324,7 +321,10 @@ export async function determineStatus(
 
   let runtimeProbe: ProbeResult = { state: "unknown", failed: false };
   if (session.runtimeHandle && canProbeRuntimeIdentity) {
-    const runtime = ctx.registry.get<Runtime>("runtime", project.runtime ?? ctx.config.defaults.runtime);
+    const runtime = ctx.registry.get<Runtime>(
+      "runtime",
+      project.runtime ?? ctx.config.defaults.runtime,
+    );
     if (runtime) {
       try {
         const alive = await runtime.isAlive(session.runtimeHandle);
@@ -376,9 +376,7 @@ export async function determineStatus(
             "runtime",
             project.runtime ?? ctx.config.defaults.runtime,
           );
-          const terminalOutput = runtime
-            ? await runtime.getOutput(session.runtimeHandle, 10)
-            : "";
+          const terminalOutput = runtime ? await runtime.getOutput(session.runtimeHandle, 10) : "";
           if (terminalOutput) {
             await agent.recordActivity(session, terminalOutput);
           }

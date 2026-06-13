@@ -993,7 +993,9 @@ describe("typed metadata helpers (AO-020)", () => {
     const parsed = getReviewDispatch(group);
     expect(parsed).toEqual(group);
 
-    const partialPatch = buildReviewDispatchPatch({ lastPendingReviewFingerprint: "fingerprint-3" });
+    const partialPatch = buildReviewDispatchPatch({
+      lastPendingReviewFingerprint: "fingerprint-3",
+    });
     expect(partialPatch).toEqual({ lastPendingReviewFingerprint: "fingerprint-3" });
   });
 
@@ -1044,7 +1046,9 @@ describe("typed metadata helpers (AO-020)", () => {
     const parsed = getReportWatcher(group);
     expect(parsed).toEqual(group);
 
-    const partialPatch = buildReportWatcherPatch({ mergedPendingCleanupSince: "2026-06-13T21:25:00Z" });
+    const partialPatch = buildReportWatcherPatch({
+      mergedPendingCleanupSince: "2026-06-13T21:25:00Z",
+    });
     expect(partialPatch).toEqual({ mergedPendingCleanupSince: "2026-06-13T21:25:00Z" });
   });
 });
@@ -1062,11 +1066,10 @@ describe("mutateMetadataSafe (B7)", () => {
       branch: "main",
       status: "working",
     });
-    const result = mutateMetadataSafe(
-      dataDir,
-      "ao-safe-1",
-      (existing) => ({ ...existing, summary: "hi" }),
-    );
+    const result = mutateMetadataSafe(dataDir, "ao-safe-1", (existing) => ({
+      ...existing,
+      summary: "hi",
+    }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value["summary"]).toBe("hi");
@@ -1075,12 +1078,9 @@ describe("mutateMetadataSafe (B7)", () => {
   });
 
   it("returns ok=false reason=missing when file does not exist and createIfMissing is false", () => {
-    const result = mutateMetadataSafe(
-      dataDir,
-      "ao-safe-missing",
-      () => ({ branch: "x" }),
-      { createIfMissing: false },
-    );
+    const result = mutateMetadataSafe(dataDir, "ao-safe-missing", () => ({ branch: "x" }), {
+      createIfMissing: false,
+    });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("missing");
@@ -1113,7 +1113,9 @@ describe("mutateMetadataSafe (B7)", () => {
     );
 
     // The corrupt forensic copy must exist.
-    const corruptCopies = readdirSync(dataDir).filter((f) => f.startsWith("ao-safe-2.json.corrupt-"));
+    const corruptCopies = readdirSync(dataDir).filter((f) =>
+      f.startsWith("ao-safe-2.json.corrupt-"),
+    );
     expect(corruptCopies).toHaveLength(1);
   });
 });

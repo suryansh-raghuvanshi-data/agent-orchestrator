@@ -1,10 +1,5 @@
 import { recordActivityEvent } from "./activity-events.js";
-import {
-  type PREnrichmentData,
-  type PRInfo,
-  type Session,
-  type SCM,
-} from "./types.js";
+import { type PREnrichmentData, type PRInfo, type Session, type SCM } from "./types.js";
 import { type NotificationEventContext } from "./notification-data.js";
 import { updateMetadata } from "./metadata.js";
 import { getProjectSessionsDir } from "./paths.js";
@@ -111,62 +106,62 @@ export async function populatePREnrichmentCache(
     const batchStartTime = Date.now();
     try {
       const enrichmentData = await scm.enrichSessionsPRBatch(
-          pluginPRs,
-          {
-            recordSuccess(_data) {
-              const batchDuration = Date.now() - batchStartTime;
-              ctx.observer.recordOperation({
-                metric: "graphql_batch",
-                operation: "batch_enrichment",
-                correlationId: createCorrelationId("graphql-batch"),
-                outcome: "success",
-                projectId: ctx.projectId,
-                durationMs: batchDuration,
-                data: {
-                  plugin: pluginKey,
-                  prCount: pluginPRs.length,
-                  prKeys: pluginPRs.map((pr) => `${pr.owner}/${pr.repo}#${pr.number}`),
-                },
-                level: "info",
-              });
-            },
-            recordFailure(data) {
-              const batchDuration = Date.now() - batchStartTime;
-              ctx.observer.recordOperation({
-                metric: "graphql_batch",
-                operation: "batch_enrichment",
-                correlationId: createCorrelationId("graphql-batch"),
-                outcome: "failure",
-                reason: data.error,
-                level: "warn",
-                data: {
-                  plugin: pluginKey,
-                  prCount: pluginPRs.length,
-                  error: data.error,
-                  durationMs: batchDuration,
-                },
-              });
-            },
-            log(level, message) {
-              ctx.observer.recordDiagnostic?.({
-                operation: "batch_enrichment.log",
-                correlationId: createCorrelationId("graphql-batch"),
-                projectId: ctx.projectId,
-                message,
-                level,
-                data: {
-                  plugin: pluginKey,
-                  source: "ao-graphql-batch",
-                },
-              });
-            },
-            reportPRListUnchangedRepos(repos) {
-              for (const repo of repos) {
-                ctx.prListUnchangedRepos.add(repo);
-              }
-            },
+        pluginPRs,
+        {
+          recordSuccess(_data) {
+            const batchDuration = Date.now() - batchStartTime;
+            ctx.observer.recordOperation({
+              metric: "graphql_batch",
+              operation: "batch_enrichment",
+              correlationId: createCorrelationId("graphql-batch"),
+              outcome: "success",
+              projectId: ctx.projectId,
+              durationMs: batchDuration,
+              data: {
+                plugin: pluginKey,
+                prCount: pluginPRs.length,
+                prKeys: pluginPRs.map((pr) => `${pr.owner}/${pr.repo}#${pr.number}`),
+              },
+              level: "info",
+            });
           },
-          pluginRepos,
+          recordFailure(data) {
+            const batchDuration = Date.now() - batchStartTime;
+            ctx.observer.recordOperation({
+              metric: "graphql_batch",
+              operation: "batch_enrichment",
+              correlationId: createCorrelationId("graphql-batch"),
+              outcome: "failure",
+              reason: data.error,
+              level: "warn",
+              data: {
+                plugin: pluginKey,
+                prCount: pluginPRs.length,
+                error: data.error,
+                durationMs: batchDuration,
+              },
+            });
+          },
+          log(level, message) {
+            ctx.observer.recordDiagnostic?.({
+              operation: "batch_enrichment.log",
+              correlationId: createCorrelationId("graphql-batch"),
+              projectId: ctx.projectId,
+              message,
+              level,
+              data: {
+                plugin: pluginKey,
+                source: "ao-graphql-batch",
+              },
+            });
+          },
+          reportPRListUnchangedRepos(repos) {
+            for (const repo of repos) {
+              ctx.prListUnchangedRepos.add(repo);
+            }
+          },
+        },
+        pluginRepos,
       );
 
       // Merge into cache
@@ -210,10 +205,7 @@ export async function populatePREnrichmentCache(
   // When Guard 1 returned 304, the repo is in prListUnchangedRepos — no new PRs exist.
   for (const session of sessions) {
     if (!session.branch) continue;
-    if (
-        session.metadata["prAutoDetect"] === "off" ||
-        session.metadata["prAutoDetect"] === "false"
-    )
+    if (session.metadata["prAutoDetect"] === "off" || session.metadata["prAutoDetect"] === "false")
       continue;
     if (session.metadata["role"] === "orchestrator" || session.id.endsWith("-orchestrator"))
       continue;
@@ -226,10 +218,10 @@ export async function populatePREnrichmentCache(
     // so use the lifecycle closed-state alone to allow re-detection after a PR is rejected.
     const primaryPRIsClosed = session.lifecycle.pr.state === "closed";
     if (
-        sessionPRs.length > 0 &&
-        projectRepoForDetect &&
-        trackedRepos.has(projectRepoForDetect) &&
-        !primaryPRIsClosed
+      sessionPRs.length > 0 &&
+      projectRepoForDetect &&
+      trackedRepos.has(projectRepoForDetect) &&
+      !primaryPRIsClosed
     ) {
       continue;
     }
@@ -251,25 +243,25 @@ export async function populatePREnrichmentCache(
         // Only skip if we already have this exact PR number on this exact repo.
         // If the existing PR on the same repo is closed, replace it with the new one.
         const alreadyTracked = sessionPRs.some(
-            (p) =>
-                p.owner === detectedPR.owner &&
-                p.repo === detectedPR.repo &&
-                p.number === detectedPR.number,
+          (p) =>
+            p.owner === detectedPR.owner &&
+            p.repo === detectedPR.repo &&
+            p.number === detectedPR.number,
         );
         if (!alreadyTracked) {
           // Remove any closed PRs on the same repo before adding the new one.
           // Open PRs on the same repo are kept — multiple open PRs per repo are valid.
           session.prs = session.prs
-              .filter(
-                  (p) =>
-                      !(
-                          p.owner === detectedPR.owner &&
-                          p.repo === detectedPR.repo &&
-                          p.number !== detectedPR.number &&
-                          ctx.prEnrichmentCache.get(`${p.owner}/${p.repo}#${p.number}`)?.state === "closed"
-                      ),
-              )
-              .concat(detectedPR);
+            .filter(
+              (p) =>
+                !(
+                  p.owner === detectedPR.owner &&
+                  p.repo === detectedPR.repo &&
+                  p.number !== detectedPR.number &&
+                  ctx.prEnrichmentCache.get(`${p.owner}/${p.repo}#${p.number}`)?.state === "closed"
+                ),
+            )
+            .concat(detectedPR);
         }
         session.prs = dedupePrInfos(session.prs);
         // pr is always the primary (first) PR
@@ -327,10 +319,7 @@ export async function populatePREnrichmentCache(
  * Persist batch enrichment data to session metadata files.
  * The web dashboard reads this instead of calling GitHub API.
  */
-export function persistPREnrichmentToMetadata(
-  sessions: Session[],
-  ctx: LifecycleContext,
-): void {
+export function persistPREnrichmentToMetadata(sessions: Session[], ctx: LifecycleContext): void {
   for (const session of sessions) {
     const sessionPRs = normalizeSessionPRs(session);
     if (!session.pr) continue;
@@ -341,7 +330,7 @@ export function persistPREnrichmentToMetadata(
     if (Object.keys(cleanupUpdates).length > 0) {
       updateMetadata(sessionsDir, session.id, cleanupUpdates);
       session.metadata = Object.fromEntries(
-          Object.entries(session.metadata).filter(([key]) => cleanupUpdates[key] === undefined),
+        Object.entries(session.metadata).filter(([key]) => cleanupUpdates[key] === undefined),
       );
     }
 
@@ -453,4 +442,3 @@ export function buildEventContext(
     branch: session.branch,
   };
 }
-

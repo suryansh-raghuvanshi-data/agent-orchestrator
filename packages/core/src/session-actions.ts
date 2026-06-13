@@ -24,17 +24,22 @@ import {
   listMetadata,
   isOrchestratorSessionRecord,
 } from "./metadata.js";
-import {
-  parseCanonicalLifecycle,
-  deriveLegacyStatus,
-} from "./lifecycle-state.js";
+import { parseCanonicalLifecycle, deriveLegacyStatus } from "./lifecycle-state.js";
 import { getProjectSessionsDir } from "./paths.js";
 import { asValidOpenCodeSessionId } from "./opencode-session-id.js";
-import { deleteOpenCodeSession, discoverOpenCodeSessionIdByTitle, fetchOpenCodeSessionList } from "./session-opencode.js";
 import {
-  type SessionContext,
-} from "./session-context.js";
-import { list, get, findSessionRecord, requireSessionRecord, loadActiveSessionRecords } from "./session-query.js";
+  deleteOpenCodeSession,
+  discoverOpenCodeSessionIdByTitle,
+  fetchOpenCodeSessionList,
+} from "./session-opencode.js";
+import { type SessionContext } from "./session-context.js";
+import {
+  list,
+  get,
+  findSessionRecord,
+  requireSessionRecord,
+  loadActiveSessionRecords,
+} from "./session-query.js";
 import { restore } from "./session-spawn.js";
 import { kill, OPENCODE_INTERACTIVE_DISCOVERY_TIMEOUT_MS } from "./session-actions-shared.js";
 import { recordActivityEvent } from "./activity-events.js";
@@ -59,8 +64,6 @@ const PR_TRACKING_STATUSES: ReadonlySet<string> = new Set([
   "approved",
   "mergeable",
 ]);
-
-
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -91,7 +94,9 @@ async function getTmuxForegroundCommand(sessionName: string): Promise<string | n
   }
 }
 
-function parseLifecycleFromRaw(raw: Record<string, string>): ReturnType<typeof parseCanonicalLifecycle> | undefined {
+function parseLifecycleFromRaw(
+  raw: Record<string, string>,
+): ReturnType<typeof parseCanonicalLifecycle> | undefined {
   const source = raw["lifecycle"] ?? raw["statePayload"];
   if (!source) return undefined;
   try {
@@ -243,9 +248,7 @@ export async function cleanup(
         terminatedId,
         terminatedRaw,
       ).agentName;
-      const mappedOpenCodeSessionId = asValidOpenCodeSessionId(
-        terminatedRaw["opencodeSessionId"],
-      );
+      const mappedOpenCodeSessionId = asValidOpenCodeSessionId(terminatedRaw["opencodeSessionId"]);
       if (cleanupAgent === "opencode" && terminatedRaw["opencodeCleanedAt"]) {
         pushSkipped(projectKey, terminatedId);
         continue;
@@ -453,9 +456,7 @@ export async function send(
         foregroundCommand === null || foregroundCommand === agentPlugin.processName;
 
       const outputFresh =
-        previousOutput !== undefined &&
-        output.trim().length > 0 &&
-        output !== previousOutput;
+        previousOutput !== undefined && output.trim().length > 0 && output !== previousOutput;
       if (runtimeAlive && foregroundReady && (processRunning || outputFresh)) {
         return true;
       }
@@ -519,9 +520,7 @@ export async function send(
 
     if (forceRestore || isRestorable(normalized)) {
       return restoreForDelivery(
-        forceRestore
-          ? "session needed to be restarted before delivery"
-          : "session is not running",
+        forceRestore ? "session needed to be restarted before delivery" : "session is not running",
         normalized,
       );
     }
@@ -549,7 +548,9 @@ export async function send(
     return normalized;
   };
 
-  const sendWithConfirmation = async (session: Session): Promise<"confirmed" | "attempted_unconfirmed"> => {
+  const sendWithConfirmation = async (
+    session: Session,
+  ): Promise<"confirmed" | "attempted_unconfirmed"> => {
     const handle = session.runtimeHandle;
     if (!handle) {
       throw new Error(`Session ${sessionId} has no runtime handle`);

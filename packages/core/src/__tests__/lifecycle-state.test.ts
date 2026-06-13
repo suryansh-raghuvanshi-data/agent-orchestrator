@@ -265,7 +265,9 @@ describe("buildLifecycleMetadataPatch (P2-10)", () => {
 
   it("does not throw and omits the whole lifecycle field on circular reference", () => {
     const lifecycle = createInitialCanonicalLifecycle("worker", new Date()) as unknown as {
-      runtime: { handle: { id?: string; runtimeName?: string; data: Record<string, unknown> | null } };
+      runtime: {
+        handle: { id?: string; runtimeName?: string; data: Record<string, unknown> | null };
+      };
       session: unknown;
       pr: unknown;
       agent: unknown;

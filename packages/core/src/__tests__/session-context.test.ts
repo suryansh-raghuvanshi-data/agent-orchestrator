@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isPathInside, normalizePath, shouldDestroyWorkspacePath, getManagedWorkspaceRoots } from "../session-context.js";
+import {
+  isPathInside,
+  normalizePath,
+  shouldDestroyWorkspacePath,
+  getManagedWorkspaceRoots,
+} from "../session-context.js";
 import { join } from "node:path";
 
 describe("isPathInside", () => {

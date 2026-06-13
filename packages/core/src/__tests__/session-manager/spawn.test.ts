@@ -1521,9 +1521,7 @@ describe("spawn", () => {
       };
     }
 
-    function createRegistryWithWorkerProvider(
-      mockWorker: WorkerProvider,
-    ): PluginRegistry {
+    function createRegistryWithWorkerProvider(mockWorker: WorkerProvider): PluginRegistry {
       return {
         ...mockRegistry,
         get: vi.fn().mockImplementation((slot: string) => {

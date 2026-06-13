@@ -51,7 +51,11 @@ function OrchestratorAgentPickerView({
 
   const allOptions = [
     ...agents.map((a) => ({ name: a.name, displayName: a.displayName, type: "agent" as const })),
-    ...providers.map((p) => ({ name: p.name, displayName: p.displayName, type: "workerProvider" as const })),
+    ...providers.map((p) => ({
+      name: p.name,
+      displayName: p.displayName,
+      type: "workerProvider" as const,
+    })),
   ];
 
   const handleChange = useCallback(
