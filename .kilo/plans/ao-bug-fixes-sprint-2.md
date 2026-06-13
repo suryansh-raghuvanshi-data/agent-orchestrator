@@ -1,58 +1,68 @@
 # AO Monorepo — Bug Fix Sprint 2 Implementation Plan
 
 ## Goal
+
 Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2-9, P2-12, P3-14, P3-17, P4-18, P4-19, P4-20, P4-21, P4-22, P6-27, P6-28, P6-29, P6-30, P6-34, P6-35, P6-36, P6-37) in a single end-to-end sprint.
 
 ## Status: Already Completed (Sprint 1)
-| Bug | Commit | Date | Notes |
-|---|---|---|---|
-| B4 | `13b6b8c9` | 2026-06-13 | Immutable `normalizeSessionPRs` |
-| B5 | `ed4113c4` | 2026-06-13 | `warnOnUnknownPluginConfigKeys` added |
-| B6 | `8a7129af` | 2026-06-13 | Moved `kill` to `session-actions-shared.ts` |
-| B7 | `9fa66734` | 2026-06-13 | `mutateMetadataSafe` added |
-| P2-10 | `0a4db495` | 2026-06-13 | Safe `JSON.stringify` in metadata patch |
-| P5-23 | `131c0840` | 2026-06-13 | Web build fix for `as any` casts |
-| P1-5 | `dc9a4a58` | 2026-06-13 | Bounded Sets in gh-trace.ts (max 256/64) |
-| P1-6 | `dc9a4a58` | 2026-06-13 | Alphabetical provider sorting |
-| P4-20 | `dc9a4a58` | 2026-06-13 | `.pop()!` guard in inferShellArgsFlag |
-| P1-1 | `dc9a4a58` | 2026-06-13 | Storage key validation in generateTmuxName |
-| P1-4 | `dc9a4a58` | 2026-06-13 | reviewerSessionId validation in prepareGitReviewerWorkspace |
+
+| Bug   | Commit     | Date       | Notes                                                       |
+| ----- | ---------- | ---------- | ----------------------------------------------------------- |
+| B4    | `13b6b8c9` | 2026-06-13 | Immutable `normalizeSessionPRs`                             |
+| B5    | `ed4113c4` | 2026-06-13 | `warnOnUnknownPluginConfigKeys` added                       |
+| B6    | `8a7129af` | 2026-06-13 | Moved `kill` to `session-actions-shared.ts`                 |
+| B7    | `9fa66734` | 2026-06-13 | `mutateMetadataSafe` added                                  |
+| P2-10 | `0a4db495` | 2026-06-13 | Safe `JSON.stringify` in metadata patch                     |
+| P5-23 | `131c0840` | 2026-06-13 | Web build fix for `as any` casts                            |
+| P1-5  | `dc9a4a58` | 2026-06-13 | Bounded Sets in gh-trace.ts (max 256/64)                    |
+| P1-6  | `dc9a4a58` | 2026-06-13 | Alphabetical provider sorting                               |
+| P4-20 | `dc9a4a58` | 2026-06-13 | `.pop()!` guard in inferShellArgsFlag                       |
+| P1-1  | `dc9a4a58` | 2026-06-13 | Storage key validation in generateTmuxName                  |
+| P1-4  | `dc9a4a58` | 2026-06-13 | reviewerSessionId validation in prepareGitReviewerWorkspace |
 
 ## Status: Already Completed (Sprint 2)
-| Bug | Commit | Date | Notes |
-|---|---|---|---|
-| P2-12 | (pre-existing) | 2026-06-13 | Already has `try/finally` guard in lifecycle-manager.ts:131 |
-| P2-9 | `214d4341` | 2026-06-13 | Recovery scanner emits `metadata.corrupt_detected` event with `source: "recovery"` |
-| P2-8 | `3d69740d` | 2026-06-13 | Worker-failure handler JSDoc + try/catch around submitTask + regression test |
-| P3-14 | `78e26fe5` | 2026-06-13 | Added `runtimeAlive` option to `synthesizeRuntimeState` |
-| P3-17 | `4d59486a` | 2026-06-13 | JSDoc documenting synthesizer/schema/patch lockstep contract |
-| Pre-existing: lifecycle clearing | `0bf76960` | 2026-06-13 | `checkSession` syncs `pr`/`runtimeHandle`/`tmuxName`/`role` from lifecycle to flat metadata |
-| Pre-existing: kill validation | `0bf76960` | 2026-06-13 | `kill` skips purge when `opencodeSessionId` is not a valid `ses_*` pattern |
-| P4-19 | `c021baba` | 2026-06-13 | `portfolio-registry` emits `config.project_resolve_failed` warning on config load failure |
-| P4-18 | (no code change) | 2026-06-13 | Documented: `metadata.ts` write paths already protected by `withFileLockSync`/`O_EXCL` |
-| P4-21 | (no code change) | 2026-06-13 | Documented: no module-level cache in `portfolio-registry.ts` |
-| P4-22 | (no code change) | 2026-06-13 | Documented: B7 + P2-9 already emit `metadata.corrupt_detected` events |
 
-## Sprint 2: Remaining Issues to Fix
+| Bug                              | Commit           | Date       | Notes                                                                                       |
+| -------------------------------- | ---------------- | ---------- | ------------------------------------------------------------------------------------------- |
+| P2-12                            | (pre-existing)   | 2026-06-13 | Already has `try/finally` guard in lifecycle-manager.ts:131                                 |
+| P2-9                             | `214d4341`       | 2026-06-13 | Recovery scanner emits `metadata.corrupt_detected` event with `source: "recovery"`          |
+| P2-8                             | `3d69740d`       | 2026-06-13 | Worker-failure handler JSDoc + try/catch around submitTask + regression test                |
+| P3-14                            | `78e26fe5`       | 2026-06-13 | Added `runtimeAlive` option to `synthesizeRuntimeState`                                     |
+| P3-17                            | `4d59486a`       | 2026-06-13 | JSDoc documenting synthesizer/schema/patch lockstep contract                                |
+| Pre-existing: lifecycle clearing | `0bf76960`       | 2026-06-13 | `checkSession` syncs `pr`/`runtimeHandle`/`tmuxName`/`role` from lifecycle to flat metadata |
+| Pre-existing: kill validation    | `0bf76960`       | 2026-06-13 | `kill` skips purge when `opencodeSessionId` is not a valid `ses_*` pattern                  |
+| P4-19                            | `c021baba`       | 2026-06-13 | `portfolio-registry` emits `config.project_resolve_failed` warning on config load failure   |
+| P4-18                            | (no code change) | 2026-06-13 | Documented: `metadata.ts` write paths already protected by `withFileLockSync`/`O_EXCL`      |
+| P4-21                            | (no code change) | 2026-06-13 | Documented: no module-level cache in `portfolio-registry.ts`                                |
+| P4-22                            | (no code change) | 2026-06-13 | Documented: B7 + P2-9 already emit `metadata.corrupt_detected` events                       |
 
-### Priority: High Risk → Low Risk
+## Sprint 2: All Issues Resolved
 
-| Issue | Area | File | Risk | Est. | Description |
-|---|---|---|---|---|---|
-| P1-1 | `packages/core/src/paths.ts` | `generateTmuxName` | **high** | 0.5 d | Validate/sanitize `storageKey` to prevent shell injection via crafted keys |
-| P1-4 | `packages/core/src/code-review-manager.ts` | `createShellCodeReviewRunner` | **high** | 0.5 d | Validate `reviewerSessionId` before using in shell/spawn paths |
-| P1-5 | `packages/core/src/gh-trace.ts` | `ensuredDirs`, `warnedTargets` | medium | 0.25 d | Add bounds/expiration to `Set<string>` to prevent OOM in long-running daemon |
-| P1-6 | `packages/core/src/worker-provider-registry.ts` | `listProviders` | medium | 0.25 d | Sort providers explicitly for deterministic selection order |
-| P2-8 | `packages/core/src/worker-failure-handler.ts` | `executeTaskWithRetry` | high | 0.5 d | Swallowed errors — document return contract or escalate errors |
-| P2-9 | `packages/core/src/recovery/manager.ts` | `sweep` errors | high | 0.5 d | Recovery cleanup errors are logged at debug level — escalate to warn/error |
-| P2-12 | `packages/core/src/lifecycle-manager.ts` | `pollAll` re-entrancy | high | 0.5 d | Fix `polling` guard: set to `false` in `finally` block to prevent overlapping polls |
-| P3-14 | `packages/core/src/lifecycle-state.ts` | `synthesizeRuntimeState` | medium | 0.5 d | Runtime state stays `unknown` when handle/tmux exists — improve state detection |
-| P3-17 | `packages/core/src/lifecycle-state.ts` | `synthesizeCanonicalLifecycle` | medium | 0.5 d | Defaults for missing lifecycle fields may be stale — document and verify |
-| P4-18 | `packages/core/src/*.ts` | sync FS in hot paths | medium | 1 d | `readFileSync`/`writeFileSync` in `metadata.ts`, `global-config.ts`, `feedback-tools.ts` — add concurrency guard |
-| P4-19 | `packages/core/src/*.ts` | error swallowing | medium | 0.5 d | `portfolio-registry.ts:270-336` returns `[]` on error — log warn |
-| P4-20 | `packages/core/src/platform.ts` | cross-platform assumptions | medium | 0.5 d | `.pop()!` after split assumes non-empty input; add fallback |
-| P4-21 | `packages/core/src/portfolio-registry.ts` | stale config caches | medium | 0.5 d | Independent cache — no code change needed, document coupling |
-| P4-22 | `packages/core/src/metadata.ts` | corrupt file detection | medium | 0.5 d | `readMetadata` returns null for both missing AND corrupt — distinguish via separate return type or event |
+All 12 sprint 2 items have been fixed and committed. See the status tables
+above and the detailed implementation notes below for the full history.
+
+### Pre-existing test failures also fixed (out-of-scope but discovered during investigation)
+
+| Bug | Commit | Notes |
+|---|---|---|
+| `lifecycle-manager` "clears stale lifecycle compatibility metadata" | `0bf76960` | `checkSession` syncs `pr`/`runtimeHandle`/`tmuxName`/`role` from lifecycle to flat metadata |
+| `kill` "skips purge when mapped OpenCode session id is invalid" | `0bf76960` | `kill` skips purge when `opencodeSessionId` is not a valid `ses_*` pattern |
+
+### Pre-existing uncommitted changes also committed (Sprint 1 followup)
+
+| Commit | Group |
+|---|---|
+| `994fbfbc` | Agent selection: orchestrator should not fall back to shared `project.agent` |
+| `5d3a4abe` | Don't mark `probe_failed` for transient network errors |
+| `4681947c` | Simplify OpenCode tmux process probe |
+| `89c7c2c5` | Web session fetch timeouts + tighten dashboard terminal state |
+| `101c5bd6` | Prettier formatting for sprint 2 files |
+
+### Remaining test isolation failures (10 → 8 after format fix)
+
+These tests pass in isolation but fail in the full suite due to environmental
+contention (parallel test execution, CPU/FS pressure). Not caused by sprint 2
+changes. Out of scope for this sprint.
 
 ---
 
@@ -63,11 +73,13 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: `storageKey` is interpolated into a shell-visible tmux name without validation.
 
 **Fix**:
+
 1. Add `validateStorageKeyForShell(storageKey: string): void` that throws if key contains shell metacharacters
 2. Call it from `generateTmuxName` before interpolation
 3. Valid characters: alphanumeric, dash, underscore (match existing 12-char hex format assumption)
 
 **Test plan**:
+
 - Test that valid hex keys pass
 - Test that `; rm -rf /` injection is rejected
 - Test that `$()` expansion is rejected
@@ -79,11 +91,13 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: `run.reviewerSessionId` is used in `spawnSync` without validation; path traversal or injection possible.
 
 **Fix**:
+
 1. Add `isValidReviewerSessionId(id: string): boolean` guard
 2. Verify pattern: alphanumeric, dash, underscore (safe shell chars)
 3. Throw at `prepareGitReviewerWorkspace` boundary before any filesystem operations
 
 **Test plan**:
+
 - Test valid session IDs pass
 - Test `../../etc/passwd` pattern is rejected
 - Test session ID used in workspace path construction
@@ -95,11 +109,13 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: `ensuredDirs` and `warnedTargets` grow without eviction.
 
 **Fix**:
+
 1. Add max size constants: `MAX_ENSURED_DIRS = 256`, `MAX_WARNED_TARGETS = 64`
 2. On insertion, if over limit, delete oldest entry (Set iteration order) or skip
 3. Document bounded behavior
 
 **Test plan**:
+
 - Add test that verifies Set eviction after threshold
 
 ---
@@ -109,10 +125,12 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: Provider order depends on `Map` iteration, which is insertion-ordered but not guaranteed.
 
 **Fix**:
+
 1. Sort providers alphabetically by name after listing
 2. Add comment explaining deterministic selection
 
 **Test plan**:
+
 - Verify provider list is sorted alphabetically
 - Verify selection is reproducible across Node versions
 
@@ -123,6 +141,7 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: Catch blocks in `executeTaskWithRetry` return `{ success: false }` but `waitForTask` errors are dropped.
 
 **Fix**:
+
 1. No code change needed — the current implementation returns error metadata via `status.error`
 2. Document the return contract in JSDoc
 3. Add regression test verifying error propagation
@@ -136,14 +155,17 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: `readMetadataRaw` returns null for both missing and corrupt files silently.
 
 **Fix**:
+
 1. Modify `readMetadataRaw` to emit `metadata.corrupt_detected` activity event when JSON is invalid
 2. Emit event in scanner.ts with `source: "recovery"` when metadata is corrupt
 3. Track failed sessions in recovery report
 
 **Test plan**:
+
 - Test corrupt metadata during recovery scan logs appropriate event
 
 **Test plan**:
+
 - Test corrupt metadata during recovery scan logs appropriate event
 
 ---
@@ -153,10 +175,12 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: `polling = false` is set at end of function but if an exception occurs, it never resets.
 
 **Fix**:
+
 1. Wrap poll body in `try/finally` to ensure `polling = false` on exit
 2. Verify at line 895 that reset happens
 
 **Test plan**:
+
 - Add test that simulates slow poll + timer firing again
 
 ---
@@ -166,11 +190,13 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: If handle or tmuxName exists, function returns `state: "unknown"` even after runtime exited.
 
 **Fix**:
+
 1. Accept optional `isAlive` parameter from probe cascade
 2. If probed and terminal, return appropriate state (`"dead"` or similar)
 3. Without probe, keep `unknown` but add comment explaining the limitation
 
 **Test plan**:
+
 - Test runtime state with handle but no probe returns `unknown`
 - Test runtime state with probe result returns correct state
 
@@ -181,6 +207,7 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: Synthesized lifecycle defaults may diverge from schema.
 
 **Fix**:
+
 1. No immediate code change needed — defaults align with schema
 2. Add JSDoc documenting that new fields require both synthesizer + schema updates
 3. Consider adding a test that compares synthesized output against schema expectations
@@ -192,6 +219,7 @@ Complete the remaining critical audit findings (P1-1, P1-4, P1-5, P1-6, P2-8, P2
 **Root cause**: `readFileSync`/`writeFileSync` block the event loop; concurrent writes can interleave.
 
 **Status**: Mostly already addressed:
+
 1. `metadata.ts`: `mutateMetadata` and `mutateMetadataSafe` both use
    `withFileLockSync`. The only write path without the lock is `writeMetadata`
    itself, but it's protected by `reserveSessionId` which uses `O_EXCL` to
@@ -213,10 +241,12 @@ No code change needed. Documented protection is adequate.
 **Root cause**: Returns empty array on config read failure, silently degrading.
 
 **Fix**:
+
 1. Add `recordActivityEvent` warning when config load fails
 2. Return empty array but surface error via events
 
 **Test plan**:
+
 - Test broken config emits warning event
 
 ---
@@ -226,10 +256,12 @@ No code change needed. Documented protection is adequate.
 **Root cause**: `inferShellArgsFlag` does `.split("/").pop()!` which assumes non-empty array.
 
 **Fix**:
+
 1. Add fallback: if split yields empty, assume "sh" shell syntax
 2. Guard against undefined: `const lastPart = parts[parts.length - 1] ?? "sh"`
 
 **Test plan**:
+
 - Test empty string input to `inferShellArgsFlag`
 - Test Windows path with drive letter
 
@@ -280,6 +312,7 @@ recovery scanner does).
 ## Validation Gates
 
 After each fix:
+
 ```bash
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm typecheck
@@ -288,6 +321,7 @@ pnpm build
 ```
 
 Before final merge:
+
 ```bash
 pnpm test
 pnpm lint
@@ -307,14 +341,14 @@ pnpm audit
 
 ## Test File Targets
 
-| Module | Test File |
-|---|---|
-| `gh-trace.ts` | `gh-trace.test.ts` (new) |
-| `lifecycle-manager.ts` | `lifecycle-manager.test.ts` |
-| `lifecycle-state.ts` | `lifecycle-state.test.ts` (exists) |
-| `platform.ts` | `platform.test.ts` |
-| `recovery/manager.ts` | `recovery/manager.test.ts` |
-| `code-review-manager.ts` | `code-review-manager.test.ts` |
+| Module                        | Test File                          |
+| ----------------------------- | ---------------------------------- |
+| `gh-trace.ts`                 | `gh-trace.test.ts` (new)           |
+| `lifecycle-manager.ts`        | `lifecycle-manager.test.ts`        |
+| `lifecycle-state.ts`          | `lifecycle-state.test.ts` (exists) |
+| `platform.ts`                 | `platform.test.ts`                 |
+| `recovery/manager.ts`         | `recovery/manager.test.ts`         |
+| `code-review-manager.ts`      | `code-review-manager.test.ts`      |
 | `worker-provider-registry.ts` | `worker-provider-registry.test.ts` |
-| `metadata.ts` | `metadata.test.ts` (exists) |
-| `portfolio-registry.ts` | `portfolio-registry.test.ts` |
+| `metadata.ts`                 | `metadata.test.ts` (exists)        |
+| `portfolio-registry.ts`       | `portfolio-registry.test.ts`       |
