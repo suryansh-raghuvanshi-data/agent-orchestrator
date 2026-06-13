@@ -389,6 +389,30 @@ export function createLifecycleManager(deps: LifecycleManagerDeps): LifecycleMan
     if ((session.metadata["detectingEscalatedAt"] || "") !== nextDetectingEscalatedAt) {
       metadataUpdates["detectingEscalatedAt"] = nextDetectingEscalatedAt;
     }
+    // Sync lifecycle-derived fields to flat metadata, clearing stale
+    // values when the lifecycle no longer carries them. Without this,
+    // the flat metadata accumulates orphaned fields that contradict
+    // the canonical lifecycle (e.g. a session whose lifecycle says
+    // pr.url=null still has a stale pr URL in the flat record).
+    const expectedPr = session.lifecycle.pr.url ?? "";
+    if ((session.metadata["pr"] ?? "") !== expectedPr) {
+      metadataUpdates["pr"] = expectedPr;
+    }
+    const expectedRuntimeHandle = session.lifecycle.runtime.handle
+      ? JSON.stringify(session.lifecycle.runtime.handle)
+      : "";
+    if ((session.metadata["runtimeHandle"] ?? "") !== expectedRuntimeHandle) {
+      metadataUpdates["runtimeHandle"] = expectedRuntimeHandle;
+    }
+    const expectedTmuxName = session.lifecycle.runtime.tmuxName ?? "";
+    if ((session.metadata["tmuxName"] ?? "") !== expectedTmuxName) {
+      metadataUpdates["tmuxName"] = expectedTmuxName;
+    }
+    const expectedRole =
+      session.lifecycle.session.kind === "orchestrator" ? "orchestrator" : "";
+    if ((session.metadata["role"] ?? "") !== expectedRole) {
+      metadataUpdates["role"] = expectedRole;
+    }
     if (Object.keys(metadataUpdates).length > 0) {
       updateSessionMetadata(session, metadataUpdates);
     }

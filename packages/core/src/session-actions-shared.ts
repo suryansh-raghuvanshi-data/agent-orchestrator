@@ -24,10 +24,7 @@ import { readMetadataRaw, updateMetadata } from "./metadata.js";
 import { parseCanonicalLifecycle } from "./lifecycle-state.js";
 import { getProjectSessionsDir } from "./paths.js";
 import { asValidOpenCodeSessionId } from "./opencode-session-id.js";
-import {
-  discoverOpenCodeSessionIdByTitle,
-  deleteOpenCodeSession,
-} from "./session-opencode.js";
+import { deleteOpenCodeSession } from "./session-opencode.js";
 import { type SessionContext } from "./session-context.js";
 import { findSessionRecord } from "./session-query.js";
 import { recordActivityEvent } from "./activity-events.js";
@@ -145,12 +142,12 @@ export async function kill(
 
   let didPurgeOpenCodeSession = false;
   if (options?.purgeOpenCode === true && cleanupAgent === "opencode") {
-    const mappedOpenCodeSessionId =
-      asValidOpenCodeSessionId(raw["opencodeSessionId"]) ??
-      (await discoverOpenCodeSessionIdByTitle(
-        sessionId,
-        OPENCODE_INTERACTIVE_DISCOVERY_TIMEOUT_MS,
-      ));
+    // Only purge when the stored session ID is a valid OpenCode
+    // session ID (matches the `ses_*` pattern). If it's missing or
+    // malformed, skip the purge entirely — falling back to title-based
+    // discovery here would risk deleting an unrelated session from
+    // a different worker that happens to share the title.
+    const mappedOpenCodeSessionId = asValidOpenCodeSessionId(raw["opencodeSessionId"]);
 
     if (mappedOpenCodeSessionId) {
       try {
