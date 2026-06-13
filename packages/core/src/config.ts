@@ -150,6 +150,52 @@ function validatePluginConfigFields(
   }
 }
 
+/**
+ * B5: Warn (not reject) on unknown keys in plugin config blocks.
+ *
+ * Tracker/SCM/Notifier configs use `.passthrough()` so a typo like
+ * `trackers:` instead of `tracker:` would be silently accepted and
+ * cause a downstream 4xx at runtime. This helper compares the raw
+ * input keys against the schema's known keys and fires a
+ * `config.project_malformed`-class audit event when an unknown key
+ * is found. The load still succeeds — the goal is to surface the
+ * mistake at load-time, not break configs that have other valid keys.
+ *
+ * Only applied to Tracker/SCM/Notifier (per the B5 plan). Applying
+ * globally would create noise from the many internal fields on
+ * ProjectConfig / OrchestratorConfig.
+ */
+const PLUGIN_CONFIG_KNOWN_KEYS: ReadonlySet<string> = new Set([
+  "plugin",
+  "package",
+  "path",
+  "webhook",
+]);
+
+function warnOnUnknownPluginConfigKeys(
+  raw: unknown,
+  configType: "Tracker" | "SCM" | "Notifier",
+  projectId: string,
+): void {
+  if (typeof raw !== "object" || raw === null) return;
+  const obj = raw as Record<string, unknown>;
+  const unknown: string[] = [];
+  for (const key of Object.keys(obj)) {
+    if (!PLUGIN_CONFIG_KNOWN_KEYS.has(key)) {
+      unknown.push(key);
+    }
+  }
+  if (unknown.length === 0) return;
+  recordActivityEvent({
+    projectId,
+    source: "config",
+    kind: "config.project_malformed",
+    level: "warn",
+    summary: `${configType} config has unknown keys: ${unknown.join(", ")}`,
+    data: { configType, unknownKeys: unknown },
+  });
+}
+
 const ReactionConfigSchema = z.object({
   auto: z.boolean().default(true),
   action: z.enum(["send-to-agent", "notify", "auto-merge"]).default("notify"),
@@ -511,6 +557,7 @@ export function collectExternalPluginConfigs(config: OrchestratorConfig): Extern
   // Collect from project tracker and scm configs
   for (const [projectId, project] of Object.entries(config.projects)) {
     if (project.tracker) {
+      warnOnUnknownPluginConfigKeys(project.tracker, "Tracker", projectId);
       const entry = processExternalPluginConfig(
         project.tracker,
         `projects.${projectId}.tracker`,
@@ -521,6 +568,7 @@ export function collectExternalPluginConfigs(config: OrchestratorConfig): Extern
     }
 
     if (project.scm) {
+      warnOnUnknownPluginConfigKeys(project.scm, "SCM", projectId);
       const entry = processExternalPluginConfig(
         project.scm,
         `projects.${projectId}.scm`,
@@ -534,6 +582,7 @@ export function collectExternalPluginConfigs(config: OrchestratorConfig): Extern
   // Collect from global notifier configs
   for (const [notifierId, notifierConfig] of Object.entries(config.notifiers ?? {})) {
     if (notifierConfig) {
+      warnOnUnknownPluginConfigKeys(notifierConfig, "Notifier", notifierId);
       const entry = processExternalPluginConfig(
         notifierConfig,
         `notifiers.${notifierId}`,
