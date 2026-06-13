@@ -17,6 +17,7 @@ import {
   readMetadataRaw,
   readCanonicalLifecycle,
   mutateMetadata,
+  mutateMetadataSafe,
   writeMetadata,
   updateMetadata,
   deleteMetadata,
@@ -1043,7 +1044,76 @@ describe("typed metadata helpers (AO-020)", () => {
     const parsed = getReportWatcher(group);
     expect(parsed).toEqual(group);
 
-    const partialPatch = buildReportWatcherPatch({ mergedPendingCleanupSince: "2026-06-12T21:25:00Z" });
-    expect(partialPatch).toEqual({ mergedPendingCleanupSince: "2026-06-12T21:25:00Z" });
+    const partialPatch = buildReportWatcherPatch({ mergedPendingCleanupSince: "2026-06-13T21:25:00Z" });
+    expect(partialPatch).toEqual({ mergedPendingCleanupSince: "2026-06-13T21:25:00Z" });
+  });
+});
+
+/**
+ * B7: mutateMetadataSafe returns a structured result so callers can
+ * distinguish "file was missing" from "file was unreadable". Previously
+ * both collapsed to `null`, which made it impossible to tell whether a
+ * failed update should retry vs. surface a corruption warning.
+ */
+describe("mutateMetadataSafe (B7)", () => {
+  it("returns ok=true with the merged value for healthy JSON", () => {
+    writeMetadata(dataDir, "ao-safe-1", {
+      worktree: "/tmp/w",
+      branch: "main",
+      status: "working",
+    });
+    const result = mutateMetadataSafe(
+      dataDir,
+      "ao-safe-1",
+      (existing) => ({ ...existing, summary: "hi" }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value["summary"]).toBe("hi");
+      expect(result.value["branch"]).toBe("main");
+    }
+  });
+
+  it("returns ok=false reason=missing when file does not exist and createIfMissing is false", () => {
+    const result = mutateMetadataSafe(
+      dataDir,
+      "ao-safe-missing",
+      () => ({ branch: "x" }),
+      { createIfMissing: false },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("missing");
+    }
+  });
+
+  it("returns ok=false reason=corrupt_metadata and emits activity event when JSON is unparseable", () => {
+    const sessionPath = join(dataDir, "ao-safe-2.json");
+    writeFileSync(sessionPath, "{ broken json", "utf-8");
+
+    const result = mutateMetadataSafe(
+      dataDir,
+      "ao-safe-2",
+      (existing) => ({ ...existing, branch: "feat/y" }),
+      { createIfMissing: true },
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok && result.reason === "corrupt_metadata") {
+      expect(result.reason).toBe("corrupt_metadata");
+      expect(result.path).toBe(sessionPath);
+    }
+
+    expect(recordActivityEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: "ao-safe-2",
+        kind: "metadata.corrupt_detected",
+        level: "error",
+      }),
+    );
+
+    // The corrupt forensic copy must exist.
+    const corruptCopies = readdirSync(dataDir).filter((f) => f.startsWith("ao-safe-2.json.corrupt-"));
+    expect(corruptCopies).toHaveLength(1);
   });
 });
