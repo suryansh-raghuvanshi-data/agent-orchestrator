@@ -44,15 +44,12 @@ let cachedShell: ShellInfo | null = null;
 /**
  * Infer the command-string flag for a given shell from its basename.
  * pwsh / powershell → -Command, cmd → /c, bash / sh / zsh → -c.
- * Default to PowerShell args (the historical behaviour) for unknown shells.
+ * Default to sh-style args for unknown shells when split yields empty.
  */
 function inferShellArgsFlag(cmd: string): (command: string) => string[] {
-  const base = cmd
-    .replace(/\\/g, "/")
-    .split("/")
-    .pop()!
-    .toLowerCase()
-    .replace(/\.exe$/, "");
+  const parts = cmd.replace(/\\/g, "/").split("/");
+  const lastPart = parts[parts.length - 1] ?? "";
+  const base = lastPart.toLowerCase().replace(/\.exe$/, "");
   if (base === "cmd") return (c) => ["/c", c];
   if (base === "bash" || base === "sh" || base === "zsh" || base === "dash") {
     return (c) => ["-c", c];

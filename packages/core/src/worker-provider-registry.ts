@@ -8,7 +8,8 @@ export function createWorkerProviderRegistry(registry: PluginRegistry) {
       const provider = registry.get<WorkerProvider>("worker-provider", manifest.name);
       if (provider) providers.push(provider);
     }
-    return providers;
+    // Sort alphabetically for deterministic selection order
+    return providers.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   function getProvider(name: string): WorkerProvider | null {

@@ -244,6 +244,19 @@ function extractSignal(err: unknown): string | undefined {
 const ensuredDirs = new Set<string>();
 const warnedTargets = new Set<string>();
 
+const MAX_ENSURED_DIRS = 256;
+const MAX_WARNED_TARGETS = 64;
+
+function addToBoundedSet(set: Set<string>, value: string, max: number): void {
+  if (set.size >= max && !set.has(value)) {
+    const firstValue = set.values().next().value;
+    if (firstValue !== undefined) {
+      set.delete(firstValue);
+    }
+  }
+  set.add(value);
+}
+
 async function writeTrace(entry: GhTraceEntry): Promise<void> {
   const target = process.env[GH_TRACE_FILE_ENV];
   if (!target) return;
@@ -254,13 +267,14 @@ async function writeTrace(entry: GhTraceEntry): Promise<void> {
   try {
     if (!ensuredDirs.has(dir)) {
       await mkdir(dir, { recursive: true });
-      ensuredDirs.add(dir);
+      addToBoundedSet(ensuredDirs, dir, MAX_ENSURED_DIRS);
     }
     await appendFile(target, line, "utf-8");
   } catch (err) {
     // Warn once per target to surface disk-full / permission errors
+    // Use bounded Set to prevent unbounded growth in long-running daemon
     if (!warnedTargets.has(target)) {
-      warnedTargets.add(target);
+      addToBoundedSet(warnedTargets, target, MAX_WARNED_TARGETS);
       const msg = err instanceof Error ? err.message : String(err);
       // eslint-disable-next-line no-console -- surface trace write failures once
       console.warn(`[gh-trace] Failed to write trace to ${target}: ${msg}`);
