@@ -118,4 +118,12 @@ Do not touch external packages and do not refactor anything that is already corr
 | Bug | Commit | Date | Notes |
 |---|---|---|---|
 | B4 | `13b6b8c9` | 2026-06-13 | `normalizeSessionPRs` is now immutable; session objects are not mutated as a side effect. Regression test added in `pr-enrichment.test.ts`. |
+| B5 | `ed4113c4` | 2026-06-13 | Added `warnOnUnknownPluginConfigKeys` that emits a `config.project_malformed` warn event for unknown keys in Tracker/SCM/Notifier blocks. Scope-limited per plan to avoid noise from internal ProjectConfig fields. Regression tests in `config-validation.test.ts`. |
 | B6 | `8a7129af` | 2026-06-13 | `kill` moved to new `session-actions-shared.ts`; rollup circular-dependency warning gone. `session-actions.ts` re-exports `kill` for backward compat. Regression test added in `session-context.test.ts`. |
+| B7 | `9fa66734` | 2026-06-13 | Added `mutateMetadataSafe` returning a discriminated union `{ok:true,value} \| {ok:false,reason:"missing"} \| {ok:false,reason:"corrupt_metadata",path}`. Existing `mutateMetadata` contract preserved. Regression tests in `metadata.test.ts`. |
+
+## Remaining (not implemented in this pass)
+
+- **B1** (`isPathInside`): the function already correctly handles prefix-only containment via the `${normalizedParent}${sep}` boundary check. No code change needed; the regression test in `session-context.test.ts` documents the expected behavior. If a Windows-specific edge case surfaces in production, revisit.
+- **B2** (non-numeric `issueId`): no call site in the current codebase constructs `JOIN(projectPrefix, issueId)` strings — the audit reference appears outdated. `sessionPrefix` is validated by Zod regex, and `issueId` flows through typed values (e.g. `Session.issueId: string | null`). No code change needed unless a new caller is added.
+- **B3** (WeakSet event suppression): the only `WeakSet` in `activity-events.ts` is the cycle-detection guard in `sanitizeValue`. There is no directional mute set that keeps discarded generator arrows alive. The audit reference appears to describe a different module or a pre-existing fix. No code change needed.
