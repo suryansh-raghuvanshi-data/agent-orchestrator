@@ -25,6 +25,7 @@ import {
 } from "./global-config.js";
 import { atomicWriteFileSync } from "./atomic-write.js";
 import { loadConfig } from "./config.js";
+import { recordActivityEvent } from "./activity-events.js";
 
 function normalizePath(path: string): string {
   return resolve(path);
@@ -267,7 +268,20 @@ function projectFromGlobalConfig(): PortfolioProject[] {
       })),
     ];
     return allEntries;
-  } catch {
+  } catch (err) {
+    // P4-19: surface config load failures via a warning event so
+    // operators can investigate why the portfolio is empty, instead
+    // of silently degrading to [].
+    recordActivityEvent({
+      source: "config",
+      kind: "config.project_resolve_failed",
+      level: "warn",
+      summary: "Failed to load global config for portfolio projection",
+      data: {
+        configPath: getGlobalConfigPath(),
+        reason: err instanceof Error ? err.message : String(err),
+      },
+    });
     return [];
   }
 }
@@ -306,7 +320,17 @@ function fallbackPortfolioFromLoadedConfig(): PortfolioProject[] {
         resolveError: project.resolveError,
       })),
     ];
-  } catch {
+  } catch (err) {
+    // P4-19: same as above — surface fallback config load failures.
+    recordActivityEvent({
+      source: "config",
+      kind: "config.project_resolve_failed",
+      level: "warn",
+      summary: "Failed to load fallback config for portfolio projection",
+      data: {
+        reason: err instanceof Error ? err.message : String(err),
+      },
+    });
     return [];
   }
 }
