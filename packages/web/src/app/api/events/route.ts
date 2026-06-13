@@ -3,6 +3,10 @@ import { type NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET(_request: NextRequest) {
+  // Hold intervals in a closure-scoped container so the cancel callback
+  // can clear them without smuggling state onto the stream via `as any`.
+  const intervals: ReturnType<typeof setInterval>[] = [];
+
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
@@ -13,27 +17,27 @@ export async function GET(_request: NextRequest) {
 
       send(JSON.stringify({ type: "connected", timestamp: Date.now() }));
 
-      const updateInterval = setInterval(() => {
-        send(
-          JSON.stringify({
-            type: "sessions.updated",
-            timestamp: Date.now(),
-          }),
-        );
-      }, 5000);
+      intervals.push(
+        setInterval(() => {
+          send(
+            JSON.stringify({
+              type: "sessions.updated",
+              timestamp: Date.now(),
+            }),
+          );
+        }, 5000),
+      );
 
-      const keepaliveInterval = setInterval(() => {
-        controller.enqueue(encoder.encode(":\n\n"));
-      }, 15000);
-
-      // Store intervals for cleanup
-      (stream as any)._intervals = [updateInterval, keepaliveInterval];
+      intervals.push(
+        setInterval(() => {
+          controller.enqueue(encoder.encode(":\n\n"));
+        }, 15000),
+      );
     },
     cancel() {
       // Clear intervals to prevent memory leak
-      const intervals = (stream as any)._intervals;
-      if (intervals) {
-        intervals.forEach((interval: ReturnType<typeof setInterval>) => clearInterval(interval));
+      for (const interval of intervals) {
+        clearInterval(interval);
       }
     },
   });
